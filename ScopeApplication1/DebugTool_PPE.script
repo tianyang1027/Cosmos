@@ -94,7 +94,7 @@ in_features =
         FROM inputCollection AS a
              LEFT JOIN
                  in_features AS b
-             ON a.MUrl == b.MUr AND a.PUrl == b.PUrl
+             ON a.MUrl == b.MUrl AND a.PUrl == b.PUrl
         GROUP BY Key,
                  PKey,
                  MUrl,
