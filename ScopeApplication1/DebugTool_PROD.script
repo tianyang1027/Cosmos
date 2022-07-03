@@ -433,7 +433,7 @@ ImageInfos =
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
-         ON a.Key == b.Key AND a.PKey==b.PKey;
+         ON a.Key == b.Key AND a.PKey == b.PKey;
 
 #IF(@Par_IsInputStepDebugInfo)
     OUTPUT ImageInfos
