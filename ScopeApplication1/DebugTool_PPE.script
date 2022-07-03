@@ -114,7 +114,6 @@ in_features =
     TO SSTREAM $"/local/Prod/Image/Prism/DebugTool_PPE/{@Par_Date}/Step/ImageInfo_1.ss";
 #ENDIF
 
-
 Adult =
     SELECT ImageKey,
            PageKey,
