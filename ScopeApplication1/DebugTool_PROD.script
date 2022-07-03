@@ -1,0 +1,482 @@
+﻿REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.dll";
+
+#DECLARE Par_T2S2Th int = 7;
+#DECLARE Par_RemoveDupOnPageDomain bool = true;
+#DECLARE Par_RemoveDupOnLanuage bool = false;
+#DECLARE Par_ControlRankArg        string = string.Format("{0}:ControlRank","OrgRank");
+#DECLARE Par_ControlRankReverseArg string = string.Format("ControlRank:{0}","OrgRank");
+
+RESOURCE "/local/Prod/Image/Prism/Blocklist/BlocklistDomains_2022_03_03.txt";
+RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
+#DECLARE Par_In_Features string = "/local/Prod/Image/Prism/2022-07-02/PrismProdRank_0.ss";
+#DECLARE Par_In_BlockList string = "/local/Prod/Image/MMToDP/DUI/Blocking/2022_07_02/BlockingList_Debug.ss";
+#DECLARE Par_In_BlockNodules string = "/local/Prod/Image/Prism/Blocklist/BlockedNodules/2022_07_01/MUrlBlockingNodules.ss";
+#DECLARE Par_In_BlockListT2S2Mapping string = "/local/Prod/Image/Prism/BlocklistToNodule/T2S2/2022_07_01/DupMapping.ss";
+#DECLARE Par_ContainsPUrl bool = false;
+#DECLARE Par_Date string =DateTime.Now.ToString("yyyy-MM-dd");
+#DECLARE Par_Input string = "/local/users/jiafa/dsat_20220629/debug_input_20220629.tsv";
+#DECLARE Out_StatsSs string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.ss";
+#DECLARE Out_StatsTsv string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.tsv";
+#DECLARE Par_In_BlockListByKeyword="/local/Prod/Image/Prism/BlocklistToNodule/blocklist_by_keyword_2022-06-29.ss";
+#DECLARE Par_IsInputStepDebugInfo bool = false;
+
+in_features =
+    SSTREAM @Par_In_Features;
+
+#IF(!@Par_ContainsPUrl)
+    inputCollection =
+        EXTRACT
+            Description : string,
+            MUrl : string
+        FROM @Par_Input
+        HAVING MUrl != "MUrl"
+        USING Extractors.Tsv();
+#ELSE
+    inputCollection =
+        EXTRACT
+            Description : string,
+            MUrl : string,
+            PUrl : string
+        FROM @Par_Input
+        HAVING MUrl != "MUrl" AND PUrl != "PUrl"
+        USING Extractors.Tsv();
+#ENDIF
+
+#IF(!@Par_ContainsPUrl)
+    ImageInfos =
+        SELECT b.Key,
+               b.PKey,
+               a.MUrl,
+               b.PUrl,
+               b.MDomain,
+               b.PDomain,
+               b.AttractivenessScore,
+               b.AdultScore AS AdultScoreV3,
+               b.RacyScore AS RacyScoreV3,
+               b.OffensiveScore  AS OffensiveScoreV3,
+               b.WatermarkProbability,
+               IF(b.MUrl == null, "No", "Yes") AS IsInActiveIndex
+        FROM inputCollection AS a
+             LEFT JOIN
+                 in_features AS b
+             ON a.MUrl == b.MUrl
+        GROUP BY Key,
+                 PKey,
+                 MUrl,
+                 PUrl,
+                 MDomain,
+                 PDomain,
+                 AttractivenessScore,
+                 AdultScoreV3,
+                 RacyScoreV3,
+                 OffensiveScoreV3,
+                 WatermarkProbability,
+                 IsInActiveIndex;
+#ELSE
+    ImageInfos =
+        SELECT b.Key,
+               b.PKey,
+               a.MUrl,
+               a.PUrl,
+               b.MDomain,
+               b.PDomain,
+               b.AttractivenessScore,
+               b.AdultScore AS AdultScoreV3,
+               b.RacyScore AS RacyScoreV3,
+               b.OffensiveScore AS OffensiveScoreV3,
+               b.WatermarkProbability,
+               IF(b.MUrl == null AND b.PUrl ==null, "No", "Yes") AS IsInActiveIndex
+        FROM inputCollection AS a
+             LEFT JOIN
+                 in_features AS b
+             ON a.MUrl == b.MUr AND a.PUrl == b.PUrl
+        GROUP BY Key,
+                 PKey,
+                 MUrl,
+                 PUrl,
+                 MDomain,
+                 PDomain,
+                 AttractivenessScore,
+                 AdultScoreV3,
+                 RacyScoreV3,
+                 OffensiveScoreV3,
+                 WatermarkProbability,
+                 IsInActiveIndex;
+#ENDIF
+
+#IF(@Par_IsInputStepDebugInfo)
+    OUTPUT ImageInfos
+    TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_1.ss";
+#ENDIF
+
+// Remove Detrimental
+
+NoduleList =
+    SELECT *
+    FROM
+    (
+        SSTREAM @Par_In_Features
+    )
+    WHERE  
+      AdultScore != null AND AdultScore <= 195
+      AND RacyScore != null AND RacyScore <= 100 
+      AND OffensiveScore != null AND OffensiveScore <= 117
+      AND NOT IsBlockedDomain(PDomain,MDomain);
+
+ImageInfos =
+    SELECT a.*,
+           IF(b.Key == null AND b.PKey == null, "Pass", "Fail") AS DetrimentalFilter
+    FROM ImageInfos AS a
+         LEFT JOIN
+             NoduleList AS b
+         ON a.Key == b.Key AND a.PKey == b.PKey;
+
+#IF(@Par_IsInputStepDebugInfo)
+    OUTPUT ImageInfos
+    TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_2.ss";
+#ENDIF
+
+// Block
+Block =
+    SELECT MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MUrl) AS Key,
+           MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(PUrl) AS PKey
+    FROM
+    (
+        SSTREAM @Par_In_BlockList
+    );
+
+// Block Nodules
+// Block
+Block = SELECT MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MUrl) AS Key,
+               MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(PUrl) AS PKey
+        FROM (SSTREAM @Par_In_BlockList);
+
+// Block By Keyword
+BlockListByKeyword = SSTREAM @Par_In_BlockListByKeyword;
+
+// Block Nodules
+BlockNodules = SELECT ImageKey AS Key, PageKey AS PKey FROM (SSTREAM @Par_In_BlockNodules);
+
+BlockListT2S2Mapping =  
+        SELECT QueryKey AS Key FROM (SSTREAM @Par_In_BlockListT2S2Mapping)
+        WHERE MatchCount >= @Par_T2S2Th;    
+
+NoduleList = 
+    SELECT * 
+    FROM NoduleList 
+    LEFT ANTISEMIJOIN BlockNodules ON NoduleList.Key == BlockNodules.Key AND NoduleList.PKey == BlockNodules.PKey
+    LEFT ANTISEMIJOIN Block ON NoduleList.Key == Block.Key AND NoduleList.PKey == Block.PKey
+    LEFT ANTISEMIJOIN BlockListT2S2Mapping ON NoduleList.Key == BlockListT2S2Mapping.Key
+    LEFT ANTISEMIJOIN BlockListByKeyword   ON NoduleList.Key == BlockListByKeyword.Key AND NoduleList.PKey == BlockListByKeyword.PKey;
+
+ImageInfos =
+    SELECT a.*,
+           a.DetrimentalFilter == "Fail"
+           ?"N/A" :
+           IF(b.Key == null AND b.PKey == null, "Pass", "Fail") AS BlockNodulesFilter
+    FROM ImageInfos AS a
+         LEFT JOIN
+             NoduleList AS b
+         ON a.Key == b.Key AND a.PKey == b.PKey;
+   
+#IF(@Par_IsInputStepDebugInfo)
+    OUTPUT ImageInfos
+    TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_3.ss";
+#ENDIF
+
+// Remove Defect
+
+NoduleList =
+    SELECT *
+      FROM NoduleList
+      WHERE  AttractivenessScore != null AND AttractivenessScore >= 180 
+      AND AspectRatio != null AND AspectRatio >= 0.6 
+      AND (HasPinterestContent OR (RepinCount != null) OR HasClickedContent )
+      AND WatermarkProbability != null AND WatermarkProbability < 0.9;
+
+ImageInfos =
+    SELECT a.*,
+           (
+               a.DetrimentalFilter == "Fail" ||
+               a.BlockNodulesFilter == "Fail"
+           )
+           ?"N/A" :
+           IF(b.Key == null AND b.PKey == null, "Pass", "Fail") AS RemoveDefectFilter
+    FROM ImageInfos AS a
+         LEFT JOIN
+             NoduleList AS b
+         ON a.Key == b.Key AND a.PKey == b.PKey;
+
+#IF(@Par_IsInputStepDebugInfo)
+    OUTPUT ImageInfos
+    TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_4.ss";
+#ENDIF
+
+// Dedupping
+
+NoduleList =
+    PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-rename", @Par_ControlRankArg);         
+
+// Dedup on Http vs Https
+NoduleList = 
+    SELECT *,
+          IF(MUrl.StartsWith("https://"), 2, 0) + IF(PUrl.StartsWith("https://"), 1, 0) AS HttpsCountOnUrl,
+          MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MMRV2.IndexSelection.SelectionUtils.ConvertHttpsToHttpInMUrl(MUrl)) AS MKeyNorm,
+          MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MMRV2.IndexSelection.SelectionUtils.ConvertHttpsToHttpInMUrl(PUrl)) AS PKeyNorm;
+
+NoduleList = 
+    SELECT *,
+       ROW_NUMBER() OVER (PARTITION BY MKeyNorm, PKeyNorm ORDER BY HttpsCountOnUrl DESC) AS RN
+       HAVING RN == 1;
+
+NoduleList = 
+    PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "HttpsCountOnUrl,MKeyNorm,PKeyNorm,RN");         
+
+// Remove Images from Pinimg.com if Dup exists.
+NoduleList = 
+        SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY DupSignature ORDER BY PinterestImage ASC, ControlRank DESC) AS RN
+           HAVING RN == 1 OR NOT PinterestImage;
+
+NoduleList = 
+        PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "RN");         
+
+#IF(@Par_RemoveDupOnPageDomain)
+    // Keep 1 Dup for each Page Domain
+    NoduleList = 
+        SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY DupSignature, PDomain ORDER BY PinterestImage ASC, ControlRank DESC) AS RN
+           HAVING RN == 1;
+
+    NoduleList = 
+        PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "RN");         
+#ENDIF
+
+#IF(@Par_RemoveDupOnLanuage)
+    // Keep 1 Dup for each Language
+    NoduleList = 
+        SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY DupSignature, Language ORDER BY PinterestImage ASC, ControlRank DESC) AS RN
+           HAVING RN == 1;
+
+    NoduleList = 
+        PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "RN");         
+#ENDIF
+
+NoduleList = 
+        PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-rename", @Par_ControlRankReverseArg);     
+
+ImageInfos =
+    SELECT a.*,
+           (
+               a.DetrimentalFilter == "Fail"||
+               a.BlockNodulesFilter == "Fail"||
+               a.RemoveDefectFilter == "Fail"
+           )
+           ?"N/A" :
+           IF(b.Key == null AND b.PKey == null, "Pass", "Fail") AS DeduppingFilter
+    FROM ImageInfos AS a
+         LEFT JOIN
+             NoduleList AS b
+         ON a.Key == b.Key AND a.PKey == b.PKey;
+             
+#IF(@Par_IsInputStepDebugInfo)
+    OUTPUT ImageInfos
+    TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_6.ss";
+#ENDIF
+
+NoduleList =
+    SELECT *
+    FROM NoduleList
+    WHERE NOT IsBlockedAdultRacyImageDomain(PDomain, MDomain);
+
+ImageInfos =
+    SELECT a.*,
+           (
+               a.DetrimentalFilter == "Fail" ||
+               a.BlockNodulesFilter == "Fail" ||
+               a.RemoveDefectFilter == "Fail" ||
+               a.DeduppingFilter == "Fail"
+           )
+           ?"N/A" :
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS AdultRacyImageDomainsFilter
+    FROM ImageInfos AS a
+         LEFT JOIN
+             NoduleList AS b
+         ON a.Key == b.Key AND a.PKey == b.PKey;
+  
+
+#IF(@Par_IsInputStepDebugInfo)
+    OUTPUT ImageInfos
+    TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_7.ss";
+#ENDIF
+
+Authority_Page_Manual =
+    EXTRACT Host,
+            Score,
+            Date,
+            Comments
+    FROM "/shares/SegmentRelevance/SegmentRelevance/fromCosmos09/prod_QC_HostQC/hotfix.tsv"
+    USING DefaultTextExtractor(silent: true)
+    HAVING Host != "Host";
+
+Bad_Authority_Page_Manual =
+    SELECT Host AS PDomain,
+           double.Parse(Score) AS Score,
+           Comments
+    FROM Authority_Page_Manual;
+
+Bad_Authority_Page_Manual =
+    SELECT *
+    WHERE Score < 1005000;
+
+Bad_Authority_Page_Auto =
+    SELECT Host AS PDomain,
+           Score
+    FROM
+    (
+        SSTREAM "/shares/SegmentRelevance/SegmentRelevance/fromCosmos09/prod_QC_HostQC/Pipeline/V2/QCHostScoreV2.ss"
+    )
+    WHERE Score != null AND Score < 51200;
+
+Bad_Authority_Page_PDomain =
+    SELECT DISTINCT PDomain
+    FROM Bad_Authority_Page_Manual
+    UNION
+    SELECT DISTINCT PDomain
+    FROM Bad_Authority_Page_Auto;
+
+NoduleList_PDomain =
+    SELECT DISTINCT PDomain
+    FROM NoduleList;
+
+Good_Authority_Page_PDomain =
+    SELECT a.PDomain
+    FROM NoduleList_PDomain AS a
+         LEFT ANTISEMIJOIN
+             Bad_Authority_Page_PDomain AS b
+         ON a.PDomain == b.PDomain;
+
+NoduleList =
+    SELECT b.*
+    FROM Good_Authority_Page_PDomain AS a
+         INNER JOIN
+             NoduleList AS b
+         ON a.PDomain == b.PDomain;
+
+ImageInfos =
+    SELECT a.*,
+           (
+               a.DetrimentalFilter == "Fail" ||
+               a.BlockNodulesFilter == "Fail" ||
+               a.RemoveDefectFilter == "Fail" ||
+               a.DeduppingFilter == "Fail" ||
+               a.AdultRacyImageDomainsFilter == "Fail"
+           )
+           ?"N/A" :
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS AuthorityPagePDomainFilter
+    FROM ImageInfos AS a
+         LEFT JOIN
+             NoduleList AS b
+         ON a.Key == b.Key AND a.PKey == b.PKey;
+
+#IF(@Par_IsInputStepDebugInfo)
+    OUTPUT ImageInfos
+    TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_8.ss";
+#ENDIF
+
+RacyANN =
+    EXTRACT QueryMUrl,
+            QueryPUrl,
+            Label,
+            QueryDocKey,
+            ResultDocKey,
+            ResultPosition,
+            ResultScore,
+            PUrl,
+            MUrl,
+            ResultTUrl
+    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/racy_feature_more_750MIndex_ANNResult_Top1000.tsv"
+    USING DefaultTextExtractor();
+
+RacyANNMurl =
+    SELECT DISTINCT MUrl;
+
+RacyANNKey =
+    SELECT MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MUrl) AS Key;
+
+NoduleList =
+    SELECT a.*
+    FROM NoduleList AS a
+         LEFT ANTISEMIJOIN
+             RacyANNKey AS b
+         ON a.Key == b.Key;
+
+ImageInfos =
+    SELECT a.*,
+           (
+               a.DetrimentalFilter == "Fail" ||
+               a.BlockNodulesFilter == "Fail" ||
+               a.RemoveDefectFilter == "Fail" ||
+               a.DeduppingFilter == "Fail" ||
+               a.AdultRacyImageDomainsFilter == "Fail" ||
+               a.AuthorityPagePDomainFilter == "Fail"
+           )
+           ?"N/A" :
+           IF(b.Key == null AND b.PKey==null, "Fail", "Pass") AS RacyANNFilter
+    FROM ImageInfos AS a
+         LEFT JOIN
+             NoduleList AS b
+         ON a.Key == b.Key AND a.PKey==b.PKey;
+
+#IF(@Par_IsInputStepDebugInfo)
+    OUTPUT ImageInfos
+    TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_9.ss";
+#ENDIF
+
+ImageInfos =
+    SELECT a.*,
+           IF(a.IsInActiveIndex == "No", "Not In Index", 
+           IF(a.DetrimentalFilter == "Fail","Fail at DetrimentalFilter",
+           IF(a.BlockNodulesFilter == "Fail","Fail at BlockNodulesFilter",
+           IF(a.RemoveDefectFilter == "Fail","Fail at RemoveDefectFilter",
+           IF(a.DeduppingFilter == "Fail","Fail at DeduppingFilter",
+           IF(a.AdultRacyImageDomainsFilter == "Fail","Fail at AdultRacyImageDomainsFilter",
+           IF(a.AuthorityPagePDomainFilter == "Fail","Fail at AuthorityPagePDomainFilter",
+           IF(a.RacyANNFilter == "Fail","Fail at RacyANNFilter","Pass")))))))) AS FinalResult
+    FROM ImageInfos AS a;
+
+OUTPUT ImageInfos TO SSTREAM @Out_StatsSs;
+OUTPUT ImageInfos TO @Out_StatsTsv USING DefaultTextOutputter( outputHeader: true );
+
+#CS
+
+static HashSet<string> blockedDomains = new HashSet<string>(File.ReadAllLines(Path.GetFileName("/local/Prod/Image/Prism/Blocklist/BlocklistDomains_2022_03_03.txt")));
+
+public static bool IsBlockedDomain(string pageDomain,string imageDomain)
+{
+    if(blockedDomains.Contains(pageDomain) || blockedDomains.Contains(imageDomain) )
+        return true;
+
+    return false;
+}
+
+static HashSet<string> blockedAdultRacyImageDomains = new HashSet<string>(File.ReadAllLines(Path.GetFileName("/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt")));
+
+public static bool IsBlockedAdultRacyImageDomain(string pageDomain,string imageDomain)
+{
+
+    if(blockedAdultRacyImageDomains.Contains(pageDomain) || blockedAdultRacyImageDomains.Contains(imageDomain) )
+        return true;
+
+    return false;
+}
+
+
+#ENDCS

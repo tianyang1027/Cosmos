@@ -1,0 +1,256 @@
+﻿REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.dll";
+
+RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
+RESOURCE "/local/Prod/Image/Prism/Blocklist/BlocklistDomains_2022_03_03.txt";
+
+#DECLARE Par_T2S2Th                   int = int.Parse("7");
+#DECLARE Par_RemoveDupOnPageDomain   bool = Convert.ToBoolean("true");
+#DECLARE Par_RemoveDupOnLanuage      bool = Convert.ToBoolean("false");
+#DECLARE Par_ControlRankArg        string = string.Format("{0}:ControlRank","OrgRank");
+#DECLARE Par_ControlRankReverseArg string = string.Format("ControlRank:{0}","OrgRank");
+
+// Remove Detrimental
+
+NoduleList =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/2022-06-26/PrismProdRank_0.ss"
+    )
+    WHERE  
+      AdultScore != null AND AdultScore <= 195
+      AND RacyScore != null AND RacyScore <= 100 
+      AND OffensiveScore != null AND OffensiveScore <= 117
+      AND NOT IsBlockedDomain(PDomain,MDomain);
+
+// Block
+Block = SELECT MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MUrl) AS Key,
+               MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(PUrl) AS PKey
+        FROM (SSTREAM "/local/Prod/Image/MMToDP/DUI/Blocking/2022_06_27/BlockingList_Debug.ss");
+
+// Block By Keyword
+BlockListByKeyword = SSTREAM "/local/Prod/Image/Prism/BlocklistToNodule/blocklist_by_keyword_2022-06-22.ss";
+
+// Block Nodules
+BlockNodules = SELECT ImageKey AS Key, PageKey AS PKey FROM (SSTREAM "/local/Prod/Image/Prism/Blocklist/BlockedNodules/2022_06_25/MUrlBlockingNodules.ss");
+
+BlockListT2S2Mapping =  
+        SELECT QueryKey AS Key FROM (SSTREAM "/local/Prod/Image/Prism/BlocklistToNodule/T2S2/2022_06_27/DupMapping.ss")
+        WHERE MatchCount >= @Par_T2S2Th;    
+
+NoduleList = 
+    SELECT * 
+    FROM NoduleList 
+    LEFT ANTISEMIJOIN BlockNodules ON NoduleList.Key == BlockNodules.Key AND NoduleList.PKey == BlockNodules.PKey
+    LEFT ANTISEMIJOIN Block ON NoduleList.Key == Block.Key AND NoduleList.PKey == Block.PKey
+    LEFT ANTISEMIJOIN BlockListT2S2Mapping ON NoduleList.Key == BlockListT2S2Mapping.Key
+    LEFT ANTISEMIJOIN BlockListByKeyword   ON NoduleList.Key == BlockListByKeyword.Key AND NoduleList.PKey == BlockListByKeyword.PKey
+    ;
+
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/Image/Prism/2022-06-26/PrismProdRank_1_NoDetrimental.ss"
+HASH CLUSTERED BY Key SORTED BY Key, PKey;
+
+// Remove Defect
+
+NoduleList =
+    SELECT *
+           FROM NoduleList
+    WHERE  AttractivenessScore != null AND AttractivenessScore >= 180 
+      AND AspectRatio != null AND AspectRatio >= 0.6 
+      AND (HasPinterestContent OR (RepinCount != null) OR HasClickedContent )
+      AND WatermarkProbability != null AND WatermarkProbability < 0.9;
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/Image/Prism/2022-06-26/PrismProdRank_1_NoDefect.ss"
+HASH CLUSTERED BY Key SORTED BY Key, PKey;
+
+// Dedupping
+
+NoduleList =
+    PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-rename", @Par_ControlRankArg);         
+
+// Dedup on Http vs Https
+NoduleList = 
+    SELECT *,
+          IF(MUrl.StartsWith("https://"), 2, 0) + IF(PUrl.StartsWith("https://"), 1, 0) AS HttpsCountOnUrl,
+          MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MMRV2.IndexSelection.SelectionUtils.ConvertHttpsToHttpInMUrl(MUrl)) AS MKeyNorm,
+          MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MMRV2.IndexSelection.SelectionUtils.ConvertHttpsToHttpInMUrl(PUrl)) AS PKeyNorm;
+
+NoduleList = 
+    SELECT *,
+       ROW_NUMBER() OVER (PARTITION BY MKeyNorm, PKeyNorm ORDER BY HttpsCountOnUrl DESC) AS RN
+       HAVING RN == 1;
+
+NoduleList = 
+    PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "HttpsCountOnUrl,MKeyNorm,PKeyNorm,RN");         
+
+// Remove Images from Pinimg.com if Dup exists.
+NoduleList = 
+        SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY DupSignature ORDER BY PinterestImage ASC, ControlRank DESC) AS RN
+           HAVING RN == 1 OR NOT PinterestImage;
+
+NoduleList = 
+        PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "RN");         
+
+#IF(@Par_RemoveDupOnPageDomain)
+    // Keep 1 Dup for each Page Domain
+    NoduleList = 
+        SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY DupSignature, PDomain ORDER BY PinterestImage ASC, ControlRank DESC) AS RN
+           HAVING RN == 1;
+
+    NoduleList = 
+        PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "RN");         
+#ENDIF
+
+#IF(@Par_RemoveDupOnLanuage)
+    // Keep 1 Dup for each Language
+    NoduleList = 
+        SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY DupSignature, Language ORDER BY PinterestImage ASC, ControlRank DESC) AS RN
+           HAVING RN == 1;
+
+    NoduleList = 
+        PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "RN");         
+#ENDIF
+
+NoduleList = 
+        PROCESS NoduleList USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-rename", @Par_ControlRankReverseArg);         
+
+NoduleList =
+    SELECT *
+    FROM NoduleList
+    WHERE NOT IsBlockedAdultRacyImageDomain(PDomain, MDomain);
+
+Authority_Page_Manual =
+    EXTRACT Host,
+            Score,
+            Date,
+            Comments
+    FROM "/shares/SegmentRelevance/SegmentRelevance/fromCosmos09/prod_QC_HostQC/hotfix.tsv"
+    USING DefaultTextExtractor(silent: true)
+    HAVING Host != "Host";
+
+Bad_Authority_Page_Manual =
+    SELECT Host AS PDomain,
+           double.Parse(Score) AS Score,
+           Comments
+    FROM Authority_Page_Manual;
+
+Bad_Authority_Page_Manual =
+    SELECT *
+    WHERE Score < 1005000;
+
+Bad_Authority_Page_Manual_PDomain =
+    SELECT DISTINCT PDomain
+    FROM Bad_Authority_Page_Manual;
+
+NoduleList_PDomain =
+    SELECT DISTINCT PDomain
+    FROM NoduleList;
+
+Good_Authority_Page_Manual_PDomain =
+    SELECT a.*
+    FROM NoduleList_PDomain AS a
+         LEFT ANTISEMIJOIN
+             Bad_Authority_Page_Manual_PDomain AS b
+         ON a.PDomain == b.PDomain;
+
+NoduleList =
+    SELECT a.*
+    FROM NoduleList AS a
+         INNER JOIN
+             Good_Authority_Page_Manual_PDomain AS b
+         ON a.PDomain == b.PDomain;
+
+Bad_Authority_Page_Auto =
+    SELECT Host AS PDomain,
+           Score
+    FROM
+    (
+        SSTREAM "/shares/SegmentRelevance/SegmentRelevance/fromCosmos09/prod_QC_HostQC/Pipeline/V2/QCHostScoreV2.ss"
+    )
+    WHERE Score != null AND Score < 51200;
+
+Bad_Authority_Page_Auto_PDomain =
+    SELECT DISTINCT PDomain
+    FROM Bad_Authority_Page_Auto;
+
+Good_Authority_Page_Auto_PDomain =
+    SELECT a.PDomain
+    FROM Good_Authority_Page_Manual_PDomain AS a
+         LEFT ANTISEMIJOIN
+             Bad_Authority_Page_Auto_PDomain AS b
+         ON a.PDomain == b.PDomain;
+
+NoduleList =
+    SELECT a.*
+    FROM NoduleList AS a
+         INNER JOIN
+             Good_Authority_Page_Auto_PDomain AS b
+         ON a.PDomain == b.PDomain;
+
+RacyANN =
+    EXTRACT QueryMUrl,
+            QueryPUrl,
+            Label,
+            QueryDocKey,
+            ResultDocKey,
+            ResultPosition,
+            ResultScore,
+            PUrl,
+            MUrl,
+            ResultTUrl
+    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/racy_feature_more_750MIndex_ANNResult_Top1000.tsv"
+    USING DefaultTextExtractor();
+
+RacyANNMurl =
+    SELECT DISTINCT MUrl;
+
+RacyANNKey =
+    SELECT MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MUrl) AS Key;
+
+NoduleList =
+    SELECT a.*
+    FROM NoduleList AS a
+         LEFT ANTISEMIJOIN
+             RacyANNKey AS b
+         ON a.Key == b.Key;
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/Image/Prism/2022-06-26/PrismProdRank_1.ss"
+HASH CLUSTERED BY Key SORTED BY Key, PKey;
+
+#CS
+
+static HashSet<string> blockedDomains = new HashSet<string>(File.ReadAllLines(Path.GetFileName("/local/Prod/Image/Prism/Blocklist/BlocklistDomains_2022_03_03.txt")));
+
+public static bool IsBlockedDomain(string pageDomain,string imageDomain)
+{
+    if(blockedDomains.Contains(pageDomain) || blockedDomains.Contains(imageDomain) )
+        return true;
+
+    return false;
+}
+
+static HashSet<string> blockedAdultRacyImageDomains = new HashSet<string>(File.ReadAllLines(Path.GetFileName("/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt")));
+
+public static bool IsBlockedAdultRacyImageDomain(string pageDomain,string imageDomain)
+{
+
+    if(blockedAdultRacyImageDomains.Contains(pageDomain) || blockedAdultRacyImageDomains.Contains(imageDomain) )
+        return true;
+
+    return false;
+}
+
+#ENDCS
