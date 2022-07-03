@@ -1,0 +1,611 @@
+﻿REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.dll";
+
+RESOURCE "/local/Prod/Image/Prism/Blocklist/BlocklistDomains_2022_03_03.txt";
+RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
+
+#DECLARE Par_T2S2Th int = int.Parse("7");
+#DECLARE Par_RemoveDupOnPageDomain bool = Convert.ToBoolean("true");
+#DECLARE Par_RemoveDupOnLanuage bool = Convert.ToBoolean("false");
+#DECLARE Par_ControlRankArg string = string.Format("{0}:ControlRank", "AttractivenessScore");
+#DECLARE Par_ControlRankReverseArg string = string.Format("ControlRank:{0}", "AttractivenessScore");
+#DECLARE Par_Now DateTime = DateTime.Now;
+#DECLARE Par_FormatNow string = DateTime.Now.ToString("yyyy_MM_dd");
+#DECLARE Out_Stats_Universal string = string.Format(@"/local/users/v-yangtian/Image/Prism/Metrics/Dashboard/Waterfall_PPE/{0}/Stats_Universal.ss", @Par_FormatNow);
+#DECLARE Out_Stats_EnOnly string = string.Format(@"/local/users/v-yangtian/Image/Prism/Metrics/Dashboard/Waterfall_PPE/{0}/Stats_EnOnly.ss", @Par_FormatNow);
+#DECLARE Out_Stats_All_Languages string = string.Format(@"/local/users/v-yangtian/Image/Prism/Metrics/Dashboard/Waterfall_PPE/{0}/Stats_All_Language.ss", @Par_FormatNow);
+
+// Remove Detrimental
+
+in_features =
+    SSTREAM "/local/Prod/Image/Prism/2022-06-23/PrismProdRank_0_PPE.ss";
+
+#DECLARE Adult_Th int = 55;
+#DECLARE Racy_Th int = 66;
+#DECLARE Gruesome_Th int = 246;
+
+// en, pt, fr, ar, ru, zh_chs,zh_cht, es, ja, de, id
+
+PrismProdRank_0_PPE_Count_10_Language =
+    SELECT "en" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+    FROM in_features
+    WHERE Language == "en"
+    UNION ALL
+    SELECT "pt" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+    FROM in_features
+    WHERE Language == "pt"
+   UNION ALL
+       SELECT "fr" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+           FROM in_features WHERE  Language == "fr"
+   UNION ALL
+       SELECT "ar" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+           FROM in_features WHERE  Language == "ar"
+   UNION ALL
+       SELECT "ru" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+           FROM in_features 
+    WHERE  Language == "ru"
+   UNION ALL
+       SELECT "zh-chs" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+           FROM in_features WHERE  Language == "zh-chs"
+   UNION ALL
+       SELECT "zh-cht" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+           FROM in_features WHERE  Language == "zh-cht"
+   UNION ALL
+       SELECT "es" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+           FROM in_features WHERE  Language == "es"
+   UNION ALL
+       SELECT "ja" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+           FROM in_features WHERE  Language == "ja"
+   UNION ALL
+       SELECT "de" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+           FROM in_features WHERE  Language == "de"
+   UNION ALL
+       SELECT "id" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+           FROM in_features WHERE  Language == "id"
+   UNION ALL
+       SELECT "global" AS Language,
+           COUNT(1) AS PrismProdRank_0_PPE_Count
+           FROM in_features;
+
+Selection_1_stat_universal =
+    SELECT "PrismProdRank_0_PPE" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "None" AS parentName
+    FROM in_features
+             UNION ALL
+    SELECT  "Detrimental_waterfall" AS name,
+            COUNT(1) AS count,
+            @Par_Now AS Date,
+           "PrismProdRank_0_PPE" AS parentName
+            FROM in_features
+            WHERE
+              AdultScore != null AND AdultScore <= @Adult_Th
+              AND RacyScore != null AND RacyScore <= @Racy_Th
+              AND GrusomeScore  != null AND GrusomeScore <= @Gruesome_Th
+                UNION ALL
+   SELECT  "IsBlockedDomain_waterfall" AS name,
+            COUNT(1) AS count,
+            @Par_Now AS date,
+           "Detrimental_waterfall" AS parentName
+            FROM in_features
+            WHERE
+              AdultScore != null AND AdultScore <= @Adult_Th
+              AND RacyScore != null AND RacyScore <= @Racy_Th
+              AND GrusomeScore  != null AND GrusomeScore <= @Gruesome_Th
+              AND NOT IsBlockedDomain(PDomain,MDomain);
+
+Selection_1_stat_en =
+    SELECT "PrismProdRank_0_PPE_EnOnly" AS name,
+           COUNT(1) AS count,
+            @Par_Now AS date,
+            "None" AS parentName
+            FROM in_features
+            WHERE Language == "en"
+    UNION ALL
+    SELECT  "Detrimental_waterfall_EnOnly" AS name,
+            COUNT(1) AS count,
+            @Par_Now AS date,
+            "PrismProdRank_0_PPE_EnOnly" AS parentName
+            FROM in_features
+            WHERE
+              AdultScore != null AND AdultScore <= @Adult_Th
+              AND RacyScore != null AND RacyScore <= @Racy_Th
+              AND GrusomeScore  != null AND GrusomeScore <= @Gruesome_Th
+              AND Language == "en"
+    UNION ALL
+    SELECT  "IsBlockedDomain_waterfall_EnOnly" AS name,
+            COUNT(1) AS count,
+            @Par_Now AS date,
+            "Detrimental_waterfall_EnOnly" AS parentName
+            FROM in_features
+            WHERE
+              AdultScore != null AND AdultScore <= @Adult_Th
+              AND RacyScore != null AND RacyScore <= @Racy_Th
+              AND GrusomeScore  != null AND GrusomeScore <= @Gruesome_Th
+              AND NOT IsBlockedDomain(PDomain,MDomain)
+              AND Language == "en";
+
+NoduleList =
+    SELECT *
+    FROM in_features
+    WHERE
+    AdultScore != null AND AdultScore <= @Adult_Th
+    AND RacyScore != null AND RacyScore <= @Racy_Th
+    AND GrusomeScore != null AND GrusomeScore <= @Gruesome_Th
+    AND NOT IsBlockedDomain(PDomain, MDomain);
+
+// Block
+Block =
+    SELECT MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MUrl) AS Key,
+           MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(PUrl) AS PKey
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/MMToDP/DUI/Blocking/2022_06_23/BlockingList_Debug.ss"
+    );
+
+
+// Block Nodules
+BlockNodules =
+    SELECT ImageKey AS Key,
+           PageKey AS PKey
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/Blocklist/BlockedNodules/2022_06_22/MUrlBlockingNodules.ss"
+    );
+
+BlockListT2S2Mapping =
+    SELECT QueryKey AS Key
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/BlocklistToNodule/T2S2/2022_06_22/DupMapping.ss"
+    )
+    WHERE MatchCount >= @Par_T2S2Th;
+
+NoduleList =
+    SELECT *
+    FROM NoduleList
+         LEFT ANTISEMIJOIN
+             BlockNodules
+         ON NoduleList.Key == BlockNodules.Key AND NoduleList.PKey == BlockNodules.PKey
+         LEFT ANTISEMIJOIN
+             Block
+         ON NoduleList.Key == Block.Key AND NoduleList.PKey == Block.PKey
+         LEFT ANTISEMIJOIN
+             BlockListT2S2Mapping
+         ON NoduleList.Key == BlockListT2S2Mapping.Key;
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/Image/Prism/2022-06-23/PrismProdRank_1_NoDetrimental_PPE.ss"
+   HASH CLUSTERED BY Key
+       SORTED BY Key, PKey;
+
+Selection_1_stat_universal =
+    SELECT *
+    FROM Selection_1_stat_universal
+    UNION ALL
+    SELECT "NoDetrimental" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "IsBlockedDomain_waterfall" AS parentName
+    FROM NoduleList;
+
+Selection_1_stat_en =
+    SELECT *
+    FROM Selection_1_stat_en
+    UNION ALL
+    SELECT "NoDetrimental_EnOnly" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "IsBlockedDomain_waterfall_EnOnly" AS parentName
+    FROM NoduleList
+    WHERE Language == "en";
+
+// Remove Defect
+
+NoduleList =
+    SELECT *
+    FROM NoduleList
+    WHERE AttractivenessScore != null AND AttractivenessScore >= 190
+          AND AspectRatio != null AND AspectRatio >= 0.6
+          //      AND (HasPinterestContent OR (RepinCount != null) OR HasClickedContent )
+          AND WatermarkProbability != null AND WatermarkProbability < 0.9;
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/Image/Prism/2022-06-23/PrismProdRank_1_NoDefect_PPE.ss"
+   HASH CLUSTERED BY Key
+       SORTED BY Key, PKey;
+
+Selection_1_stat_universal =
+    SELECT *
+    FROM Selection_1_stat_universal
+    UNION ALL
+    SELECT "NoDefect" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "NoDetrimental" AS parentName 
+    FROM NoduleList;
+
+Selection_1_stat_en =
+    SELECT *
+    FROM Selection_1_stat_en
+    UNION ALL
+    SELECT "NoDefect_EnOnly" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "NoDetrimental_EnOnly" AS prentName
+    FROM NoduleList
+    WHERE Language == "en";
+
+// Dedupping
+
+NoduleList =
+    PROCESS NoduleList
+    USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-rename", @Par_ControlRankArg);
+
+// Dedup on Http vs Https
+NoduleList =
+    SELECT *,
+           IF(MUrl.StartsWith("https://"), 2, 0) + IF(PUrl.StartsWith("https://"), 1, 0) AS HttpsCountOnUrl,
+           MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MMRV2.IndexSelection.SelectionUtils.ConvertHttpsToHttpInMUrl(MUrl)) AS MKeyNorm,
+           MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MMRV2.IndexSelection.SelectionUtils.ConvertHttpsToHttpInMUrl(PUrl)) AS PKeyNorm;
+
+NoduleList =
+    SELECT *,
+           ROW_NUMBER() OVER(PARTITION BY MKeyNorm, PKeyNorm ORDER BY HttpsCountOnUrl DESC) AS RN
+    HAVING RN == 1;
+
+NoduleList =
+    PROCESS NoduleList
+    USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "HttpsCountOnUrl,MKeyNorm,PKeyNorm,RN");
+
+// Remove Images from Pinimg.com if Dup exists.
+NoduleList =
+    SELECT *,
+           ROW_NUMBER() OVER(PARTITION BY DupSignature ORDER BY PinterestImage ASC, ControlRank DESC) AS RN;
+
+NoduleList =
+    SELECT *
+    WHERE RN == 1 OR PinterestImage == null OR PinterestImage == false;
+
+NoduleList =
+    PROCESS NoduleList
+    USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "RN");
+
+#IF(@Par_RemoveDupOnPageDomain)
+    // Keep 1 Dup for each Page Domain
+    NoduleList =
+        SELECT *,
+               ROW_NUMBER() OVER(PARTITION BY DupSignature, PDomain ORDER BY PinterestImage ASC, ControlRank DESC) AS RN
+        HAVING RN == 1;
+    
+    NoduleList =
+        PROCESS NoduleList
+        USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "RN");
+#ENDIF
+
+#IF(@Par_RemoveDupOnLanuage)
+    // Keep 1 Dup for each Language
+    NoduleList =
+        SELECT *,
+               ROW_NUMBER() OVER(PARTITION BY DupSignature, Language ORDER BY PinterestImage ASC, ControlRank DESC) AS RN
+        HAVING RN == 1;
+    
+    NoduleList =
+        PROCESS NoduleList
+        USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "RN");
+#ENDIF
+
+NoduleList =
+    PROCESS NoduleList
+    USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-rename", @Par_ControlRankReverseArg);
+
+Selection_1_stat_universal =
+    SELECT *
+    FROM Selection_1_stat_universal
+    UNION ALL
+    SELECT "After_Dedupping_Filter" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "NoDefect" AS parentName
+    FROM NoduleList;
+
+Selection_1_stat_en =
+    SELECT *
+    FROM Selection_1_stat_en
+    UNION ALL
+    SELECT "After_Dedupping_Filter_EnOnly" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "NoDefect_EnOnly" AS parentName
+    FROM NoduleList
+    WHERE Language == "en";
+
+NoduleList =
+    SELECT *
+    FROM NoduleList
+    WHERE NOT IsBlockedAdultRacyImageDomain(PDomain, MDomain);
+
+Selection_1_stat_universal =
+    SELECT *
+    FROM Selection_1_stat_universal
+    UNION ALL
+    SELECT "After_Adult_Racy_Image_Domains_Filter" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "After_Dedupping_Filter" AS parentName
+    FROM NoduleList;
+
+Selection_1_stat_en =
+    SELECT *
+    FROM Selection_1_stat_en
+    UNION ALL
+    SELECT "After_Adult_Racy_Image_Domains_Filter_EnOnly" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "After_Dedupping_Filter_EnOnly" AS parentName
+    FROM NoduleList
+    WHERE Language == "en";
+
+Authority_Page_Manual =
+    EXTRACT Host,
+            Score,
+            Date,
+            Comments
+    FROM "/shares/SegmentRelevance/SegmentRelevance/fromCosmos09/prod_QC_HostQC/hotfix.tsv"
+    USING DefaultTextExtractor(silent: true)
+    HAVING Host != "Host";
+
+Bad_Authority_Page_Manual =
+    SELECT Host AS PDomain,
+           double.Parse(Score) AS Score,
+           Comments
+    FROM Authority_Page_Manual;
+
+Bad_Authority_Page_Manual =
+    SELECT *
+    WHERE Score < 1005000;
+
+Bad_Authority_Page_Auto =
+    SELECT Host AS PDomain,
+           Score
+    FROM
+    (
+        SSTREAM "/shares/SegmentRelevance/SegmentRelevance/fromCosmos09/prod_QC_HostQC/Pipeline/V2/QCHostScoreV2.ss"
+    )
+    WHERE Score != null AND Score < 51200;
+
+Bad_Authority_Page_PDomain =
+    SELECT DISTINCT PDomain
+    FROM Bad_Authority_Page_Manual
+    UNION
+    SELECT DISTINCT PDomain
+    FROM Bad_Authority_Page_Auto;
+
+NoduleList_PDomain =
+    SELECT DISTINCT PDomain
+    FROM NoduleList;
+
+Good_Authority_Page_PDomain =
+    SELECT a.PDomain
+    FROM NoduleList_PDomain AS a
+         LEFT ANTISEMIJOIN
+             Bad_Authority_Page_PDomain AS b
+         ON a.PDomain == b.PDomain;
+
+NoduleList =
+    SELECT b.*
+    FROM Good_Authority_Page_PDomain AS a
+         INNER JOIN
+             NoduleList AS b
+         ON a.PDomain == b.PDomain;
+
+Selection_1_stat_universal =
+    SELECT *
+    FROM Selection_1_stat_universal
+    UNION ALL
+    SELECT "After_Authority_Page_PDomain_Filter" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "After_Adult_Racy_Image_Domains_Filter" AS parentName
+    FROM NoduleList;
+
+Selection_1_stat_en =
+    SELECT *
+    FROM Selection_1_stat_en
+    UNION ALL
+    SELECT "After_Authority_Page_PDomain_Filter_EnOnly" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "After_Adult_Racy_Image_Domains_Filter_EnOnly" AS parentName
+    FROM NoduleList
+    WHERE Language == "en";
+
+RacyANN =
+    EXTRACT QueryMUrl,
+            QueryPUrl,
+            Label,
+            QueryDocKey,
+            ResultDocKey,
+            ResultPosition,
+            ResultScore,
+            PUrl,
+            MUrl,
+            ResultTUrl
+    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/racy_feature_more_750MIndex_ANNResult_Top1000.tsv"
+    USING DefaultTextExtractor();
+
+RacyANNMurl =
+    SELECT DISTINCT MUrl;
+
+RacyANNKey =
+    SELECT MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MUrl) AS Key;
+
+NoduleList =
+    SELECT a.*
+    FROM NoduleList AS a
+         LEFT ANTISEMIJOIN
+             RacyANNKey AS b
+         ON a.Key == b.Key;
+
+OUTPUT
+TO SSTREAM "/local//users/v-yangtian/Image/Prism/2022-06-23/PrismProdRank_1_PPE.ss"
+   HASH CLUSTERED BY Key
+       SORTED BY Key, PKey;
+
+Selection_1_stat_universal =
+    SELECT *
+    FROM Selection_1_stat_universal
+    UNION ALL
+    SELECT "PrismProdRank_1_PPE" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "After_Authority_Page_PDomain_Filter" AS parentName
+    FROM NoduleList;
+
+Selection_1_stat_en =
+    SELECT *
+    FROM Selection_1_stat_en
+    UNION ALL
+    SELECT "PrismProdRank_1_PPE_EnOnly" AS name,
+           COUNT(1) AS count,
+           @Par_Now AS date,
+           "After_Authority_Page_PDomain_Filter_EnOnly" AS parentName
+           FROM NoduleList
+           WHERE Language == "en";
+
+Stats_Universal =
+    SELECT a.name AS Name,
+           a.count AS Count,
+           a.parentName AS ParentName,
+           IF(a.parentName == "None", 1.0, 1.0 * a.count / b.count) AS Percentage,
+           a.date AS Date
+    FROM Selection_1_stat_universal AS a
+         LEFT JOIN
+             Selection_1_stat_universal AS b
+         ON a.parentName == b.name;
+
+OUTPUT
+TO SSTREAM @Out_Stats_Universal
+   CLUSTERED BY Count DESC
+       SORTED BY Count DESC;
+
+
+Stats_EnOnly =
+    SELECT a.name AS Name,
+           a.count AS Count,
+           a.parentName AS ParentName,
+           IF(a.parentName == "None", 1.0, 1.0 * a.count / b.count) AS Percentage,
+           a.date AS Date
+    FROM Selection_1_stat_en AS a
+         LEFT JOIN
+             Selection_1_stat_en AS b
+         ON a.parentName == b.name;
+
+OUTPUT Stats_EnOnly
+TO SSTREAM @Out_Stats_EnOnly
+   CLUSTERED BY Count DESC
+       SORTED BY Count DESC;
+
+PrismProdRank_1_PPE_Count_10_Language =
+    SELECT "en" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count
+    FROM NoduleList
+    WHERE Language == "en"
+    UNION ALL
+    SELECT "pt" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count
+    FROM NoduleList
+    WHERE Language == "pt"
+   UNION ALL
+       SELECT "fr" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count
+           FROM NoduleList WHERE  Language == "fr"
+   UNION ALL
+       SELECT "ar" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count
+           FROM NoduleList WHERE  Language == "ar"
+   UNION ALL
+       SELECT "ru" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count
+           FROM NoduleList WHERE  Language == "ru"
+   UNION ALL
+       SELECT "zh-chs" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count
+           FROM NoduleList WHERE  Language == "zh-chs"
+   UNION ALL
+       SELECT "es" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count
+           FROM NoduleList WHERE  Language == "es"
+   UNION ALL
+       SELECT "ja" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count
+           FROM NoduleList WHERE  Language == "ja"
+   UNION ALL
+       SELECT "de" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count_10
+           FROM NoduleList WHERE  Language == "de"
+   UNION ALL
+       SELECT "id" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count
+           FROM NoduleList WHERE  Language == "id"
+   UNION ALL
+       SELECT "global" AS Language,
+           COUNT(1) AS PrismProdRank_1_PPE_Count
+           FROM NoduleList;
+
+Statistics_All_languages =
+    SELECT a.Language AS Language,
+           a.PrismProdRank_0_PPE_Count AS PrismProdRank_0_PPE_Count,
+           b.PrismProdRank_1_PPE_Count AS PrismProdRank_1_PPE_Count,
+           (1.0 * b.PrismProdRank_1_PPE_Count / a.PrismProdRank_0_PPE_Count) AS Percentage,
+           @Par_Now AS Date
+     FROM PrismProdRank_0_PPE_Count_10_Language AS a 
+          LEFT JOIN PrismProdRank_1_PPE_Count_10_Language AS b
+          ON  a.Language == b.Language;
+
+OUTPUT Statistics_All_languages
+TO SSTREAM @Out_Stats_All_Languages
+   CLUSTERED BY PrismProdRank_0_PPE_Count DESC
+       SORTED BY PrismProdRank_0_PPE_Count DESC;
+
+#CS
+
+static HashSet<string> blockedDomains = new HashSet<string>(File.ReadAllLines(Path.GetFileName("/local/Prod/Image/Prism/Blocklist/BlocklistDomains_2022_03_03.txt")));
+
+public static bool IsBlockedDomain(string pageDomain,string imageDomain)
+{
+    if(blockedDomains.Contains(pageDomain) || blockedDomains.Contains(imageDomain) )
+        return true;
+
+    return false;
+}
+
+static HashSet<string> blockedAdultRacyImageDomains = new HashSet<string>(File.ReadAllLines(Path.GetFileName("/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt")));
+
+public static bool IsBlockedAdultRacyImageDomain(string pageDomain,string imageDomain)
+{
+
+    if(blockedAdultRacyImageDomains.Contains(pageDomain) || blockedAdultRacyImageDomains.Contains(imageDomain) )
+        return true;
+
+    return false;
+}
+
+#ENDCS

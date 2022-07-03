@@ -1,0 +1,32 @@
+﻿DebugInfo =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/users/v-yangtian/debugtool/DebugIno.ss"
+    );
+
+DebugInfo_PIVOT =
+    SELECT Pvt.*
+    FROM
+    (
+        SELECT *
+        FROM DebugInfo
+    ) AS P
+        PIVOT
+        (
+            ANY_VALUE(IsFiltered) FOR Name IN
+            (
+                "AdultRacyImageDomains_Filtering" AS AdultRacyImageDomains_Filtering,
+                "Authority_Page_Manual_PDomain_Filtering" AS Authority_Page_Manual_PDomain_Filtering,
+                "Authority_Page_Auto_PDomain_Filtering_Filtering" AS Authority_Page_Auto_PDomain_Filtering_Filtering,
+                "RacyANN_Filtering" AS RacyANN_Filtering,
+                "RemoveDefect_Filtering" AS RemoveDefect_Filtering,
+                "Dedupping_Filtering" AS Dedupping_Filtering,
+                "BlockNodules_Filtering" AS BlockNodules_Filtering,
+                "DetrimentalFiltering_Filtering" AS DetrimentalFiltering_Filtering
+            )
+        )
+        AS Pvt;
+
+OUTPUT DebugInfo_PIVOT
+TO SSTREAM "/local/users/v-yangtian/debugtool/DebugInfo_PIVOT.ss";

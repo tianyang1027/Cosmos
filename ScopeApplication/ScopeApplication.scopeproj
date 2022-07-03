@@ -1,0 +1,95 @@
+﻿<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>d7f2708a-6b02-4e41-82f8-015a1bbded12</ProjectGuid>
+    <OutputType>File</OutputType>
+    <AssemblyName>Algebra.xml</AssemblyName>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <Name>ScopeApplication</Name>
+    <RootNamespace>ScopeApplication1</RootNamespace>
+    <VCSelectionInProjectProperty>vc://cosmos11/MMRepository.VNext</VCSelectionInProjectProperty>
+    <CosmosRuntimeVersion>Default</CosmosRuntimeVersion>
+    <ScopePath>%24(SCRIPT_DIR);%24(CLUSTER_ROOT);%24(SCOPE_DIR);%24(PROJECT_DIR)</ScopePath>
+    <InputStreamSearchPath>%24(PROJECT_DIR);%24(SCRIPT_DIR);%24(CLUSTER_ROOT);%24(SCRIPT_DIR);%24(CLUSTER_ROOT)</InputStreamSearchPath>
+    <VertexDebugSolution>false</VertexDebugSolution>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugSymbols>false</DebugSymbols>
+    <OutputPath>bin\Release\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Script Include="ContentCoverage_6_IndexCoverage.script" />
+    <Script Include="DebugToolToTestGivenSetOfImages.script" />
+    <Script Include="DebugTool_PPE.script" />
+    <Script Include="DebugTool_PROD.script" />
+    <Script Include="Generate_Detrimental.script" />
+    <Script Include="IndexSelection_0_GenerateFeatures.script" />
+    <Script Include="IndexSelection_0_GenerateFeatures_PPE.script" />
+    <Script Include="IndexSelection_1_GenerateRankFile2.script" />
+    <Script Include="IndexSelection_1_GenerateRankFile_PPE.script">
+      <RemoveUselessParameters>False</RemoveUselessParameters>
+      <ScopeOldParameters>In_BlockListDomain=(\"\"),Par_T2S2Th=(\"\"),Par_RemoveDupOnPageDomain=(\"\"),Par_RemoveDupOnLanuage=(\"\"),Par_ControlRank=(\"\"),In_Features=(\"\"),In_BlockList=(\"\"),In_BlockNodules=(\"\"),In_BlockListT2S2Mapping=(\"\"),Out_RankFile_NoDetrimental=(\"\"),Out_RankFile_NoDefect=(\"\"),Out_StatFile=(\"\"),Out_RankFile=(\"\")</ScopeOldParameters>
+    </Script>
+    <Script Include="IndexSelection_1_GenerateRankFile.script">
+      <RemoveUselessParameters>True</RemoveUselessParameters>
+      <ScopeOldParameters>
+      </ScopeOldParameters>
+      <ScopeClusterParameters>
+      </ScopeClusterParameters>
+    </Script>
+    <Script Include="IndexSelection_1_GenerateRankFile_PPE2.script" />
+    <Script Include="IndexSelection_2_TopicStamping.script" />
+    <Script Include="IndexSelection_2_TopicStamping_PPE.script" />
+    <Script Include="PIVOT.script" />
+    <ScriptCode Include="ContentCoverage_6_IndexCoverage.script.cs">
+      <DependentUpon>ContentCoverage_6_IndexCoverage.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="DebugToolToTestGivenSetOfImages.script.cs">
+      <DependentUpon>DebugToolToTestGivenSetOfImages.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="DebugTool_PPE.script.cs">
+      <DependentUpon>DebugTool_PPE.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="DebugTool_PROD.script.cs">
+      <DependentUpon>DebugTool_PROD.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Generate_Detrimental.script.cs">
+      <DependentUpon>Generate_Detrimental.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="IndexSelection_0_GenerateFeatures.script.cs">
+      <DependentUpon>IndexSelection_0_GenerateFeatures.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="IndexSelection_0_GenerateFeatures_PPE.script.cs">
+      <DependentUpon>IndexSelection_0_GenerateFeatures_PPE.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="IndexSelection_1_GenerateRankFile2.script.cs">
+      <DependentUpon>IndexSelection_1_GenerateRankFile2.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="IndexSelection_1_GenerateRankFile_PPE.script.cs">
+      <DependentUpon>IndexSelection_1_GenerateRankFile_PPE.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="IndexSelection_1_GenerateRankFile.script.cs">
+      <DependentUpon>IndexSelection_1_GenerateRankFile.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="IndexSelection_1_GenerateRankFile_PPE2.script.cs">
+      <DependentUpon>IndexSelection_1_GenerateRankFile_PPE2.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="IndexSelection_2_TopicStamping.script.cs">
+      <DependentUpon>IndexSelection_2_TopicStamping.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="IndexSelection_2_TopicStamping_PPE.script.cs">
+      <DependentUpon>IndexSelection_2_TopicStamping_PPE.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="PIVOT.script.cs">
+      <DependentUpon>PIVOT.script</DependentUpon>
+    </ScriptCode>
+  </ItemGroup>
+  <Import Project="$(AppData)\Microsoft\ScopeStudio\MsBuild\1.0\Scope.targets" />
+</Project>

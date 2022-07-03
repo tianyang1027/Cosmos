@@ -1,0 +1,330 @@
+﻿//Script GUID:fab077ff-e2f5-4bdd-8121-556e20db1fb4
+//Used for tracking history
+RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bing.HashUtil.dll";
+USING MMRV2.Utility;
+USING MMRV2.Core;
+
+CurrentIndexV1 = 
+    SSTREAM "/local/Prod/Image/Prism/IndexGen/2022_05_19/CurrentIndexV1.ss";
+
+CurrentIndexV1 =
+    SELECT *
+    FROM CurrentIndexV1;
+
+RacyCandidate =
+    SELECT murl, purl, "UNKNOWN" AS label
+    FROM
+    (
+        SSTREAM "/local/users/jichen4/Prism/Crowd/prismy_crowd_100k.ss"
+    )
+    WHERE Adj_C_Ok < 3 AND (C_NotLoad == null OR C_NotLoad < 3) AND ((C_CP != null AND C_CP >= 2)
+          OR (C_Abuse != null AND C_Abuse >= 2) OR (C_Adult != null AND C_Adult >= 2)
+          OR (C_Hate != null AND C_Hate >= 2) OR (C_Violence != null AND C_Violence >= 2)
+          OR (C_Dangerous != null AND C_Dangerous >= 2));
+
+Racy0 =
+    EXTRACT occurrence,
+            image_url,
+            page_url,
+            title,
+            RecallPath,
+            C_CP,
+            C_Abuse,
+            C_Adult,
+            C_Hate,
+            C_Violence,
+            C_Dangerous,
+            C_Ok,
+            C_NotLoad,
+            C_Detrimental_Max,
+            Adj_C_Ok,
+            Class_Agg,
+            detrimental_rating
+    FROM "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesDetrimentalLabelClickSampledTSVimgfeedl2psmt2s22022-04-29_2022-05-03.tsv"
+    USING DefaultTextExtractor()
+    HAVING occurrence != "occurrence";
+
+Racy0 =
+    SELECT image_url AS murl,
+           page_url AS purl,
+           detrimental_rating AS label
+    WHERE detrimental_rating != "ok_to_show" AND detrimental_rating != "image_not_load";
+
+RacyCandidate =
+    SELECT *
+    FROM RacyCandidate
+    UNION ALL
+    SELECT *
+    FROM Racy0;
+
+Racy0 =
+    EXTRACT occurrence,
+            image_url,
+            page_url,
+            title,
+            RecallPath,
+            C_CP,
+            C_Abuse,
+            C_Adult,
+            C_Hate,
+            C_Violence,
+            C_Dangerous,
+            C_Ok,
+            C_NotLoad,
+            C_Detrimental_Max,
+            Adj_C_Ok,
+            Class_Agg,
+            detrimental_rating
+    FROM "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesDetrimentalLabelImpression_20220519_imgfeedl2prism.tsv"
+    USING DefaultTextExtractor()
+    HAVING occurrence != "occurrence";
+
+Racy0 =
+    SELECT image_url AS murl,
+           page_url AS purl,
+           detrimental_rating AS label
+    WHERE detrimental_rating != "ok_to_show" AND detrimental_rating != "image_not_load";
+
+RacyCandidate =
+    SELECT *
+    FROM RacyCandidate
+    UNION ALL
+    SELECT *
+    FROM Racy0;
+
+Racy0 =
+    EXTRACT occurrence,
+            image_url,
+            page_url,
+            title,
+            RecallPath,
+            C_CP,
+            C_Abuse,
+            C_Adult,
+            C_Hate,
+            C_Violence,
+            C_Dangerous,
+            C_Ok,
+            C_NotLoad,
+            C_Detrimental_Max,
+            Adj_C_Ok,
+            Class_Agg,
+            detrimental_rating
+    FROM "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesDetrimentalLabelImpression_20220519_imgfeeddppaggtd2.tsv"
+    USING DefaultTextExtractor()
+    HAVING occurrence != "occurrence";
+
+Racy0 =
+    SELECT image_url AS murl,
+           page_url AS purl,
+           detrimental_rating AS label
+    WHERE detrimental_rating != "ok_to_show" AND detrimental_rating != "image_not_load";
+
+RacyCandidate =
+    SELECT *
+    FROM RacyCandidate
+    UNION ALL
+    SELECT *
+    FROM Racy0;
+
+Racy0 =
+    EXTRACT occurrence,
+            image_url,
+            page_url,
+            title,
+            RecallPath,
+            C_CP,
+            C_Abuse,
+            C_Adult,
+            C_Hate,
+            C_Violence,
+            C_Dangerous,
+            C_Ok,
+            C_NotLoad,
+            C_Detrimental_Max,
+            Adj_C_Ok,
+            Class_Agg,
+            detrimental_rating
+    FROM "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesDetrimentalLabelImpression_20220519_imgfeeddppaggtd.tsv"
+    USING DefaultTextExtractor()
+    HAVING occurrence != "occurrence";
+
+Racy0 =
+    SELECT image_url AS murl,
+           page_url AS purl,
+           detrimental_rating AS label
+    WHERE detrimental_rating != "ok_to_show" AND detrimental_rating != "image_not_load";
+
+RacyCandidate =
+    SELECT *
+    FROM RacyCandidate
+    UNION ALL
+    SELECT *
+    FROM Racy0;
+
+Racy0 =
+    EXTRACT occurrence,
+            image_url,
+            page_url,
+            title,
+            RecallPath,
+            C_CP,
+            C_Abuse,
+            C_Adult,
+            C_Hate,
+            C_Violence,
+            C_Dangerous,
+            C_Ok,
+            C_NotLoad,
+            C_Detrimental_Max,
+            Adj_C_Ok,
+            Class_Agg,
+            detrimental_rating
+    FROM "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesDetrimentalLabelImpression_20220519_imgfeeden750m.tsv"
+    USING DefaultTextExtractor()
+    HAVING occurrence != "occurrence";
+
+Racy0 =
+    SELECT image_url AS murl,
+           page_url AS purl,
+           detrimental_rating AS label
+    WHERE detrimental_rating != "ok_to_show" AND detrimental_rating != "image_not_load";
+
+RacyCandidate =
+    SELECT *
+    FROM RacyCandidate
+    UNION ALL
+    SELECT *
+    FROM Racy0;
+
+Racy0 =
+    EXTRACT murl, purl,	Key, PKey, title, detrimental_rating, detrimental_ok_cannot_judge, no_in_orig_file, AdultScore,	RacyScore, GrusomeScore
+    FROM "/local/users/jiafa/t2s2_imp_measure/t2s2_det_image.tsv"
+    USING DefaultTextExtractor()
+    HAVING murl != "murl";
+
+Racy0 =
+    SELECT murl,
+           purl,
+           detrimental_rating AS label;
+
+RacyCandidate =
+    SELECT *
+    FROM RacyCandidate
+    UNION ALL
+    SELECT *
+    FROM Racy0;
+
+RacyCandidate =
+    SELECT DISTINCT murl,
+                    purl,
+                    FIRST(label) AS label
+    GROUP BY murl,
+             purl;
+
+RacyFeature = 
+    SELECT a.murl,
+		   a.purl,
+           a.label,
+           b.LargeFeature__SIEMv3ImageEncoded_Binary,
+           b.TextFeatures__SIEMv3TextVector
+    FROM RacyCandidate AS a
+         INNER JOIN
+             CurrentIndexV1 AS b
+         ON a.murl == b.MUrl AND a.purl == b.PUrl;
+
+NoduleListWithNormalizedImagevector =
+    SELECT murl,
+		   purl,
+           label,
+           Utils.NormalizeVector(n.LargeFeature__SIEMv3ImageEncoded_Binary) AS SIEMv3ImageVectorNormalized,
+           n.TextFeatures__SIEMv3TextVector AS SIEMv3TextVector
+    FROM RacyFeature AS n
+    WHERE !String.IsNullOrEmpty(n.LargeFeature__SIEMv3ImageEncoded_Binary);
+
+IngestionStream =
+    SELECT murl,
+           purl,
+           label,
+           Utils.GetDocKeyBase64(murl, purl) AS DocKey,
+           Utils.GetFullVector(SIEMv3ImageVectorNormalized, SIEMv3TextVector) AS Vector,
+           "PrismImage" AS TenantId
+    FROM NoduleListWithNormalizedImagevector
+    WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
+
+OUTPUT
+TO SSTREAM "/local/users/jiafa/racy_feature_more.ss";
+
+
+OUTPUT TO "/local/users/jiafa/racy_feature_more.tsv" USING DefaultTextOutputter(delimiter:'\t', outputHeader:false);
+
+#CS
+using Microsoft.Bing.HashUtil;
+
+public static class Utils
+{
+    public static string GetDocKeyBase64(string mediaUrl, string pageUrl)
+    {
+        return ConvertDocKeyToBase64(GetDocKeyBinary(mediaUrl, pageUrl));
+    }
+
+    public static byte[] GetDocKeyBinary(string mediaUrl, string pageUrl)
+    {
+        var hashIndex = pageUrl.IndexOf("#");
+
+        var pageUrlForDocKey = hashIndex != -1 ? pageUrl.Substring(0, hashIndex) : pageUrl;
+
+        return Microsoft.Bing.HashUtil.HutHash.GetHashAsBinary(
+            Microsoft.Bing.HashUtil.HutHash.GetUrlHashAsBase64String(mediaUrl)
+            + Microsoft.Bing.HashUtil.HutHash.GetUrlHashAsBase64String(pageUrlForDocKey));
+    }
+
+    public static string ConvertDocKeyToBase64(byte[] docKey)
+    {
+        return Convert.ToBase64String(docKey).Substring(0, 22);
+    }
+
+    public static string GetFullVector(string vector1, string vector2)
+    {
+        var concat = string.Format("{0} {1}", vector1, vector2);
+        var split = concat.Split(' ');
+        return string.Join("|", split);
+    }
+
+    public static string NormalizeVector(string vectorString)
+    {
+        List<float> vector = new List<float>();
+        var imageStrings = vectorString.Split(',');
+
+        for (int i = 0; i < imageStrings.Length; i++)
+        {
+            // values are quantized to 8 bits (numbers are between 0 - 255), it means that to get the original values, we need to run this operation on each vector x: (x/127.5) - 1
+            vector.Add((float)((float.Parse(imageStrings[i]) / 127.5) - 1));
+        }
+
+        return string.Join(" ", vector);
+    }
+    
+    public static Boolean isValidVector(string SIEMv3ImageEncoded_Binary)
+        {   
+            if(String.IsNullOrEmpty(SIEMv3ImageEncoded_Binary))
+            {
+                return false;
+            }
+            string[] imageStrings = SIEMv3ImageEncoded_Binary.Split(',');
+            var total = 0.0;
+            for(int i = 0; i < 32; i++)
+            {
+                total += Convert.ToDouble(imageStrings[i]);
+            }
+            return (total != 0);
+        }
+
+}
+
+#ENDCS
