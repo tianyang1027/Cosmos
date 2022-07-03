@@ -8,7 +8,7 @@
     <AssemblyName>Algebra.xml</AssemblyName>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <Name>ScopeApplication1</Name>
+    <Name>ScopeApplication</Name>
     <RootNamespace>ScopeApplication1</RootNamespace>
     <VCSelectionInProjectProperty>vc://cosmos11/MMRepository.VNext</VCSelectionInProjectProperty>
     <CosmosRuntimeVersion>Default</CosmosRuntimeVersion>
