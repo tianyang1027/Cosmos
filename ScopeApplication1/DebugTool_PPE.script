@@ -18,7 +18,7 @@ RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
 #DECLARE Par_In_BlockNodules string = "/local/Prod/Image/Prism/Blocklist/BlockedNodules/2022_06_25/MUrlBlockingNodules.ss";
 #DECLARE Par_In_BlockListT2S2Mapping string = "/local/Prod/Image/Prism/BlocklistToNodule/T2S2/2022_06_26/DupMapping.ss";
 #DECLARE Par_ContainsPUrl bool = false;
-#DECLARE Par_Date string =DateTime.Now.ToString("yyyy-MM-dd");
+#DECLARE Par_Date string = DateTime.Now.ToString("yyyy-MM-dd");
 #DECLARE Par_Input string = "/local/users/jiafa/dsat_20220629/debug_input_20220629.tsv";
 #DECLARE Out_StatsSs string = $"/local/Prod/Image/Prism/DebugTool_PPE/{@Par_Date}/Final/ImageDebugInfo.ss";
 #DECLARE Out_StatsTsv string = $"/local/Prod/Image/Prism/DebugTool_PPE/{@Par_Date}/Final/ImageDebugInfo.tsv";
