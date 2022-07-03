@@ -24,7 +24,7 @@ RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
 #DECLARE Out_StatsSs string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.ss";
 #DECLARE Out_StatsTsv string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.tsv";
 #DECLARE Par_In_BlockListByKeyword="/local/Prod/Image/Prism/BlocklistToNodule/blocklist_by_keyword_2022-06-29.ss";
-#DECLARE Par_IsInputStepDebugInfo bool = false;
+#DECLARE Par_IsOutputStepDebugInfo bool = false;
 
 in_features =
     SSTREAM @Par_In_Features;
@@ -110,7 +110,7 @@ in_features =
                  IsInActiveIndex;
 #ENDIF
 
-#IF(@Par_IsInputStepDebugInfo)
+#IF(@Par_IsOutputStepDebugInfo)
     OUTPUT ImageInfos
     TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_1.ss";
 #ENDIF
@@ -137,7 +137,7 @@ ImageInfos =
              NoduleList AS b
          ON a.Key == b.Key AND a.PKey == b.PKey;
 
-#IF(@Par_IsInputStepDebugInfo)
+#IF(@Par_IsOutputStepDebugInfo)
     OUTPUT ImageInfos
     TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_2.ss";
 #ENDIF
@@ -185,7 +185,7 @@ ImageInfos =
              NoduleList AS b
          ON a.Key == b.Key AND a.PKey == b.PKey;
    
-#IF(@Par_IsInputStepDebugInfo)
+#IF(@Par_IsOutputStepDebugInfo)
     OUTPUT ImageInfos
     TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_3.ss";
 #ENDIF
@@ -213,7 +213,7 @@ ImageInfos =
              NoduleList AS b
          ON a.Key == b.Key AND a.PKey == b.PKey;
 
-#IF(@Par_IsInputStepDebugInfo)
+#IF(@Par_IsOutputStepDebugInfo)
     OUTPUT ImageInfos
     TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_4.ss";
 #ENDIF
@@ -286,7 +286,7 @@ ImageInfos =
              NoduleList AS b
          ON a.Key == b.Key AND a.PKey == b.PKey;
              
-#IF(@Par_IsInputStepDebugInfo)
+#IF(@Par_IsOutputStepDebugInfo)
     OUTPUT ImageInfos
     TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_6.ss";
 #ENDIF
@@ -312,7 +312,7 @@ ImageInfos =
          ON a.Key == b.Key AND a.PKey == b.PKey;
   
 
-#IF(@Par_IsInputStepDebugInfo)
+#IF(@Par_IsOutputStepDebugInfo)
     OUTPUT ImageInfos
     TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_7.ss";
 #ENDIF
@@ -386,7 +386,7 @@ ImageInfos =
              NoduleList AS b
          ON a.Key == b.Key AND a.PKey == b.PKey;
 
-#IF(@Par_IsInputStepDebugInfo)
+#IF(@Par_IsOutputStepDebugInfo)
     OUTPUT ImageInfos
     TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_8.ss";
 #ENDIF
@@ -435,7 +435,7 @@ ImageInfos =
              NoduleList AS b
          ON a.Key == b.Key AND a.PKey == b.PKey;
 
-#IF(@Par_IsInputStepDebugInfo)
+#IF(@Par_IsOutputStepDebugInfo)
     OUTPUT ImageInfos
     TO SSTREAM $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Step/ImageInfo_9.ss";
 #ENDIF
