@@ -92,7 +92,7 @@ in_features =
                b.RacyScore AS RacyScoreV4,
                b.GrusomeScore AS GrusomeScoreV4,
                b.WatermarkProbability,
-               IF(b.MUrl == null AND b.PUrl == null, "No", "Yes") AS IsInActiveIndex
+               IF(b.MUrl == null AND b.PUrl ==null, "No", "Yes") AS IsInActiveIndex
         FROM inputCollection AS a
              LEFT JOIN
                  in_features AS b
@@ -238,7 +238,7 @@ ImageInfos =
                a.BlockNodulesFilter == "Fail"
            )
            ?"N/A" :
-           IF(b.Key == null AND b.PKey == null, "Fail", "pass") AS RemoveDefectFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS RemoveDefectFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
