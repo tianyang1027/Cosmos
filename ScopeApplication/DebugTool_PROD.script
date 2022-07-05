@@ -19,7 +19,9 @@ RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
 #DECLARE Par_In_BlockNodules string = "/local/Prod/Image/Prism/Blocklist/BlockedNodules/2022_07_01/MUrlBlockingNodules.ss";
 #DECLARE Par_In_BlockListT2S2Mapping string = "/local/Prod/Image/Prism/BlocklistToNodule/T2S2/2022_07_01/DupMapping.ss";
 #DECLARE Par_ContainsPUrl bool = false;
-#DECLARE Par_Date string = DateTime.Now.ToString("yyyy-MM-dd");
+#DECLARE UtcNow DateTime = DateTime.UtcNow;
+#DECLARE Now DateTime = @UtcNow.AddHours(-8);
+#DECLARE Par_Date string = @Now.ToString("yyyy-MM-dd");
 #DECLARE Par_Input string = "/local/users/jiafa/dsat_20220629/debug_input_20220629.tsv";
 #DECLARE Out_StatsSs string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.ss";
 #DECLARE Out_StatsTsv string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.tsv";
@@ -131,7 +133,7 @@ NoduleList =
 
 ImageInfos =
     SELECT a.*,
-           IF(b.Key == null AND b.PKey == null, "Pass", "Fail") AS DetrimentalFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS DetrimentalFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
@@ -179,7 +181,7 @@ ImageInfos =
     SELECT a.*,
            a.DetrimentalFilter == "Fail"
            ?"N/A" :
-           IF(b.Key == null AND b.PKey == null, "Pass", "Fail") AS BlockNodulesFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS BlockNodulesFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
@@ -207,7 +209,7 @@ ImageInfos =
                a.BlockNodulesFilter == "Fail"
            )
            ?"N/A" :
-           IF(b.Key == null AND b.PKey == null, "Pass", "Fail") AS RemoveDefectFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS RemoveDefectFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
@@ -280,7 +282,7 @@ ImageInfos =
                a.RemoveDefectFilter == "Fail"
            )
            ?"N/A" :
-           IF(b.Key == null AND b.PKey == null, "Pass", "Fail") AS DeduppingFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS DeduppingFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
