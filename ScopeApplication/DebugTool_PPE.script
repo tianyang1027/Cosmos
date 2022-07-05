@@ -92,7 +92,7 @@ in_features =
                b.RacyScore AS RacyScoreV4,
                b.GrusomeScore AS GrusomeScoreV4,
                b.WatermarkProbability,
-               IF(b.MUrl == null AND b.PUrl ==null, "No", "Yes") AS IsInActiveIndex
+               IF(b.MUrl == null AND b.PUrl == null, "No", "Yes") AS IsInActiveIndex
         FROM inputCollection AS a
              LEFT JOIN
                  in_features AS b
