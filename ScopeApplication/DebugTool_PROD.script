@@ -18,13 +18,13 @@ RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
 #DECLARE Par_In_BlockList string = "/local/Prod/Image/MMToDP/DUI/Blocking/2022_07_02/BlockingList_Debug.ss";
 #DECLARE Par_In_BlockNodules string = "/local/Prod/Image/Prism/Blocklist/BlockedNodules/2022_07_01/MUrlBlockingNodules.ss";
 #DECLARE Par_In_BlockListT2S2Mapping string = "/local/Prod/Image/Prism/BlocklistToNodule/T2S2/2022_07_01/DupMapping.ss";
-#DECLARE Par_ContainsPUrl bool = false;
+#DECLARE Par_ContainsPUrl bool = true;
 #DECLARE UtcNow DateTime = DateTime.UtcNow;
 #DECLARE Now DateTime = @UtcNow.AddHours(-8);
 #DECLARE Par_Date string = @Now.ToString("yyyy-MM-dd");
-#DECLARE Par_Input string = "/local/users/jiafa/dsat_20220629/debug_input_20220629.tsv";
-#DECLARE Out_StatsSs string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.ss";
-#DECLARE Out_StatsTsv string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.tsv";
+#DECLARE Par_Input string = "/local/users/jiafa/dsat_20220629/debug_input_20220629_both.tsv";
+#DECLARE Out_StatsSs string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo_both.ss";
+#DECLARE Out_StatsTsv string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo_both.tsv";
 #DECLARE Par_In_BlockListByKeyword="/local/Prod/Image/Prism/BlocklistToNodule/blocklist_by_keyword_2022-06-29.ss";
 #DECLARE Par_IsOutputStepDebugInfo bool = false;
 
@@ -97,7 +97,7 @@ in_features =
         FROM inputCollection AS a
              LEFT JOIN
                  in_features AS b
-             ON a.MUrl == b.MUr AND a.PUrl == b.PUrl
+             ON a.MUrl == b.MUrl AND a.PUrl == b.PUrl
         GROUP BY Key,
                  PKey,
                  MUrl,
