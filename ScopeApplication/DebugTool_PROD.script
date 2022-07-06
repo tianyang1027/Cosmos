@@ -15,6 +15,8 @@ REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.Sco
 RESOURCE "/local/Prod/Image/Prism/Blocklist/BlocklistDomains_2022_03_03.txt";
 RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
 #DECLARE Par_In_Features string = "/local/Prod/Image/Prism/2022-07-02/PrismProdRank_0.ss";
+#DECLARE Par_CF_6_Month string = "/local/Prod/Image/Prism/OneTime/PrismProdRank_CF_6_Month.ss";
+#DECLARE Par_PinterestFilteredClickBased_2Months string = "/local/Prod/Image/Prism/OneTime/PrismProdRank_PopularityBased_PinterestFilteredClickBased_2Months.ss";
 #DECLARE Par_In_BlockList string = "/local/Prod/Image/MMToDP/DUI/Blocking/2022_07_02/BlockingList_Debug.ss";
 #DECLARE Par_In_BlockNodules string = "/local/Prod/Image/Prism/Blocklist/BlockedNodules/2022_07_01/MUrlBlockingNodules.ss";
 #DECLARE Par_In_BlockListT2S2Mapping string = "/local/Prod/Image/Prism/BlocklistToNodule/T2S2/2022_07_01/DupMapping.ss";
@@ -30,6 +32,12 @@ RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
 
 in_features =
     SSTREAM @Par_In_Features;
+
+CF_6_Month =
+    SSTREAM @Par_CF_6_Month;
+
+PinterestFilteredClickBased_2Months =
+    SSTREAM @Par_PinterestFilteredClickBased_2Months;
 
 #IF(!@Par_ContainsPUrl)
     inputCollection =
@@ -111,6 +119,18 @@ in_features =
                  WatermarkProbability,
                  IsInActiveIndex;
 #ENDIF
+
+ImageInfos =
+    SELECT a.*,
+           IF(b.Key == null AND b.PKey == null, "No", "Yes") AS IsInCF6Month,
+           IF(c.Key == null AND c.PKey == null, "No", "Yes") AS IsInPFCB2Months
+    FROM ImageInfos AS a
+         LEFT JOIN
+             CF_6_Month AS b
+         ON a.Key == b.Key AND a.PKey == b.PKey
+         LEFT JOIN
+             PinterestFilteredClickBased_2Months AS c
+         ON a.Key == c.Key AND a.PKey == c.PKey;
 
 #IF(@Par_IsOutputStepDebugInfo)
     OUTPUT ImageInfos
