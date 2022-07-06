@@ -24,9 +24,9 @@ RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
 #DECLARE UtcNow DateTime = DateTime.UtcNow;
 #DECLARE Now DateTime = @UtcNow.AddHours(-8);
 #DECLARE Par_Date string = @Now.ToString("yyyy-MM-dd");
-#DECLARE Par_Input string = "/local/users/v-yangtian/debug_input_20220629.tsv";
-#DECLARE Out_StatsSs string = $"/local/users/v-yangtian/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.ss";
-#DECLARE Out_StatsTsv string = $"/local/users/v-yangtian/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.tsv";
+#DECLARE Par_Input string = "/local/users/jiafa/dsat_20220629/debug_input_20220629.tsv";
+#DECLARE Out_StatsSs string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.ss";
+#DECLARE Out_StatsTsv string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.tsv";
 #DECLARE Par_In_BlockListByKeyword string = "/local/Prod/Image/Prism/BlocklistToNodule/blocklist_by_keyword_2022-06-29.ss";
 #DECLARE Par_IsOutputStepDebugInfo bool = false;
 
@@ -161,7 +161,7 @@ NoduleList =
 
 ImageInfos =
     SELECT a.*,
-           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS DetrimentalFilter
+           IF(a.IsInActiveIndex == "No","N/A",IF(b.Key == null AND b.PKey == null, "Fail", "Pass")) AS DetrimentalFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
@@ -207,9 +207,9 @@ NoduleList =
 
 ImageInfos =
     SELECT a.*,
-           a.DetrimentalFilter == "Fail"
+           IF(a.IsInActiveIndex == "No","N/A", a.DetrimentalFilter == "Fail"
            ?"N/A" :
-           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS BlockNodulesFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass")) AS BlockNodulesFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
@@ -232,12 +232,13 @@ NoduleList =
 
 ImageInfos =
     SELECT a.*,
+           IF(a.IsInActiveIndex == "No","N/A",
            (
                a.DetrimentalFilter == "Fail" ||
                a.BlockNodulesFilter == "Fail"
            )
            ?"N/A" :
-           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS RemoveDefectFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass")) AS RemoveDefectFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
@@ -304,13 +305,14 @@ NoduleList =
 
 ImageInfos =
     SELECT a.*,
+           IF(a.IsInActiveIndex == "No","N/A",  
            (
                a.DetrimentalFilter == "Fail"||
                a.BlockNodulesFilter == "Fail"||
                a.RemoveDefectFilter == "Fail"
            )
            ?"N/A" :
-           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS DeduppingFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass")) AS DeduppingFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
@@ -328,6 +330,7 @@ NoduleList =
 
 ImageInfos =
     SELECT a.*,
+           IF(a.IsInActiveIndex == "No","N/A",
            (
                a.DetrimentalFilter == "Fail" ||
                a.BlockNodulesFilter == "Fail" ||
@@ -335,7 +338,7 @@ ImageInfos =
                a.DeduppingFilter == "Fail"
            )
            ?"N/A" :
-           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS AdultRacyImageDomainsFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass")) AS AdultRacyImageDomainsFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
@@ -402,6 +405,7 @@ NoduleList =
 
 ImageInfos =
     SELECT a.*,
+           IF(a.IsInActiveIndex == "No","N/A",           
            (
                a.DetrimentalFilter == "Fail" ||
                a.BlockNodulesFilter == "Fail" ||
@@ -410,7 +414,7 @@ ImageInfos =
                a.AdultRacyImageDomainsFilter == "Fail"
            )
            ?"N/A" :
-           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS AuthorityPagePDomainFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass")) AS AuthorityPagePDomainFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
@@ -450,6 +454,7 @@ NoduleList =
 
 ImageInfos =
     SELECT a.*,
+           IF(a.IsInActiveIndex == "No","N/A",
            (
                a.DetrimentalFilter == "Fail" ||
                a.BlockNodulesFilter == "Fail" ||
@@ -459,7 +464,7 @@ ImageInfos =
                a.AuthorityPagePDomainFilter == "Fail"
            )
            ?"N/A" :
-           IF(b.Key == null AND b.PKey == null, "Fail", "Pass") AS RacyANNFilter
+           IF(b.Key == null AND b.PKey == null, "Fail", "Pass")) AS RacyANNFilter
     FROM ImageInfos AS a
          LEFT JOIN
              NoduleList AS b
