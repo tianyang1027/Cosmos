@@ -24,9 +24,9 @@ RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
 #DECLARE UtcNow DateTime = DateTime.UtcNow;
 #DECLARE Now DateTime = @UtcNow.AddHours(-8);
 #DECLARE Par_Date string = @Now.ToString("yyyy-MM-dd");
-#DECLARE Par_Input string = "/local/users/jiafa/dsat_20220629/debug_input_20220629.tsv";
-#DECLARE Out_StatsSs string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.ss";
-#DECLARE Out_StatsTsv string = $"/local/Prod/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.tsv";
+#DECLARE Par_Input string = "/local/users/v-yangtian/debug_input_20220629.tsv";
+#DECLARE Out_StatsSs string = $"/local/users/v-yangtian/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.ss";
+#DECLARE Out_StatsTsv string = $"/local/users/v-yangtian/Image/Prism/DebugTool/{@Par_Date}/Final/ImageDebugInfo.tsv";
 #DECLARE Par_In_BlockListByKeyword string = "/local/Prod/Image/Prism/BlocklistToNodule/blocklist_by_keyword_2022-06-29.ss";
 #DECLARE Par_IsOutputStepDebugInfo bool = false;
 
