@@ -60,8 +60,8 @@ PinterestFilteredClickBased_2Months =
 
 #IF(!@Par_ContainsPUrl)
     ImageInfos =
-        SELECT b.Key,
-               b.PKey,
+        SELECT IF(b.MUrl == null, MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(a.MUrl), b.Key) AS Key,
+               IF(b.MUrl == null, null, b.PKey) AS PKey,
                a.MUrl,
                b.PUrl,
                b.MDomain,
@@ -69,13 +69,21 @@ PinterestFilteredClickBased_2Months =
                b.AttractivenessScore,
                b.AdultScore AS AdultScoreV3,
                b.RacyScore AS RacyScoreV3,
-               b.OffensiveScore  AS OffensiveScoreV3,
+               b.OffensiveScore AS OffensiveScoreV3,
                b.WatermarkProbability,
-               IF(b.MUrl == null, "No", "Yes") AS IsInActiveIndex
+               IF(b.MUrl == null, "No", "Yes") AS IsInActiveIndex,
+               IF(c.MUrl == null, "No", "Yes") AS IsInCF6Month,
+               IF(d.MUrl == null, "No", "Yes") AS IsInPFCB2Months
         FROM inputCollection AS a
              LEFT JOIN
                  in_features AS b
              ON a.MUrl == b.MUrl
+             LEFT JOIN
+                 CF_6_Month AS c
+             ON a.MUrl == c.MUrl
+             LEFT JOIN
+                 PinterestFilteredClickBased_2Months AS d
+             ON a.MUrl == d.MUrl
         GROUP BY Key,
                  PKey,
                  MUrl,
@@ -87,11 +95,13 @@ PinterestFilteredClickBased_2Months =
                  RacyScoreV3,
                  OffensiveScoreV3,
                  WatermarkProbability,
-                 IsInActiveIndex;
+                 IsInActiveIndex,
+                 IsInCF6Month,
+                 IsInPFCB2Months;
 #ELSE
     ImageInfos =
-        SELECT b.Key,
-               b.PKey,
+        SELECT IF(b.MUrl == null AND b.PUrl == null, MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(a.MUrl), b.Key) AS Key,
+               IF(b.MUrl == null AND b.PUrl == null, MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(a.PUrl), b.PKey) AS PKey,
                a.MUrl,
                a.PUrl,
                b.MDomain,
@@ -102,10 +112,18 @@ PinterestFilteredClickBased_2Months =
                b.OffensiveScore AS OffensiveScoreV3,
                b.WatermarkProbability,
                IF(b.MUrl == null AND b.PUrl == null, "No", "Yes") AS IsInActiveIndex
+               IF(c.MUrl == null AND c.PUrl == null, "No", "Yes") AS IsInCF6Month,
+               IF(d.MUrl == null AND d.PUrl == null, "No", "Yes") AS IsInPFCB2Months
         FROM inputCollection AS a
              LEFT JOIN
                  in_features AS b
              ON a.MUrl == b.MUrl AND a.PUrl == b.PUrl
+             LEFT JOIN
+                 CF_6_Month AS c
+             ON a.MUrl == c.MUrl AND a.PUrl == c.PUrl
+             LEFT JOIN
+                 PinterestFilteredClickBased_2Months AS d
+             ON a.MUrl == d.MUrl AND a.PUrl == d.PUrl
         GROUP BY Key,
                  PKey,
                  MUrl,
@@ -117,20 +135,10 @@ PinterestFilteredClickBased_2Months =
                  RacyScoreV3,
                  OffensiveScoreV3,
                  WatermarkProbability,
-                 IsInActiveIndex;
+                 IsInActiveIndex,
+                 IsInCF6Month,
+                 IsInPFCB2Months;
 #ENDIF
-
-ImageInfos =
-    SELECT a.*,
-           IF(b.Key == null AND b.PKey == null, "No", "Yes") AS IsInCF6Month,
-           IF(c.Key == null AND c.PKey == null, "No", "Yes") AS IsInPFCB2Months
-    FROM ImageInfos AS a
-         LEFT JOIN
-             CF_6_Month AS b
-         ON a.Key == b.Key AND a.PKey == b.PKey
-         LEFT JOIN
-             PinterestFilteredClickBased_2Months AS c
-         ON a.Key == c.Key AND a.PKey == c.PKey;
 
 #IF(@Par_IsOutputStepDebugInfo)
     OUTPUT ImageInfos
