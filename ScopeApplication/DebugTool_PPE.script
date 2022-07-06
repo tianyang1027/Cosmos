@@ -13,7 +13,7 @@ REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.Sco
 #DECLARE Par_ControlRankReverseArg string = string.Format("ControlRank:{0}", "AttractivenessScore");
 RESOURCE "/local/Prod/Image/Prism/Blocklist/BlocklistDomains_2022_03_03.txt";
 RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
-#DECLARE Par_In_Features string = "/local/Prod/Image/Prism/2022-06-29/PrismProdRank_0_PPE.ss";
+#DECLARE Par_In_Features string = "/local/Prod/Image/Prism/2022-07-05/PrismProdRank_0_PPE.ss";
 #DECLARE Par_In_BlockList string = "/local/Prod/Image/MMToDP/DUI/Blocking/2022_06_29/BlockingList_Debug.ss";
 #DECLARE Par_In_BlockNodules string = "/local/Prod/Image/Prism/Blocklist/BlockedNodules/2022_06_25/MUrlBlockingNodules.ss";
 #DECLARE Par_In_BlockListT2S2Mapping string = "/local/Prod/Image/Prism/BlocklistToNodule/T2S2/2022_06_26/DupMapping.ss";
@@ -24,7 +24,7 @@ RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
 #DECLARE Par_Input string = "/local/users/jiafa/dsat_20220629/debug_input_20220629.tsv";
 #DECLARE Out_StatsSs string = $"/local/Prod/Image/Prism/DebugTool_PPE/{@Par_Date}/Final/ImageDebugInfo.ss";
 #DECLARE Out_StatsTsv string = $"/local/Prod/Image/Prism/DebugTool_PPE/{@Par_Date}/Final/ImageDebugInfo.tsv";
-#DECLARE Par_In_Adult string = "/shares/SegmentRelevance/SegmentRelevance/ImageAdultBlocking/DUIV4/AdultRacy_2022_07_02.ss";
+#DECLARE Par_In_Adult string = "/shares/SegmentRelevance/SegmentRelevance/ImageAdultBlocking/DUIV4/AdultRacy_2022_07_05.ss";
 #DECLARE Par_IsOutputStepDebugInfo bool = false;
 
 in_features =
