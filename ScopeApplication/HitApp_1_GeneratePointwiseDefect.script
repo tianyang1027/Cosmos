@@ -1,0 +1,529 @@
+﻿RESOURCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
+USING MMRV2.Utility;
+
+#DECLARE In_DetrimentalJudgment    string = @@In_DetrimentalJudgment@@;
+#DECLARE In_Original     string = @In_DetrimentalJudgment.Substring(@In_DetrimentalJudgment.LastIndexOf("AutoUpload-"));
+// "AutoUpload-{Name}{Suffix}" -> "{Name}"
+#DECLARE In_Original_1 string = @In_Original.Substring(11, @In_Original.Length-56);
+#DECLARE In_Original_Name string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/Samples" + @In_Original_1 + ".ss";
+#DECLARE Out_SampleFile string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/NonDetrimental" + @In_Original_1 + ".ss";
+#DECLARE Out_SampleForMeasurement string = "/local/Prod/Image/Prism/UHRS_Uploads/Prism_pointwise_defect/Crowd/" + @In_Original_1 + ".tsv";
+#DECLARE Out_SampleLabel string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesDetrimentalLabel" + @In_Original_1 + ".tsv";
+#DECLARE Out_Stats string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/NonDetrimentalStats" + @In_Original_1 + ".ss";
+#DECLARE Out_StatsNumber string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/NonDetrimentalStatsNumber" + @In_Original_1 + ".ss";
+#DECLARE Out_StatsPerRecallPath string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/NonDetrimentalStatsPerRecallPath" + @In_Original_1 + ".ss";
+#DECLARE Out_StatsImageNotLoadPerRecallPath string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/Debug/NonDetrimentalStatsImageNotLoadPerRecallPath" + @In_Original_1 + ".ss";
+#DECLARE NeedSaveDashboard bool = false;
+#DECLARE UtcNow DateTime = DateTime.UtcNow;
+#DECLARE Now DateTime = @UtcNow.AddHours(-8);
+#DECLARE Seed string = ((int)DateTime.Now.Ticks).ToString();
+#DECLARE SampleNumber string = @@SampleNumber@@;
+// There are 5 judges for detrimental judgement.
+#DECLARE NumJudges int = 5;
+#DECLARE SingleTh int = @NumJudges / 2;
+#DECLARE OkTh int = @NumJudges / 2 + 1;
+#DECLARE prefix string = "";
+#IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
+    #SET prefix = "Index_PPE_Detrimental";
+    #SET NeedSaveDashboard = true;
+#ELSEIF (@In_Original_1.StartsWith("Index_Regular"))
+    #SET prefix = "Index_Detrimental";
+    #SET NeedSaveDashboard = true;
+#ELSEIF (@In_Original_1.StartsWith("Impression_Regular"))
+    #SET prefix = "Impression_Detrimental";
+    #SET NeedSaveDashboard = true;
+#ELSEIF (@In_Original_1.StartsWith("Click_Regular"))
+    #SET prefix = "Click_Detrimental";
+    #SET NeedSaveDashboard = true;
+#ENDIF
+#DECLARE Out_Stats_DashBoard string = "";
+#DECLARE Out_StatsPerRecallPath_DashBoard string = "";
+#IF(@NeedSaveDashboard)
+#SET Out_Stats_DashBoard = string.Format(@"/local/Prod/Image/Prism/Metrics/Dashboard/{0}/{1}_{2}_{3}/Stats.ss",
+    @prefix, @Now.Year.ToString(), @Now.Month.ToString("00"), @Now.Day.ToString("00"));
+#SET Out_StatsPerRecallPath_DashBoard = string.Format(@"/local/Prod/Image/Prism/Metrics/Dashboard/{0}/{1}_{2}_{3}/StatsPerRecallPath.ss",
+    @prefix, @Now.Year.ToString(), @Now.Month.ToString("00"), @Now.Day.ToString("00"));
+#ENDIF
+#IF(!EXISTS(@Out_SampleFile))
+data =
+    EXTRACT JudgeID,
+            HitGroupDataInt,
+            HitDataInt,
+            HitState,
+            HitType,
+            Price,
+            JudgmentState,
+            JudgmentDataInt,
+            JudgmentDataIntName,
+            JudgmentSubmitTime,
+            JudgmentTypeID,
+            JudgmentType,
+            Consensus,
+            TimeSpentOnJudgment,
+            ConsensusModifiedTime,
+            HitGroupID,
+            HitID,
+            image_url,
+            page_url,
+            title,
+            JudgmentID
+    FROM @In_DetrimentalJudgment
+    USING DefaultTextExtractor()
+    HAVING JudgeID != "JudgeID";
+
+data =
+    SELECT str2int(JudgmentDataInt) AS JudgmentDataInt,
+           JudgmentDataIntName,
+           image_url,
+           page_url,
+           title
+    FROM data;
+
+data_group_orig =
+    SELECT image_url,
+           page_url,
+           title,
+           IF(COUNTIF(JudgmentDataInt == 0) != null, COUNTIF(JudgmentDataInt == 0), 0) AS C_CP,
+           IF(COUNTIF(JudgmentDataInt == 1) != null, COUNTIF(JudgmentDataInt == 1), 0) AS C_Abuse,
+           IF(COUNTIF(JudgmentDataInt == 2) != null, COUNTIF(JudgmentDataInt == 2), 0) AS C_Adult,
+           IF(COUNTIF(JudgmentDataInt == 3) != null, COUNTIF(JudgmentDataInt == 3), 0) AS C_Hate,
+           IF(COUNTIF(JudgmentDataInt == 4) != null, COUNTIF(JudgmentDataInt == 4), 0) AS C_Violence,
+           IF(COUNTIF(JudgmentDataInt == 5) != null, COUNTIF(JudgmentDataInt == 5), 0) AS C_Dangerous,
+           IF(COUNTIF(JudgmentDataInt == 6) != null, COUNTIF(JudgmentDataInt == 6), 0) AS C_Ok,
+           IF(COUNTIF(JudgmentDataInt == 7) != null, COUNTIF(JudgmentDataInt == 7), 0) AS C_NotLoad
+    FROM data
+    GROUP BY image_url,
+             page_url,
+             title;
+
+data_group_orig =
+    SELECT *,
+           (C_NotLoad > 0 ? "NotLoad: " + C_NotLoad : "") +
+           (C_Ok > 0 ? "Ok: " + C_Ok : "") +
+           (C_Dangerous > 0 ? " Dangerous: " + C_Dangerous : "") +
+           (C_Violence > 0 ? " Violence: " + C_Violence : "") +
+           (C_Hate > 0 ? " Hate: " + C_Hate : "") +
+           (C_Adult > 0 ? " Adult: " + C_Adult : "") +
+           (C_Abuse > 0 ? " Abuse: " + C_Abuse : "") +
+           (C_CP > 0 ? " Child Porn: " + C_CP : "") AS Class_Agg,
+           Math.Max(Math.Max(Math.Max(Math.Max(Math.Max(C_Dangerous, C_Violence), C_Hate), C_Adult), C_Abuse), C_CP) AS C_Detrimental_Max
+    FROM data_group_orig;
+
+data_group =
+    SELECT *.Except(Class_Agg),
+           C_Ok < @OkTh AND (C_CP >= @SingleTh OR C_Abuse >= @SingleTh OR C_Adult >= @SingleTh OR C_Hate >= @SingleTh OR C_Violence >= @SingleTh OR C_Dangerous >= @SingleTh) ? C_Ok : Math.Max(@OkTh, C_Ok) AS Adj_C_Ok,
+           Class_Agg
+    FROM data_group_orig;
+
+data_group =
+    SELECT *,
+           Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_CP >= @SingleTh AND C_CP == C_Detrimental_Max? "child_sexualization" :
+           Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Abuse >= @SingleTh AND C_Abuse == C_Detrimental_Max? "abuse" :
+           Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Adult >= @SingleTh AND C_Adult == C_Detrimental_Max? "adult_racy" :
+           Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Hate >= @SingleTh AND C_Hate == C_Detrimental_Max? "promoting_hate" :
+           Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Violence >= @SingleTh AND C_Violence == C_Detrimental_Max? "promoting_violence" :
+           Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Dangerous >= @SingleTh AND C_Dangerous == C_Detrimental_Max? "dangerous_goods" :
+           Adj_C_Ok >= @OkTh AND C_NotLoad <= C_Ok? "ok_to_show" :
+           (Adj_C_Ok >= @OkTh AND C_NotLoad > C_Ok) OR C_NotLoad >= @OkTh? "image_not_load" : "none" AS detrimental_rating;
+
+data_group_ok =
+    SELECT image_url,
+           page_url,
+           title
+    FROM data_group
+    WHERE Adj_C_Ok >= @OkTh AND C_NotLoad <= C_Ok;
+
+data_original = SSTREAM @In_Original_Name;
+
+data_original = PROCESS data_original
+      PRODUCE Key, PKey, image_url, page_url, title, RecallPath
+      USING DefaultColumnProcessor;
+
+data_original_occurrence =
+    SELECT image_url,
+           page_url,
+           title,
+           RecallPath,
+           SUM(1) AS occurrence
+    FROM data_original
+    GROUP BY image_url,
+             page_url,
+             title,
+             RecallPath;
+
+data_original_ok = SELECT a.image_url,
+                          a.page_url,
+                          a.title,
+                          a.RecallPath
+    FROM data_original AS a
+    INNER JOIN data_group_ok ON
+    a.image_url == data_group_ok.image_url AND
+    a.page_url == data_group_ok.page_url;
+
+data_original_ok =
+    SELECT *,
+           (double) 1 AS Weight;
+
+Sample =
+    REDUCE data_original_ok ALL
+    USING TopNReducer(@SampleNumber, "-random", @Seed, "-WeightCol", "Weight");
+
+Sample_original = PROCESS Sample USING ColumnProcessor("-prune", "Weight");
+
+OUTPUT Sample_original TO SSTREAM @Out_SampleFile;
+
+Sample =
+    SELECT image_url, page_url, title, COUNT(1) AS occurrence
+    FROM Sample_original
+    GROUP BY image_url, page_url, title;
+
+Sample =
+    SELECT image_url,
+           page_url,
+           IF(title != null AND title != "", title, "title not found") AS title
+    FROM Sample;
+
+OUTPUT Sample TO @Out_SampleForMeasurement USING DefaultTextOutputter(delimiter:'\t', outputHeader:true);
+
+// Stat for Debugging
+data_group = SELECT a.occurrence,
+                    a.image_url,
+                    a.page_url,
+                    a.title,
+                    a.RecallPath,
+                    data_group.C_CP,
+                    data_group.C_Abuse,
+                    data_group.C_Adult,
+                    data_group.C_Hate,
+                    data_group.C_Violence,
+                    data_group.C_Dangerous,
+                    data_group.C_Ok,
+                    data_group.C_NotLoad,
+                    data_group.C_Detrimental_Max,
+                    data_group.Adj_C_Ok,
+                    data_group.Class_Agg,
+                    data_group.detrimental_rating
+    FROM data_original_occurrence AS a
+    INNER JOIN data_group ON  // Use INNER JOIN to ensure C_CP not null, it is equivalent to LEFT JOIN here.
+    a.image_url == data_group.image_url AND
+    a.page_url == data_group.page_url;
+
+OUTPUT data_group TO @Out_SampleLabel USING DefaultTextOutputter(delimiter:'\t', outputHeader:true);
+
+Stats_default =
+    SELECT "detrimental hitapp #nodule total" AS Status
+    FROM data_group
+    UNION
+    SELECT "detrimental hitapp #nodule child porn" AS Status
+    FROM data_group
+    UNION
+    SELECT "detrimental hitapp #nodule abuse" AS Status
+    FROM data_group
+    UNION
+    SELECT "detrimental hitapp #nodule adult" AS Status
+    FROM data_group
+    UNION
+    SELECT "detrimental hitapp #nodule hate" AS Status
+    FROM data_group
+    UNION
+    SELECT "detrimental hitapp #nodule violence" AS Status
+    FROM data_group
+    UNION
+    SELECT "detrimental hitapp #nodule dangerous good" AS Status
+    FROM data_group
+    UNION
+    SELECT "detrimental hitapp #nodule ok to show" AS Status
+    FROM data_group
+    UNION
+    SELECT "detrimental hitapp #nodule detrimental" AS Status
+    FROM data_group
+    UNION
+    SELECT "detrimental hitapp #nodule image not load" AS Status
+    FROM data_group;
+
+Stats =
+    SELECT "detrimental hitapp #nodule total" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group
+    UNION
+    SELECT "detrimental hitapp #nodule child porn" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group
+    WHERE Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_CP >= @SingleTh AND C_CP == C_Detrimental_Max
+    UNION
+    SELECT "detrimental hitapp #nodule abuse" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group
+    WHERE Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Abuse >= @SingleTh AND C_Abuse == C_Detrimental_Max
+    UNION
+    SELECT "detrimental hitapp #nodule adult" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group
+    WHERE Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Adult >= @SingleTh AND C_Adult == C_Detrimental_Max
+    UNION
+    SELECT "detrimental hitapp #nodule hate" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group
+    WHERE Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Hate >= @SingleTh AND C_Hate == C_Detrimental_Max
+    UNION
+    SELECT "detrimental hitapp #nodule violence" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group
+    WHERE Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Violence >= @SingleTh AND C_Violence == C_Detrimental_Max
+    UNION
+    SELECT "detrimental hitapp #nodule dangerous good" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group
+    WHERE Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Dangerous >= @SingleTh AND C_Dangerous == C_Detrimental_Max
+    UNION
+    SELECT "detrimental hitapp #nodule ok to show" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group
+    WHERE Adj_C_Ok >= @OkTh AND C_NotLoad <= C_Ok
+    UNION
+    SELECT "detrimental hitapp #nodule detrimental" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group
+    WHERE Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Detrimental_Max >= @SingleTh
+    UNION
+    SELECT "detrimental hitapp #nodule image not load" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group
+    WHERE (Adj_C_Ok >= @OkTh AND C_NotLoad > C_Ok) OR C_NotLoad >= @OkTh;
+
+Stats = SELECT Stats_default.Status,
+               IF(Stats.Count != null, Stats.Count, 0) AS Count
+        FROM Stats_default LEFT JOIN Stats ON Stats_default.Status == Stats.Status;
+
+TotalCnt =
+    SELECT SUM(occurrence) AS Total FROM data_group;
+
+Stats = SELECT Status,
+               Count,
+               Total
+    FROM Stats CROSS JOIN TotalCnt;
+
+Stats = SELECT Status,
+               Count,
+               Total AS TotalNoduleCnt,
+               1.0*Count/Total AS Coverage,
+               1.0*Count/Total AS AdjCoverage,
+               @Now AS Date;
+
+OUTPUT Stats
+TO SSTREAM @Out_Stats;
+
+#IF(@NeedSaveDashboard)
+OUTPUT Stats
+TO SSTREAM @Out_Stats_DashBoard;
+#ENDIF
+
+StatsRecallPath = SELECT RecallPath,
+                  SUM((Adj_C_Ok < @OkTh AND C_NotLoad < @OkTh AND C_Detrimental_Max >= @SingleTh) ? occurrence : 0) AS CountDetrimental,
+                  SUM(occurrence) AS Count
+                  FROM data_group
+                  GROUP BY RecallPath;
+
+StatsRecallPath = SELECT *,
+                         IF(Count != null AND Count > 0, (float)CountDetrimental/Count, 1.0) AS Coverage,
+                         IF(Count != null AND Count > 0, (float)CountDetrimental/Count, 1.0) AS AdjCoverage,
+                         @Now AS Date;
+
+OUTPUT StatsRecallPath
+TO SSTREAM @Out_StatsPerRecallPath;
+
+#IF(@NeedSaveDashboard)
+OUTPUT StatsRecallPath
+TO SSTREAM @Out_StatsPerRecallPath_DashBoard;
+#ENDIF
+ 
+StatsImageNotLoadRecallPath = SELECT RecallPath,
+                    SUM(((Adj_C_Ok >= @OkTh AND C_NotLoad > C_Ok) OR C_NotLoad >= @OkTh) ? occurrence : 0) AS CountImageNotLoad,
+                    SUM(occurrence) AS Count
+                    FROM data_group
+                    GROUP BY RecallPath;
+
+StatsImageNotLoadRecallPath = SELECT *,
+                            IF(Count != null AND Count > 0, (float)CountImageNotLoad/Count, 1.0) AS Coverage,
+                            IF(Count != null AND Count > 0, (float)CountImageNotLoad/Count, 1.0) AS AdjCoverage,
+                            @Now AS Date;
+
+OUTPUT StatsImageNotLoadRecallPath
+TO SSTREAM @Out_StatsImageNotLoadPerRecallPath;
+
+
+
+StatsNumber = SELECT "original samples" AS Name,
+                     SUM(occurrence) AS Count
+              FROM data_group
+              UNION
+              SELECT "detrimental ok to show" AS Name,
+                     COUNT(1) AS Count
+              FROM data_original_ok
+              UNION
+              SELECT "samples for defect" AS Name,
+                     COUNT(1) AS Count
+              FROM Sample_original;
+
+OUTPUT StatsNumber
+TO SSTREAM @Out_StatsNumber;
+
+In_features =
+    SELECT *
+    FROM (SSTREAM @@In_Features@@);
+    
+    Racy0 =
+    SELECT image_url AS murl,
+           page_url AS purl,
+           defect_rating AS label
+           FROM (SSTREAM @In_Original_Name)
+    WHERE defect_rating != "ok_to_show" AND defect_rating != "image_not_load";
+
+RacyCandidate =
+    SELECT DISTINCT murl,
+                    purl,
+                    FIRST(label) AS label
+    GROUP BY murl,
+             purl;
+
+RacyFeature = 
+    SELECT a.murl,
+		   a.purl,
+           a.label,
+           b.LargeFeature__SIEMv3ImageEncoded_Binary,
+           b.TextFeatures__SIEMv3TextVector
+    FROM RacyCandidate AS a
+         INNER JOIN
+             In_features AS b
+         ON a.murl == b.MUrl AND a.purl == b.PUrl;
+
+NoduleListWithNormalizedImagevector =
+    SELECT murl,
+		   purl,
+           label,
+           Utils.NormalizeVector(n.LargeFeature__SIEMv3ImageEncoded_Binary) AS SIEMv3ImageVectorNormalized,
+           n.TextFeatures__SIEMv3TextVector AS SIEMv3TextVector
+    FROM RacyFeature AS n
+    WHERE !String.IsNullOrEmpty(n.LargeFeature__SIEMv3ImageEncoded_Binary);
+
+IngestionStream =
+    SELECT murl,
+           purl,
+           label,
+           Utils.GetDocKeyBase64(murl, purl) AS DocKey,
+           Utils.GetFullVector(SIEMv3ImageVectorNormalized, SIEMv3TextVector) AS Vector,
+           "PrismImage" AS TenantId
+    FROM NoduleListWithNormalizedImagevector
+    WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
+
+OUTPUT
+TO SSTREAM "/local/users/jiafa/racy_feature_more.ss";
+    
+#ENDIF
+
+#CS
+public static int str2int(string input)
+{
+    int outVal;
+    if (!int.TryParse(input,out outVal))
+        outVal = 0;
+    return outVal;
+}
+
+public class DefaultColumnProcessor  : Processor
+{
+    public override Schema Produces(string[] columns, string[] args, Schema inputSchema)
+    {
+        var outputSchema = inputSchema.CloneWithSource();
+
+        if (!inputSchema.Contains("RecallPath"))
+        {
+            outputSchema.Add(new ColumnInfo("RecallPath", typeof(string)));
+        }
+
+        return outputSchema;
+    }
+
+    public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
+    {
+        bool needToAddDefaultColumn = input.Schema.Contains("RecallPath");
+
+        foreach (Row row in input.Rows)
+        {
+            row.CopyTo(output);
+
+            if (!needToAddDefaultColumn)
+            {
+                output["RecallPath"].Set((string) null);
+            }
+
+            yield return output;
+        }
+    }
+}
+using Microsoft.Bing.HashUtil;
+
+public static class Utils
+{
+    public static string GetDocKeyBase64(string mediaUrl, string pageUrl)
+    {
+        return ConvertDocKeyToBase64(GetDocKeyBinary(mediaUrl, pageUrl));
+    }
+
+    public static byte[] GetDocKeyBinary(string mediaUrl, string pageUrl)
+    {
+        var hashIndex = pageUrl.IndexOf("#");
+
+        var pageUrlForDocKey = hashIndex != -1 ? pageUrl.Substring(0, hashIndex) : pageUrl;
+
+        return Microsoft.Bing.HashUtil.HutHash.GetHashAsBinary(
+            Microsoft.Bing.HashUtil.HutHash.GetUrlHashAsBase64String(mediaUrl)
+            + Microsoft.Bing.HashUtil.HutHash.GetUrlHashAsBase64String(pageUrlForDocKey));
+    }
+
+    public static string ConvertDocKeyToBase64(byte[] docKey)
+    {
+        return Convert.ToBase64String(docKey).Substring(0, 22);
+    }
+
+    public static string GetFullVector(string vector1, string vector2)
+    {
+        var concat = string.Format("{0} {1}", vector1, vector2);
+        var split = concat.Split(' ');
+        return string.Join("|", split);
+    }
+
+    public static string NormalizeVector(string vectorString)
+    {
+        List<float> vector = new List<float>();
+        var imageStrings = vectorString.Split(',');
+
+        for (int i = 0; i < imageStrings.Length; i++)
+        {
+            // values are quantized to 8 bits (numbers are between 0 - 255), it means that to get the original values, we need to run this operation on each vector x: (x/127.5) - 1
+            vector.Add((float)((float.Parse(imageStrings[i]) / 127.5) - 1));
+        }
+
+        return string.Join(" ", vector);
+    }
+    
+    public static Boolean isValidVector(string SIEMv3ImageEncoded_Binary)
+        {   
+            if(String.IsNullOrEmpty(SIEMv3ImageEncoded_Binary))
+            {
+                return false;
+            }
+            string[] imageStrings = SIEMv3ImageEncoded_Binary.Split(',');
+            var total = 0.0;
+            for(int i = 0; i < 32; i++)
+            {
+                total += Convert.ToDouble(imageStrings[i]);
+            }
+            return (total != 0);
+        }
+
+}
+#ENDCS
