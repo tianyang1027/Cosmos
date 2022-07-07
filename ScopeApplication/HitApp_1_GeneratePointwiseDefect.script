@@ -3,8 +3,7 @@ REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
 REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
 REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
 REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
-
-REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bing.HashUtil.dll";
+RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\IdfCooking\Microsoft.Bing.HashUtil.dll";
 USING MMRV2.Utility;
 USING MMRV2.Core;
 
@@ -481,7 +480,7 @@ public class DefaultColumnProcessor  : Processor
         }
     }
 }
-using Microsoft.Bing.HashUtil;
+
 
 public static class Utils
 {
