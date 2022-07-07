@@ -2,9 +2,13 @@
 REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
 REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
 REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
-USING MMRV2.Utility;
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
 
-#DECLARE In_DetrimentalJudgment    string = "local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesDetrimentalLabelIndex_PPE_Regular_2022_07_04.tsv";
+REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bing.HashUtil.dll";
+USING MMRV2.Utility;
+USING MMRV2.Core;
+
+#DECLARE In_DetrimentalJudgment    string = "/local/Prod/Image/Prism/UHRS_Archival/Detrimental_categorization/Crowd/AutoUpload-Index_PPE_Regular_2022_06_27-2022-06-27-22-45-3160284_2022-06-28_00-40-13";
 #DECLARE In_Original     string = @In_DetrimentalJudgment.Substring(@In_DetrimentalJudgment.LastIndexOf("AutoUpload-"));
 // "AutoUpload-{Name}{Suffix}" -> "{Name}"
 #DECLARE In_Original_1 string = @In_Original.Substring(11, @In_Original.Length-56);
@@ -28,6 +32,8 @@ USING MMRV2.Utility;
 #DECLARE prefix string = "";
 #DECLARE Par_Date string = @Now.ToString("yyyy_MM_dd");
 #DECLARE Out_RacyFeatureFile = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_Date}/racy_feature.tsv" ;
+#DECLARE Par_In_Features_PPE string = "/local/Prod/Image/Prism/2022-07-05/PrismProdRank_2_PPE.ss";
+#DECLARE Par_In_Features string = "/local/Prod/Image/Prism/2022-07-05/PrismProdRank_2.ss";
 
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
     #SET prefix = "Index_PPE_Detrimental";
@@ -373,17 +379,13 @@ StatsNumber = SELECT "original samples" AS Name,
 
 OUTPUT StatsNumber
 TO SSTREAM @Out_StatsNumber;
-
-In_features =
-    SELECT *
-    FROM (SSTREAM @@In_Features@@);
     
-    Racy0 =
-    SELECT image_url AS murl,
-           page_url AS purl,
-           detrimental_rating AS label
-           FROM data_group
-    WHERE detrimental_rating != "ok_to_show" AND detrimental_rating != "image_not_load";
+Racy0 =
+SELECT image_url AS murl,
+        page_url AS purl,
+        detrimental_rating AS label
+        FROM data_group
+WHERE detrimental_rating != "ok_to_show" AND detrimental_rating != "image_not_load";
 
 RacyCandidate =
     SELECT DISTINCT murl,
@@ -391,6 +393,18 @@ RacyCandidate =
                     FIRST(label) AS label
     GROUP BY murl,
              purl;
+
+#IF (@In_Original_1.StartsWith("Index_Regular"))
+In_features =
+    SELECT *
+    FROM @Par_In_Features;
+#ENDIF
+
+#IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
+In_features =
+    SELECT *
+    FROM @Par_In_Features_PPE;
+#ENDIF
 
 RacyFeature = 
     SELECT a.murl,
