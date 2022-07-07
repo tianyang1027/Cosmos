@@ -4,7 +4,7 @@ REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
 REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
 USING MMRV2.Utility;
 
-#DECLARE In_DetrimentalJudgment    string = @@In_DetrimentalJudgment@@;
+#DECLARE In_DetrimentalJudgment    string = "local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesDetrimentalLabelIndex_PPE_Regular_2022_07_04.tsv";
 #DECLARE In_Original     string = @In_DetrimentalJudgment.Substring(@In_DetrimentalJudgment.LastIndexOf("AutoUpload-"));
 // "AutoUpload-{Name}{Suffix}" -> "{Name}"
 #DECLARE In_Original_1 string = @In_Original.Substring(11, @In_Original.Length-56);
@@ -20,12 +20,15 @@ USING MMRV2.Utility;
 #DECLARE UtcNow DateTime = DateTime.UtcNow;
 #DECLARE Now DateTime = @UtcNow.AddHours(-8);
 #DECLARE Seed string = ((int)DateTime.Now.Ticks).ToString();
-#DECLARE SampleNumber string = @@SampleNumber@@;
+#DECLARE SampleNumber string = "500";
 // There are 5 judges for detrimental judgement.
 #DECLARE NumJudges int = 5;
 #DECLARE SingleTh int = @NumJudges / 2;
 #DECLARE OkTh int = @NumJudges / 2 + 1;
 #DECLARE prefix string = "";
+#DECLARE Par_Date string = @Now.ToString("yyyy_MM_dd");
+#DECLARE Out_RacyFeatureFile = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_Date}/racy_feature.tsv" ;
+
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
     #SET prefix = "Index_PPE_Detrimental";
     #SET NeedSaveDashboard = true;
@@ -378,9 +381,9 @@ In_features =
     Racy0 =
     SELECT image_url AS murl,
            page_url AS purl,
-           defect_rating AS label
-           FROM (SSTREAM @In_Original_Name)
-    WHERE defect_rating != "ok_to_show" AND defect_rating != "image_not_load";
+           detrimental_rating AS label
+           FROM data_group
+    WHERE detrimental_rating != "ok_to_show" AND detrimental_rating != "image_not_load";
 
 RacyCandidate =
     SELECT DISTINCT murl,
@@ -420,7 +423,7 @@ IngestionStream =
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
 OUTPUT
-TO SSTREAM "/local/users/jiafa/racy_feature_more.ss";
+TO SSTREAM @Out_RacyFeatureFile;
     
 #ENDIF
 
