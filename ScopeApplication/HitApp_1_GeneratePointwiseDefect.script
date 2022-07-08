@@ -438,7 +438,7 @@ IngestionStream =
     FROM NoduleListWithNormalizedImagevector
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
-Source =
+PrismStream =
     SELECT *
     FROM (SSTREAM $"{@BasePath}{@Source}.ss");
 
@@ -448,7 +448,7 @@ IngestionStream =
             @Source AS Source,
             @Now AS Date
     FROM IngestionStream AS a 
-                LEFT JOIN  Source AS b 
+                LEFT JOIN PrismStream AS b 
                 ON a.murl == b. MUrl AND a.purl ==b.MUrl;
 
 OUTPUT IngestionStream
