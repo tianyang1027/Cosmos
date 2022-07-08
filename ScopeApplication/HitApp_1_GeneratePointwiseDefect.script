@@ -421,20 +421,20 @@ RacyFeature =
 
 NoduleListWithNormalizedImagevector =
     SELECT murl,
-		    purl,
-            label,
-            Utils.NormalizeVector(n.LargeFeature__SIEMv3ImageEncoded_Binary) AS SIEMv3ImageVectorNormalized,
-            n.TextFeatures__SIEMv3TextVector AS SIEMv3TextVector
+		   purl,
+           label,
+           Utils.NormalizeVector(n.LargeFeature__SIEMv3ImageEncoded_Binary) AS SIEMv3ImageVectorNormalized,
+           n.TextFeatures__SIEMv3TextVector AS SIEMv3TextVector
     FROM RacyFeature AS n
     WHERE !String.IsNullOrEmpty(n.LargeFeature__SIEMv3ImageEncoded_Binary);
 
 IngestionStream =
     SELECT murl,
-            purl,
-            label,
-            Utils.GetDocKeyBase64(murl, purl) AS DocKey,
-            Utils.GetFullVector(SIEMv3ImageVectorNormalized, SIEMv3TextVector) AS Vector,
-            "PrismImage" AS TenantId
+           purl,
+           label,
+           Utils.GetDocKeyBase64(murl, purl) AS DocKey,
+           Utils.GetFullVector(SIEMv3ImageVectorNormalized, SIEMv3TextVector) AS Vector,
+           "PrismImage" AS TenantId
     FROM NoduleListWithNormalizedImagevector
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
