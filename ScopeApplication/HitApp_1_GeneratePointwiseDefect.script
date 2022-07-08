@@ -32,28 +32,28 @@ USING MMRV2.Core;
 #DECLARE In_CurrentIndexV1 string = "/local/Prod/Image/Prism/IndexGen/2022_07_06/CurrentIndexV1.ss";
 #DECLARE Out_RacyFeatureFile = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_Date}/racy_feature.tsv" ;
 #DECLARE NeedOutputRacyFeatureMore bool = false;
-#DECLARE PrismSource_BasePath string ="/local/Prod/Image/Prism/2022-07-05/";
-#DECLARE PrismSource string = "";
+#DECLARE SourceBasePath string ="/local/Prod/Image/Prism/2022-07-05/";
+#DECLARE Source string = "";
 
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular")) //ppe-1
     #SET prefix = "Index_PPE_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET PrismSource="PrismProdRank_1_PPE";
+    #SET Source="PrismProdRank_1_PPE";
     #SET NeedOutputRacyFeatureMore = true;
 #ELSEIF (@In_Original_1.StartsWith("Index_Regular"))//prod-1
     #SET prefix = "Index_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET PrismSource="PrismProdRank_1";
+    #SET Source="PrismProdRank_1";
     #SET NeedOutputRacyFeatureMore = true;
 #ELSEIF (@In_Original_1.StartsWith("Impression_Regular"))//prod-0
     #SET prefix = "Impression_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET PrismSource="PrismProdRank_0";
+    #SET Source="PrismProdRank_0";
     #SET NeedOutputRacyFeatureMore = true;
 #ELSEIF (@In_Original_1.StartsWith("Click_Regular"))//prod-0
     #SET prefix = "Click_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET PrismSource = "PrismProdRank_0";
+    #SET Source = "PrismProdRank_0";
     #SET NeedOutputRacyFeatureMore = true;
 #ENDIF
 #DECLARE Out_Stats_DashBoard string = "";
@@ -438,17 +438,17 @@ IngestionStream =
     FROM NoduleListWithNormalizedImagevector
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
-PrismSource =
+Source =
     SELECT *
-    FROM (SSTREAM $"{@PrismSource_BasePath}{@PrismSource}.ss");
+    FROM (SSTREAM $"{@Source_BasePath}{@Source}.ss");
 
 IngestionStream = 
     SELECT a.*,
             b.AdultScore AS AdultScore,
-            @PrismSource AS Source,
+            @Source AS Source,
             @Now AS Date
     FROM IngestionStream AS a 
-                LEFT JOIN  PrismSource AS b 
+                LEFT JOIN  Source AS b 
                 ON a.murl == b. MUrl AND a.purl ==b.MUrl;
 
 OUTPUT IngestionStream
