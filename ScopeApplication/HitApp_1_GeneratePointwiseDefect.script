@@ -32,7 +32,7 @@ USING MMRV2.Core;
 #DECLARE In_CurrentIndexV1 string = "/local/Prod/Image/Prism/IndexGen/2022_07_06/CurrentIndexV1.ss";
 #DECLARE Out_RacyFeatureFile = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_Date}/racy_feature.tsv" ;
 #DECLARE NeedOutputRacyFeatureMore bool = false;
-#DECLARE SourceBasePath string ="/local/Prod/Image/Prism/2022-07-05/";
+#DECLARE BasePath string ="/local/Prod/Image/Prism/2022-07-05/";
 #DECLARE Source string = "";
 
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular")) //ppe-1
@@ -440,7 +440,7 @@ IngestionStream =
 
 Source =
     SELECT *
-    FROM (SSTREAM $"{@Source_BasePath}{@Source}.ss");
+    FROM (SSTREAM $"{@BasePath}{@Source}.ss");
 
 IngestionStream = 
     SELECT a.*,
