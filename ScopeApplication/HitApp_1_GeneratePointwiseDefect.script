@@ -34,19 +34,19 @@ USING MMRV2.Core;
 #DECLARE Out_RacyFeatureMore = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_Date}/racy_feature_more.tsv" ;
 #DECLARE NeedOutputRacyFeatureMore bool = false;
 
-#IF (@In_Original_1.StartsWith("Index_PPE_Regular")) //ppe-1
+#IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
     #SET prefix = "Index_PPE_Detrimental";
     #SET NeedSaveDashboard = true;
     #SET NeedOutputRacyFeatureMore = true;
-#ELSEIF (@In_Original_1.StartsWith("Index_Regular"))//prod-1
+#ELSEIF (@In_Original_1.StartsWith("Index_Regular"))
     #SET prefix = "Index_Detrimental";
     #SET Source="PrismProdRank_1";
     #SET NeedOutputRacyFeatureMore = true;
-#ELSEIF (@In_Original_1.StartsWith("Impression_Regular"))//prod-0
+#ELSEIF (@In_Original_1.StartsWith("Impression_Regular"))
     #SET prefix = "Impression_Detrimental";
     #SET NeedSaveDashboard = true;
     #SET NeedOutputRacyFeatureMore = true;
-#ELSEIF (@In_Original_1.StartsWith("Click_Regular"))//prod-0
+#ELSEIF (@In_Original_1.StartsWith("Click_Regular"))
     #SET prefix = "Click_Detrimental";
     #SET NeedSaveDashboard = true;
     #SET NeedOutputRacyFeatureMore = true;
