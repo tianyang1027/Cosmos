@@ -451,7 +451,7 @@ racy_feature_more=
 
 OUTPUT racy_feature_more
 TO @Out_RacyFeatureMore
-USING DefaultTextOutputter(outputHeader: true);
+USING DefaultTextOutputter();
 #ENDIF
 
 #ENDIF

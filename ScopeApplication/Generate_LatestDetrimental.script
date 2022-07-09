@@ -15,4 +15,4 @@ racy_feature_more =
 
 OUTPUT racy_feature_more
 TO "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2022_07_07/racy_feature_more.tsv"
-USING DefaultTextOutputter(outputHeader: true);
+USING DefaultTextOutputter();
