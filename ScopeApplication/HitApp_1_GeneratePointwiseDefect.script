@@ -29,31 +29,27 @@ USING MMRV2.Core;
 #DECLARE OkTh int = @NumJudges / 2 + 1;
 #DECLARE prefix string = "";
 #DECLARE Par_Date string = @Now.ToString("yyyy_MM_dd");
-#DECLARE In_CurrentIndexV1 string = "/local/Prod/Image/Prism/IndexGen/2022_07_06/CurrentIndexV1.ss";
-#DECLARE Out_RacyFeatureFile = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_Date}/racy_feature.tsv" ;
+#DECLARE In_CurrentIndexV1 string = @@In_CurrentIndexV1@@;
+#DECLARE In_RacyFeatureMore string = @@In_RacyFeatureMore@@;
+#DECLARE Out_RacyFeatureMore = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_Date}/racy_feature.tsv" ;
 #DECLARE NeedOutputRacyFeatureMore bool = false;
-#DECLARE BasePath string ="/local/Prod/Image/Prism/2022-07-05/";
-#DECLARE Source string = "";
+
 
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular")) //ppe-1
     #SET prefix = "Index_PPE_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET Source="PrismProdRank_1_PPE";
     #SET NeedOutputRacyFeatureMore = true;
 #ELSEIF (@In_Original_1.StartsWith("Index_Regular"))//prod-1
     #SET prefix = "Index_Detrimental";
-    #SET NeedSaveDashboard = true;
     #SET Source="PrismProdRank_1";
     #SET NeedOutputRacyFeatureMore = true;
 #ELSEIF (@In_Original_1.StartsWith("Impression_Regular"))//prod-0
     #SET prefix = "Impression_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET Source="PrismProdRank_0";
     #SET NeedOutputRacyFeatureMore = true;
 #ELSEIF (@In_Original_1.StartsWith("Click_Regular"))//prod-0
     #SET prefix = "Click_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET Source = "PrismProdRank_0";
     #SET NeedOutputRacyFeatureMore = true;
 #ENDIF
 #DECLARE Out_Stats_DashBoard string = "";
@@ -389,9 +385,8 @@ OUTPUT StatsNumber
 TO SSTREAM @Out_StatsNumber;
  
 #IF(@NeedOutputRacyFeatureMore)
-    
 Racy0 =
-SELECT image_url AS murl,
+SELECT  image_url AS murl,
         page_url AS purl,
         detrimental_rating AS label
         FROM data_group
@@ -402,7 +397,7 @@ RacyCandidate =
                     purl,
                     FIRST(label) AS label
     GROUP BY murl,
-                purl;
+             purl;
 
 CurrentIndexV1 =
     SELECT *
@@ -410,14 +405,14 @@ CurrentIndexV1 =
 
 RacyFeature = 
     SELECT a.murl,
-		    a.purl,
-            a.label,
-            b.LargeFeature__SIEMv3ImageEncoded_Binary,
-            b.TextFeatures__SIEMv3TextVector
+		   a.purl,
+           a.label,
+           b.LargeFeature__SIEMv3ImageEncoded_Binary,
+           b.TextFeatures__SIEMv3TextVector
     FROM RacyCandidate AS a
-            INNER JOIN
-                CurrentIndexV1 AS b
-            ON a.murl == b.MUrl AND a.purl == b.PUrl;
+         INNER JOIN
+             CurrentIndexV1 AS b
+         ON a.murl == b.MUrl AND a.purl == b.PUrl;
 
 NoduleListWithNormalizedImagevector =
     SELECT murl,
@@ -435,26 +430,29 @@ IngestionStream =
            Utils.GetDocKeyBase64(murl, purl) AS DocKey,
            Utils.GetFullVector(SIEMv3ImageVectorNormalized, SIEMv3TextVector) AS Vector,
            "PrismImage" AS TenantId
+           @Now AS Date
     FROM NoduleListWithNormalizedImagevector
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
-PrismStream =
-    SELECT *
-    FROM (SSTREAM $"{@BasePath}{@Source}.ss");
+racy_feature_more_latest =
+    EXTRACT murl,
+            purl,
+            label,
+            DocKey,
+            Vector,
+            TenantId,
+            Date
+    FROM @In_RacyFeatureMore
+    USING Extractors.Tsv();
 
-IngestionStream = 
-    SELECT a.*,
-            b.AdultScore AS AdultScore,
-            @Source AS Source,
-            @Now AS Date
-    FROM IngestionStream AS a 
-                LEFT JOIN PrismStream AS b 
-                ON a.murl == b. MUrl AND a.purl ==b.MUrl;
+racy_feature_more=
+    SELECT * FROM racy_feature_more_latest
+    UNION ALL
+    SELECT * FROM IngestionStream;
 
-OUTPUT IngestionStream
-TO @Out_RacyFeatureFile
+OUTPUT racy_feature_more
+TO @Out_RacyFeatureMore
 USING DefaultTextOutputter(outputHeader: true);
-
 #ENDIF
 
 #ENDIF
