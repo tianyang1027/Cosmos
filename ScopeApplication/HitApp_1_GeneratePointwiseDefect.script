@@ -34,7 +34,6 @@ USING MMRV2.Core;
 #DECLARE Out_RacyFeatureMore = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_Date}/racy_feature.tsv" ;
 #DECLARE NeedOutputRacyFeatureMore bool = false;
 
-
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular")) //ppe-1
     #SET prefix = "Index_PPE_Detrimental";
     #SET NeedSaveDashboard = true;
