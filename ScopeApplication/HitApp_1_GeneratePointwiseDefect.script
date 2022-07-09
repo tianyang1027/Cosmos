@@ -28,10 +28,10 @@ USING MMRV2.Core;
 #DECLARE SingleTh int = @NumJudges / 2;
 #DECLARE OkTh int = @NumJudges / 2 + 1;
 #DECLARE prefix string = "";
-#DECLARE Par_Date string = @Now.ToString("yyyy_MM_dd");
+#DECLARE Par_FormatNow string = @Now.ToString("yyyy_MM_dd");
 #DECLARE In_CurrentIndexV1 string = "/local/Prod/Image/Prism/IndexGen/2022_07_07/CurrentIndexV1.ss";
 #DECLARE In_RacyFeatureMore string = "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2022_07_07/racy_feature_more.tsv";
-#DECLARE Out_RacyFeatureMore = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_Date}/racy_feature_more.tsv" ;
+#DECLARE Out_RacyFeatureMore = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_FormatNow}/racy_feature_more.tsv" ;
 #DECLARE NeedOutputRacyFeatureMore bool = false;
 
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
@@ -443,7 +443,7 @@ racy_feature_more_latest =
             TenantId : string,
             Date : DateTime
     FROM @In_RacyFeatureMore
-    HAVING Date.ToString("yyyy_MM_dd") != @Par_Date 
+    HAVING Date.ToString("yyyy_MM_dd") != @Par_FormatNow 
     USING Extractors.Tsv();
 
 racy_feature_more =
