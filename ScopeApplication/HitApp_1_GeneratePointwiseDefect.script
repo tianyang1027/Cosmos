@@ -434,13 +434,13 @@ IngestionStream =
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
 racy_feature_more_latest =
-    EXTRACT murl,
-            purl,
-            label,
-            DocKey,
-            Vector,
-            TenantId,
-            Date
+    EXTRACT murl : string,
+            purl : string,
+            label : string,
+            DocKey : string,
+            Vector : string,
+            TenantId : string,
+            Date : DateTime
     FROM @In_RacyFeatureMore
     USING Extractors.Tsv();
 
