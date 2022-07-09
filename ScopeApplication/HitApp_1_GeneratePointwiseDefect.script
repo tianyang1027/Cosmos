@@ -31,7 +31,7 @@ USING MMRV2.Core;
 #DECLARE Par_FormatNow string = @Now.ToString("yyyy_MM_dd");
 #DECLARE In_CurrentIndexV1 string = "/local/Prod/Image/Prism/IndexGen/2022_07_07/CurrentIndexV1.ss";
 #DECLARE In_RacyFeatureMore string = "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2022_07_07/racy_feature_more.tsv";
-#DECLARE Out_RacyFeatureMore = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_FormatNow}/racy_feature_more.tsv" ;
+#DECLARE Out_RacyFeatureMore string = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_FormatNow}/racy_feature_more.tsv" ;
 #DECLARE NeedOutputRacyFeatureMore bool = false;
 
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
