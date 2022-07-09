@@ -10,7 +10,7 @@
 
 racy_feature_more =
     SELECT *,
-           "6/27/2022 1:59:32 PM" AS Date
+           Convert.ToDateTime("6/27/2022 1:59:32 PM") AS Date
     FROM racy_feature_more;
 
 OUTPUT racy_feature_more
