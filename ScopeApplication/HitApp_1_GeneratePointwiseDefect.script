@@ -445,7 +445,7 @@ racy_feature_more_latest =
     USING Extractors.Tsv();
 
 //prevent execute twice in the current day, filter existing data of the current day
-racy_feature_more=
+racy_feature_more =
     SELECT * FROM racy_feature_more_latest WHERE Date.ToString("yyyy_MM_dd") != @Par_Date 
     UNION ALL
     SELECT * FROM IngestionStream;
