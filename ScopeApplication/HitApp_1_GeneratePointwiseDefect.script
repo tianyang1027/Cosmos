@@ -398,6 +398,25 @@ RacyCandidate =
     GROUP BY murl,
              purl;
 
+detrimental_doc=
+    EXTRACT murl : string,
+            purl : string,
+            label : string,
+            DocKey : string,
+            Vector : string,
+            TenantId : string,
+            Date : DateTime
+    FROM @In_DetrimentalDocs
+    HAVING murl!= "murl" AND purl != "purl"
+    USING Extractors.Tsv();
+
+RacyCandidate =
+    SELECT *
+    FROM RacyCandidate AS a
+            LEFT ANTISEMIJOIN
+                detrimental_doc AS b
+            ON a.murl == b.murl AND a.purl == b.purl;
+
 CurrentIndexV1 =
     SELECT *
     FROM (SSTREAM @In_CurrentIndexV1);
@@ -433,18 +452,6 @@ delta_detrimental_doc=
     FROM NoduleListWithNormalizedImagevector
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
-detrimental_doc=
-    EXTRACT murl : string,
-            purl : string,
-            label : string,
-            DocKey : string,
-            Vector : string,
-            TenantId : string,
-            Date : DateTime
-    FROM @In_DetrimentalDocs
-    HAVING Date.ToString("yyyy_MM_dd") != @Par_FormatNow 
-    USING Extractors.Tsv();
-
 DetrimentalDoc =
     SELECT * FROM detrimental_doc
     UNION ALL
@@ -452,7 +459,7 @@ DetrimentalDoc =
 
 OUTPUT DetrimentalDoc
 TO @Out_DetrimentalDoc
-USING DefaultTextOutputter();
+USING DefaultTextOutputter(delimiter:'\t', outputHeader:true);
 #ENDIF
 
 #ENDIF
