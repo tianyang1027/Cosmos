@@ -452,10 +452,10 @@ delta_detrimental_doc=
     FROM NoduleListWithNormalizedImagevector
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
-DetrimentalDoc =
+DetrimentalDoc = SELECT * FROM (
     SELECT * FROM detrimental_doc
     UNION ALL
-    SELECT * FROM delta_detrimental_doc;
+    SELECT * FROM delta_detrimental_doc) ORDER BY Date DESC;
 
 OUTPUT DetrimentalDoc
 TO @Out_DetrimentalDoc
