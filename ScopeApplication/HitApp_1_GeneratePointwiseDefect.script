@@ -30,26 +30,26 @@ USING MMRV2.Core;
 #DECLARE prefix string = "";
 #DECLARE Par_FormatNow string = @Now.ToString("yyyy_MM_dd");
 #DECLARE In_CurrentIndexV1 string = "/local/Prod/Image/Prism/IndexGen/2022_07_07/CurrentIndexV1.ss";
-#DECLARE In_RacyFeatureMore string = "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2022_07_07/racy_feature_more.tsv";
-#DECLARE Out_RacyFeatureMore string = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_FormatNow}/racy_feature_more.tsv" ;
-#DECLARE NeedOutputRacyFeatureMore bool = false;
+#DECLARE In_DetrimentalDocs string = "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2022_07_07/racy_feature_more.tsv";
+#DECLARE Out_DetrimentalDocstring = $"/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_FormatNow}/racy_feature_more.tsv";
+#DECLARE NeedOutputDetrimentalDoc bool = false;
 
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
     #SET prefix = "Index_PPE_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET NeedOutputRacyFeatureMore = true;
+    #SET NeedOutputDetrimentalDoc = true;
 #ELSEIF (@In_Original_1.StartsWith("Index_Regular"))
     #SET prefix = "Index_Detrimental";
     #SET Source="PrismProdRank_1";
-    #SET NeedOutputRacyFeatureMore = true;
+    #SET NeedOutputDetrimentalDoc = true;
 #ELSEIF (@In_Original_1.StartsWith("Impression_Regular"))
     #SET prefix = "Impression_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET NeedOutputRacyFeatureMore = true;
+    #SET NeedOutputDetrimentalDoc = true;
 #ELSEIF (@In_Original_1.StartsWith("Click_Regular"))
     #SET prefix = "Click_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET NeedOutputRacyFeatureMore = true;
+    #SET NeedOutputDetrimentalDoc = true;
 #ENDIF
 #DECLARE Out_Stats_DashBoard string = "";
 #DECLARE Out_StatsPerRecallPath_DashBoard string = "";
@@ -383,7 +383,7 @@ StatsNumber = SELECT "original samples" AS Name,
 OUTPUT StatsNumber
 TO SSTREAM @Out_StatsNumber;
  
-#IF(@NeedOutputRacyFeatureMore)
+#IF(@NeedOutputDetrimentalDoc)
 Racy0 =
 SELECT  image_url AS murl,
         page_url AS purl,
@@ -422,7 +422,7 @@ NoduleListWithNormalizedImagevector =
     FROM RacyFeature AS n
     WHERE !String.IsNullOrEmpty(n.LargeFeature__SIEMv3ImageEncoded_Binary);
 
-IngestionStream =
+delta_detrimental_doc=
     SELECT murl,
            purl,
            label,
@@ -433,8 +433,7 @@ IngestionStream =
     FROM NoduleListWithNormalizedImagevector
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
-//prevent execute twice in the current day, filter existing data of the current day
-racy_feature_more_latest =
+detrimental_doc=
     EXTRACT murl : string,
             purl : string,
             label : string,
@@ -442,17 +441,17 @@ racy_feature_more_latest =
             Vector : string,
             TenantId : string,
             Date : DateTime
-    FROM @In_RacyFeatureMore
+    FROM @In_DetrimentalDocs
     HAVING Date.ToString("yyyy_MM_dd") != @Par_FormatNow 
     USING Extractors.Tsv();
 
-racy_feature_more =
-    SELECT * FROM racy_feature_more_latest 
+DetrimentalDocstring =
+    SELECT * FROM detrimental_doc
     UNION ALL
-    SELECT * FROM IngestionStream;
+    SELECT * FROM delta_detrimental_doc;
 
-OUTPUT racy_feature_more
-TO @Out_RacyFeatureMore
+OUTPUT DetrimentalDocstring
+TO @Out_DetrimentalDocstring
 USING DefaultTextOutputter();
 #ENDIF
 
