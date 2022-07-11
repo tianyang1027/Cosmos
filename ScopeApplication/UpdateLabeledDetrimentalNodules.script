@@ -15,23 +15,23 @@ USING MMRV2.Core;
 #DECLARE Out_DetrimentalDoc string = $"/local/users/v-yangtian/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_FormatNow}/racy_feature_more.tsv";
 
 data_group=
-     EXTRACT occurrence : int,
-            image_url : string,
-            page_url : string,
-            title : string,
-            RecallPath : string,
-            C_CP : int,
-            C_Abuse : int,
-            C_Adult : int,
-            C_Hate : int,
-            C_Violence : int,
-            C_Dangerous : int,
-            C_Ok : int,
-            C_NotLoad : int,
-            C_Detrimental_Max : int,
-            Adj_C_Ok: int,
-            Class_Agg: string,
-            detrimental_rating : string
+    EXTRACT occurrence,
+            image_url,
+            page_url,
+            title,
+            RecallPath,
+            C_CP,
+            C_Abuse,
+            C_Adult,
+            C_Hate,
+            C_Violence,
+            C_Dangerous,
+            C_Ok,
+            C_NotLoad,
+            C_Detrimental_Max,
+            Adj_C_Ok,
+            Class_Agg,
+            detrimental_rating 
     FROM @In_SampleLabel
     USING DefaultTextExtractor()
     HAVING detrimental_rating != "ok_to_show" AND detrimental_rating != "image_not_load";
@@ -58,7 +58,7 @@ detrimental_doc=
             TenantId : string,
             Date : DateTime
     FROM @In_DetrimentalDocs
-    USING Extractors.Tsv(delimiter: '\t', skipFirstNRows: 1);
+    USING Extractors.Tsv(skipFirstNRows: 1);
 
 RacyCandidate =
     SELECT *
