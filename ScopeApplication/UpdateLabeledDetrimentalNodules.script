@@ -58,7 +58,7 @@ detrimental_doc=
             TenantId : string,
             Date : DateTime
     FROM @In_DetrimentalDocs
-    USING DefaultTextExtractor(delimiter: '\t', skipFirstNRows: 1);
+    USING Extractors.Tsv(delimiter: '\t', skipFirstNRows: 1);
 
 RacyCandidate =
     SELECT *
