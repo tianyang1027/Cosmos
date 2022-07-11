@@ -9,7 +9,7 @@ USING MMRV2.Core;
 #DECLARE UtcNow DateTime = DateTime.UtcNow;
 #DECLARE Now DateTime = @UtcNow.AddHours(-8);
 #DECLARE Par_FormatNow string = @Now.ToString("yyyy_MM_dd");
-#DECLARE In_SampleLabel = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesDetrimentalLabelImpression_Regular_2022_07_03.tsv";
+#DECLARE In_SampleLabel = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesDetrimentalLabelImpression_imgfeedprod_2022_06_28_2022_06_30.tsv";
 #DECLARE In_CurrentIndexV1 string = "/local/Prod/Image/Prism/IndexGen/2022_07_07/CurrentIndexV1.ss";
 #DECLARE In_DetrimentalDocs string = "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2022_07_07/racy_feature_more.tsv";
 #DECLARE Out_DetrimentalDoc string = $"/local/users/v-yangtian/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/{@Par_FormatNow}/racy_feature_more.tsv";
