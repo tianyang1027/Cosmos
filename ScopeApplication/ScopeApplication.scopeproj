@@ -50,6 +50,7 @@
     <Script Include="IndexSelection_2_TopicStamping.script" />
     <Script Include="IndexSelection_2_TopicStamping_PPE.script" />
     <Script Include="PIVOT.script" />
+    <Script Include="UpdateLabeledDetrimentalNodules.script" />
     <ScriptCode Include="ContentCoverage_6_IndexCoverage.script.cs">
       <DependentUpon>ContentCoverage_6_IndexCoverage.script</DependentUpon>
     </ScriptCode>
@@ -97,6 +98,9 @@
     </ScriptCode>
     <ScriptCode Include="PIVOT.script.cs">
       <DependentUpon>PIVOT.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="UpdateLabeledDetrimentalNodules.script.cs">
+      <DependentUpon>UpdateLabeledDetrimentalNodules.script</DependentUpon>
     </ScriptCode>
   </ItemGroup>
   <Import Project="$(AppData)\Microsoft\ScopeStudio\MsBuild\1.0\Scope.targets" />
