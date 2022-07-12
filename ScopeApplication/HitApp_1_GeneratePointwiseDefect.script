@@ -407,7 +407,8 @@ detrimental_doc=
             TenantId : string,
             Date : DateTime
     FROM @In_DetrimentalDocs
-    USING DefaultTextExtractor(delimiter: '\t', skipFirstNRows: 1); 
+    USING DefaultTextExtractor()
+    HAVING murl != "murl" AND purl != "purl";
 
 RacyCandidate =
     SELECT *

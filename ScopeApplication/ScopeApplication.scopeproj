@@ -49,6 +49,7 @@
     <Script Include="IndexSelection_1_GenerateRankFile_PPE2.script" />
     <Script Include="IndexSelection_2_TopicStamping.script" />
     <Script Include="IndexSelection_2_TopicStamping_PPE.script" />
+    <Script Include="LoopSamples.script" />
     <Script Include="PIVOT.script" />
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
     <ScriptCode Include="ContentCoverage_6_IndexCoverage.script.cs">
@@ -95,6 +96,9 @@
     </ScriptCode>
     <ScriptCode Include="IndexSelection_2_TopicStamping_PPE.script.cs">
       <DependentUpon>IndexSelection_2_TopicStamping_PPE.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="LoopSamples.script.cs">
+      <DependentUpon>LoopSamples.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="PIVOT.script.cs">
       <DependentUpon>PIVOT.script</DependentUpon>
