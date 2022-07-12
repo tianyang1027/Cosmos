@@ -1,0 +1,65 @@
+﻿REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+
+#DECLARE In_LwNoduleText_View string = "/local/Prod/Image/Repository/Schema/Latest/LwNoduleText_Combine.view";
+//#DECLARE Out_ActiveIndex_Title string = "/local/Prod/Image/Repository/ActiveDocsCombined/ActiveIndex_With_Title_All.ss";
+#DECLARE Out_ActiveIndex_Title string = "/local/users/v-yangtian/ActiveIndex_With_Title_All.ss";
+ActiveIndex =
+    VIEW @"/local/Prod/Image/Repository/ActiveDocsCombined/LatestActiveNodulesList.view"
+    PARAMS
+    (
+        SegmentsList = "GenericLatest"
+    );
+
+ActiveIndex =
+    SELECT MUrlKey AS Key,
+           PUrlKey AS PKey,
+           MUrl,
+           PUrl;
+
+LwNoduleText =
+    VIEW @In_LwNoduleText_View
+    PARAMS
+    (
+        Date = "2022_07_08"
+    );
+
+ProcessedNoduleText =
+    PROCESS LwNoduleText
+    USING MMRV2.Core.MmrScopeTypeProcessor("-schemaPath", "Metadata:Image_LwNoduleTextBase_Schema.xml", "-outputFeatures", "TextFeatures__PageTitle");
+
+LwNodule =
+    SELECT Key,
+           PageKey,
+           TextFeatures__PageTitle
+    FROM ProcessedNoduleText;
+
+ActiveIndex_With_Title_All =
+    SELECT a.PUrl AS page_url,
+           b.TextFeatures__PageTitle AS title
+    FROM ActiveIndex AS a
+         INNER JOIN
+             LwNodule AS b
+         ON a.Key == b.Key AND a.PKey == b.PageKey;
+
+OUTPUT
+TO SSTREAM @Out_ActiveIndex_Title;
+
+page_url_count =
+    SELECT COUNT(DISTINCT page_url)
+    FROM ActiveIndex_With_Title_All;
+
+OUTPUT page_url_count
+TO SSTREAM "/local/users/v-yangtian/page_url_count.txt";
+
+title_count =
+    SELECT COUNT(DISTINCT title)
+    FROM ActiveIndex_With_Title_All;
+
+OUTPUT title_count
+TO SSTREAM "/local/users/v-yangtian/title_count.txt";
+
