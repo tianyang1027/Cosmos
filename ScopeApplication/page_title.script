@@ -5,9 +5,10 @@ REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll"
 REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
 RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
 
-#DECLARE In_LwNoduleText_View string = "/local/Prod/Image/Repository/Schema/Latest/LwNoduleText_Combine.view";
-//#DECLARE Out_ActiveIndex_Title string = "/local/Prod/Image/Repository/ActiveDocsCombined/ActiveIndex_With_Title_All.ss";
-#DECLARE Out_ActiveIndex_Title string = "/local/users/v-yangtian/ActiveIndex_With_Title_All.ss";
+#DECLARE In_LwNoduleTextBaseSchema string= "/local/Prod/Image/Repository/Snapshot/LwNoduleText/Base/2022_07_08/Image_LwNoduleTextBase_Schema.xml";
+#DECLARE LatestDate string = @In_LwNoduleTextBaseSchema.Split('/')[8];
+#DECLARE Out_PageWithTitleAll string = "/local/users/v-yangtian/ActiveIndex_With_Title_All.ss";
+#DECLARE Par_LwNoduleText_View string = "/local/Prod/Image/Repository/Schema/Latest/LwNoduleText_Combine.view";
 ActiveIndex =
     VIEW @"/local/Prod/Image/Repository/ActiveDocsCombined/LatestActiveNodulesList.view"
     PARAMS
@@ -22,10 +23,10 @@ ActiveIndex =
            PUrl;
 
 LwNoduleText =
-    VIEW @In_LwNoduleText_View
+    VIEW @Par_LwNoduleText_View
     PARAMS
     (
-        Date = "2022_07_08"
+        Date = @LatestDate
     );
 
 ProcessedNoduleText =
@@ -39,43 +40,13 @@ LwNodule =
     FROM ProcessedNoduleText;
 
 ActiveIndex_With_Title_All =
-    SELECT a.PUrl AS page_url,
+    SELECT a.MUrl AS image_url,
+           a.PUrl AS page_url,
            b.TextFeatures__PageTitle AS title
     FROM ActiveIndex AS a
-         INNER JOIN
+         LEFT JOIN
              LwNodule AS b
          ON a.Key == b.Key AND a.PKey == b.PageKey;
 
 OUTPUT
-TO SSTREAM @Out_ActiveIndex_Title;
-
-page_url_count =
-    SELECT COUNT(DISTINCT page_url) AS page_url_count
-    FROM ActiveIndex_With_Title_All;
-
-OUTPUT page_url_count
-TO  "/local/users/v-yangtian/page_url_count.ss"
-USING DefaultTextOutputter(outputHeader: true);
-
-title_count =
-    SELECT COUNT(DISTINCT title) AS title_count
-    FROM ActiveIndex_With_Title_All;
-
-OUTPUT title_count
-TO  "/local/users/v-yangtian/title_count.ss"
-USING DefaultTextOutputter(outputHeader: true);
-
-ActiveIndex_With_Title_All =
-    SELECT *
-    FROM ActiveIndex_With_Title_All
-    GROUP BY page_url,
-             title;
-
-page_url_title_count =
-    SELECT COUNT( * ) AS page_url_title_count
-    FROM ActiveIndex_With_Title_All;
-
-OUTPUT page_url_title_count
-TO  "/local/users/v-yangtian/page_url_title_count.ss"
-USING DefaultTextOutputter(outputHeader: true);
-
+TO SSTREAM @Out_PageWithTitleAll;

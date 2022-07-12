@@ -51,6 +51,8 @@
     <Script Include="IndexSelection_2_TopicStamping.script" />
     <Script Include="IndexSelection_2_TopicStamping_PPE.script" />
     <Script Include="LoopSamples.script" />
+    <Script Include="LwNoduleText_Combine.script" />
+    <Script Include="page_title.script" />
     <Script Include="PIVOT.script" />
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
     <ScriptCode Include="ContentCoverage_6_IndexCoverage.script.cs">
@@ -103,6 +105,12 @@
     </ScriptCode>
     <ScriptCode Include="LoopSamples.script.cs">
       <DependentUpon>LoopSamples.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="LwNoduleText_Combine.script.cs">
+      <DependentUpon>LwNoduleText_Combine.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="page_title.script.cs">
+      <DependentUpon>page_title.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="PIVOT.script.cs">
       <DependentUpon>PIVOT.script</DependentUpon>

@@ -1,0 +1,51 @@
+﻿CREATE VIEW NoduleTextRawView
+SCHEMA (
+    Key:string,
+    PageKey:string,
+    Metadata:byte[]
+    )
+PARAMS (Date string DEFAULT = @"2022_07_11", // Date should have either format "yyyy_MM_dd" or "yyyy-MM-dd"
+        RepoPath string DEFAULT = @"local/Prod/Image/Repository",
+        UseSample bool DEFAULT = false,
+        HidePartitioning bool DEFAULT = false)
+AS
+BEGIN
+    #DECLARE SampleBaseDate string = "2016-07-15";
+    #DECLARE BaseMergeInterval int = 4;
+    #DECLARE DateTimeParsed DateTime = DateTime.Parse(@Date.Replace("_", "-"));
+    #DECLARE DaysSinceBaseMerge int = ((int)(@DateTimeParsed - DateTime.Parse(@SampleBaseDate)).TotalDays) % @BaseMergeInterval;
+    #DECLARE BaseDate string = @DateTimeParsed.AddDays(-@DaysSinceBaseMerge).ToString("yyyy_MM_dd");
+    #DECLARE BaseSchemaFileName string = "Image_LwNoduleTextBase_Schema.xml";
+    #DECLARE DeltaSchemaFileName string = "Image_LwNoduleTextDelta_Schema.xml";
+    #DECLARE MmrBasePath string = @RepoPath + "/Snapshot/LwNoduleText/Base/" + @BaseDate;
+    #DECLARE MmrDeltaPath string = @RepoPath + "/Snapshot/LwNoduleText/Delta/" + @Date.Replace("-", "_");
+    #DECLARE BaseSchema string = @MmrBasePath + "/" + @BaseSchemaFileName;
+    #DECLARE DeltaSchema string = @MmrDeltaPath + "/" + @DeltaSchemaFileName;
+    #DECLARE BaseSnapshot string = @MmrBasePath + "/Image_LwNoduleTextBase_%n.ss?serialnum=0...7";
+    #DECLARE DeltaSnapshot string = @MmrDeltaPath + "/Image_LwNoduleTextDelta_Metadata.ss";
+    RESOURCE @BaseSchema;
+    RESOURCE @DeltaSchema;
+    BaseData = SELECT 
+    #IF (@UseSample)
+        TOP 10000
+    #ENDIF
+        Key, PageKey, Metadata
+        FROM (SSTREAM @BaseSnapshot);
+    DeltaData = SELECT 
+    #IF (@UseSample)
+        TOP 10000
+    #ENDIF
+        Key, PageKey, Metadata
+        FROM (SSTREAM @DeltaSnapshot);
+    CombineData = COMBINE BaseData WITH DeltaData
+    ON BaseData.Key == DeltaData.Key AND BaseData.PageKey == DeltaData.PageKey
+    USING MMRV2.Core.MmrSnapshotMerger(
+        "-oldSchemaPath", @BaseSchemaFileName,
+        "-sensorSchemaPath", @DeltaSchemaFileName,
+        "-newSchemaPath", @DeltaSchemaFileName,
+        "-newDate", "2000_01_01"
+        );
+    #IF (@HidePartitioning)
+    CombineData = SELECT Key ?? Key AS Key, PageKey AS PageKey, Metadata FROM CombineData;
+    #ENDIF
+END;
