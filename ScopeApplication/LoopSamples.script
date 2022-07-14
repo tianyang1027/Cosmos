@@ -1,8 +1,6 @@
-﻿//Script GUID:6d498b0f-cf77-43d6-a833-f4c8b5b8c06d
-//Used for tracking history
-
+﻿
 RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
-REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll"; 
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
 REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
 REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
 REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\IdfCooking2\MMRV2.SnapshotMerger.dll";
@@ -15,14 +13,18 @@ USING MMRV2.Utility;
 //#DECLARE Out_SampleFile string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesIndex_PPE_Regular_2022_06_27.ss";
 //#DECLARE Out_SampleForMeasurement string = "/local/Prod/Image/Prism/UHRS_Uploads/Detrimental_categorization/Crowd/Index_PPE_Regular_2022_06_27.tsv";
 //#DECLARE Out_Stats string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SampleStatsIndex_PPE_Regular_2022_06_27.ss";
-#DECLARE Seed string = ((int)DateTime.Now.Ticks).ToString();
+#DECLARE Seed string =((int)DateTime.Now.Ticks).ToString();
 #DECLARE In_Lang string = "pt,fr,de,ja";
 #DECLARE loop_number_minus_one int = 3;
 
-index_file = SSTREAM @In_indexFile;
+index_file =
+    SSTREAM @In_indexFile;
 
 // pt, fr, ar, ru, zh_chs, es, ja, de, id
-index_file_lang = SELECT * FROM index_file WHERE Language == getLang(@In_Lang, 0);
+index_file_lang =
+    SELECT *
+    FROM index_file
+    WHERE Language == getLang(@In_Lang, 0);
 samplePool =
     SELECT DISTINCT Key,
                     PKey,
@@ -38,7 +40,10 @@ Sample =
                        
 LOOP(n, @loop_number_minus_one)
 {
-index_file_lang = SELECT * FROM index_file WHERE Language == getLang(@In_Lang, @@n@@+1);
+index_file_lang =
+    SELECT *
+    FROM index_file
+    WHERE Language == getLang(@In_Lang, @@n@@ + 1);
 samplePool =
     SELECT DISTINCT Key,
                     PKey,
@@ -50,16 +55,17 @@ samplePool =
 Sample_pt =
     REDUCE samplePool ALL
     USING TopNReducer(@SampleNumber, "-random", @Seed, "-WeightCol", "Weight");
-Sample =
-    SELECT *
-    FROM Sample
-    UNION ALL
-    SELECT *
-    FROM Sample_pt;         
+
+//OUTPUT Sample_pt
+//TO  $"/local/users/v-yangtian/lang_test/Index_{getLang(@In_Lang, @@n@@ + 1)}.tsv";
+
+
+OUTPUT Sample_pt
+TO  "/local/users/v-yangtian/lang_test/Index_{Language}.tsv";
+
 }
 
-OUTPUT Sample
-TO SSTREAM "/local/users/jiafa/lang_test.ss";
+
 
 #CS
 public static string getLang(string s, int i)
@@ -67,7 +73,7 @@ public static string getLang(string s, int i)
     if(string.IsNullOrEmpty(s))return "";
     string[] tokens = s.Split(',');
     return tokens[i]; 
-}  
+}
 #ENDCS
     
 

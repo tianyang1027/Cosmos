@@ -1,0 +1,11 @@
+﻿#DECLARE In_indexFile string = "/local/Prod/Image/Prism/2022-07-11/PrismProdRank_2_PPE.ss";
+
+index_file = SSTREAM @In_indexFile;
+
+// pt, fr, ar, ru, zh_chs, es, ja, de, id
+index_file_lang =
+    SELECT *
+    FROM index_file
+    WHERE Language IN("pt", "fr", "de", "ja");
+OUTPUT
+TO  "/local/users/v-yangtian/test/{Language}.txt";

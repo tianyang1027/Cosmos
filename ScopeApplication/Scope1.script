@@ -1,0 +1,8 @@
+﻿
+a =
+    SELECT "A" AS a;
+b =
+    SELECT "B" AS b;
+#IF(a==b)
+    OUTPUT "true" To "D:\test.txt";
+#ENDIF
