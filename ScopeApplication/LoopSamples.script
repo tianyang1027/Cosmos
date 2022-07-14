@@ -14,7 +14,7 @@ USING MMRV2.Utility;
 //#DECLARE Out_SampleForMeasurement string = "/local/Prod/Image/Prism/UHRS_Uploads/Detrimental_categorization/Crowd/Index_PPE_Regular_2022_06_27.tsv";
 //#DECLARE Out_Stats string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SampleStatsIndex_PPE_Regular_2022_06_27.ss";
 #DECLARE Seed string =((int)DateTime.Now.Ticks).ToString();
-#DECLARE In_Lang string = "pt,fr,de,ja";
+#DECLARE In_Lang string = "pt, fr, ar, ru, zh_chs, es, ja, de, id";
 #DECLARE loop_number_minus_one int = 3;
 
 index_file =
