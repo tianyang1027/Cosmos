@@ -3,9 +3,9 @@
 #DECLARE Platform string = "Prod";
 #DECLARE JobName string = "Index_Regular";
 #DECLARE In_indexFile string ="/local/Prod/Image/Prism/IndexGen/2022_07_23/CurrentIndexV1.ss";
-#DECLARE In_SampleIndex string = "/local/users/v-yangtian/Image/Prism/2022-07-25/SampleIndex_en.ss";
+#DECLARE In_SampleIndex string = "/local/users/v-yangtian/Image/Prism/2022_07_25/SampleIndex_en.ss";
 #DECLARE In_Language string = "en";
-#DECLARE In_PageTitle string ="/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/PageData/%Y_%m_%d/PageTitle.tsv";
+#DECLARE In_PageTitle string ="/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/PageData/2022_07_25/PageTitle.tsv";
 
 #DECLARE IndexDate string = "";
 #IF(@Platform == "Prod" AND @In_Language == "en")
