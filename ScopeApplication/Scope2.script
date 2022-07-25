@@ -1,11 +1,9 @@
-﻿#DECLARE In_indexFile string = "/local/Prod/Image/Prism/2022-07-11/PrismProdRank_2_PPE.ss";
+﻿title_not_found_file =
+    EXTRACT language,
+            title_not_found
+    FROM "/local/Prod/Image/Prism/Data/title_not_found1.tsv"
+    USING DefaultTextExtractor()
+    HAVING language != "language";
 
-index_file = SSTREAM @In_indexFile;
-
-// pt, fr, ar, ru, zh_chs, es, ja, de, id
-index_file_lang =
-    SELECT *
-    FROM index_file
-    WHERE Language IN("pt", "fr", "de", "ja");
-OUTPUT
-TO  "/local/users/v-yangtian/test/{Language}.txt";
+OUTPUT title_not_found_file
+TO SSTREAM "/local/Prod/Image/Prism/Data/title_not_found.ss";

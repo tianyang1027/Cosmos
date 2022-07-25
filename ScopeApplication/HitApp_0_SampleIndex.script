@@ -1,0 +1,94 @@
+﻿REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
+
+#DECLARE SampleNumber string ="3000";
+#DECLARE In_indexFile string ="/local/Prod/Image/Prism/IndexGen/2022_07_23/CurrentIndexV1.ss";
+#DECLARE In_Language string ="en";
+
+#DECLARE NumberLanguage int = @In_Language.Split(',').Length;
+#DECLARE Seed string = ((int)DateTime.Now.Ticks).ToString();
+#DECLARE In_Pagekey string = "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/PageKey/2022-07-25/PageKey.tsv";
+#DECLARE Out_SampleIndex string ="";
+#DECLARE UtcNow DateTime = DateTime.UtcNow;
+#DECLARE Now DateTime = @UtcNow.AddHours(-8);
+#DECLARE Par_Date string = @Now.ToString("yyyy-MM-dd");
+#IF(@In_Language == "en")
+    #SET @Out_SampleIndex = $"/local/users/v-yangtian/Image/Prism/{@Par_Date}/SampleIndex_en.ss";
+#ELSE
+    #SET @Out_SampleIndex = $"/local/users/v-yangtian/Image/Prism/{@Par_Date}/SampleIndex_other.ss";
+#ENDIF  
+#DECLARE Out_PageKey string = $"/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/PageKey/{@Par_Date}/PageKey.tsv";
+
+
+index_file =
+    SSTREAM @In_indexFile;
+
+In_Pagekey =
+    EXTRACT PKey:string
+    FROM @In_Pagekey
+    USING DefaultTextExtractor();
+
+#IF(@In_indexFile.Contains("EnOnly") || @In_indexFile.EndsWith("CurrentIndexV1.ss"))
+    #SET In_Language = "en";
+    #SET NumberLanguage = 1;
+#ENDIF
+
+LOOP(i, @NumberLanguage) {
+
+    #IF(@In_indexFile.Contains("EnOnly") || @In_indexFile.EndsWith("CurrentIndexV1.ss"))
+        index_file_0 = SELECT * FROM index_file;
+        #IF(@In_indexFile.EndsWith("CurrentIndexV1.ss"))
+            samplePool_0 =
+                SELECT DISTINCT ImageKey AS Key,
+                                PageKey AS PKey,
+                                MUrl,
+                                PUrl,
+                                "en" AS Language,
+                                (double) 1 AS Weight
+                FROM index_file_0;
+        #ELSE
+            samplePool_0 =
+                SELECT DISTINCT Key,
+                                PKey,
+                                MUrl,
+                                PUrl,
+                                "en" AS Language,
+                                (double) 1 AS Weight
+                FROM index_file_0;
+        #ENDIF
+    #ELSE
+        index_file_@@i@@ = SELECT * FROM index_file WHERE Language == @In_Language.Split(',')[@@i@@];
+        samplePool_@@i@@ =
+            SELECT DISTINCT Key,
+                            PKey,
+                            MUrl,
+                            PUrl,
+                            Language,
+                            (double) 1 AS Weight
+            FROM index_file_@@i@@;
+    #ENDIF
+
+    Sample_@@i@@ =
+        REDUCE samplePool_@@i@@ ALL
+        USING TopNReducer(@SampleNumber, "-random", @Seed, "-WeightCol", "Weight");
+}
+
+Sample = SELECT * FROM  Sample_0;
+LOOP(i, @NumberLanguage){
+Sample =
+    SELECT * FROM Sample
+    UNION
+    SELECT * FROM Sample_@@i@@;
+}
+
+OUTPUT Sample TO SSTREAM @Out_SampleIndex;
+
+Pagekey =
+    SELECT PKey
+    FROM Sample
+    UNION
+    SELECT PKey
+    FROM In_Pagekey;
+
+OUTPUT Pagekey
+TO @Out_PageKey
+USING DefaultTextOutputter();

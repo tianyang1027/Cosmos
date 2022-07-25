@@ -32,6 +32,8 @@
     <Script Include="Generate_Detrimental.script" />
     <Script Include="Generate_LatestDetrimental.script" />
     <Script Include="Generate_PageTitle.script" />
+    <Script Include="HitApp_0_SampleIndex.script" />
+    <Script Include="HitApp_0_SampleIndex_SendDetrimental.script" />
     <Script Include="HitApp_1_GeneratePointwiseDefect.script" />
     <Script Include="IndexSelection_0_GenerateFeatures.script" />
     <Script Include="IndexSelection_0_GenerateFeatures_PPE.script" />
@@ -76,6 +78,12 @@
     </ScriptCode>
     <ScriptCode Include="Generate_PageTitle.script.cs">
       <DependentUpon>Generate_PageTitle.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="HitApp_0_SampleIndex.script.cs">
+      <DependentUpon>HitApp_0_SampleIndex.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="HitApp_0_SampleIndex_SendDetrimental.script.cs">
+      <DependentUpon>HitApp_0_SampleIndex_SendDetrimental.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="HitApp_1_GeneratePointwiseDefect.script.cs">
       <DependentUpon>HitApp_1_GeneratePointwiseDefect.script</DependentUpon>

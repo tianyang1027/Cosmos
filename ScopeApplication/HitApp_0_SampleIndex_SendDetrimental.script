@@ -1,0 +1,188 @@
+﻿REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
+
+#DECLARE Platform string = "Prod";
+#DECLARE JobName string = "Index_Regular";
+#DECLARE In_indexFile string ="/local/Prod/Image/Prism/IndexGen/2022_07_23/CurrentIndexV1.ss";
+#DECLARE In_SampleIndex string = "/local/users/v-yangtian/Image/Prism/2022-07-25/SampleIndex_en.ss";
+#DECLARE In_Language string = "en";
+#DECLARE In_PageTitle string ="/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/PageData/%Y_%m_%d/PageTitle.tsv";
+
+#DECLARE IndexDate string = "";
+#IF(@Platform == "Prod" AND @In_Language == "en")
+    #SET IndexDate = @In_indexFile.Substring(@In_indexFile.IndexOf("IndexGen/") + "IndexGen/".Length);
+#ELSE
+    #SET IndexDate = @In_indexFile.Substring(@In_indexFile.IndexOf("Prism/") + "Prism/".Length).Replace('-', '_');
+#ENDIF
+#SET IndexDate = @IndexDate.Substring(0, @IndexDate.LastIndexOf("/"));
+#DECLARE TaskName string = @JobName + "_" + @IndexDate;
+#DECLARE Out_SampleForMeasurement string = "/local/users/v-yangtian/Image/Prism/UHRS_Uploads/Detrimental_categorization/Crowd_{Language}/" + @TaskName + "_{Language}.tsv";
+#DECLARE AutoMeasurementDir string = "/local/users/v-yangtian/Image/Prism/Metrics/AutoMeasurement/";
+#DECLARE Out_SampleFile_en string = string.Format("{0}en/Samples{1}_en.ss", @AutoMeasurementDir, @TaskName);
+#DECLARE Out_SampleFile_pt string = string.Format("{0}pt/Samples{1}_pt.ss", @AutoMeasurementDir, @TaskName);
+#DECLARE Out_SampleFile_fr string = string.Format("{0}fr/Samples{1}_fr.ss", @AutoMeasurementDir, @TaskName);
+#DECLARE Out_SampleFile_ar string = string.Format("{0}ar/Samples{1}_ar.ss", @AutoMeasurementDir, @TaskName);
+#DECLARE Out_SampleFile_ru string = string.Format("{0}ru/Samples{1}_ru.ss", @AutoMeasurementDir, @TaskName);
+#DECLARE Out_SampleFile_zh_chs string = string.Format("{0}zh_chs/Samples{1}_zh_chs.ss", @AutoMeasurementDir, @TaskName);
+#DECLARE Out_SampleFile_es string = string.Format("{0}es/Samples{1}_es.ss", @AutoMeasurementDir, @TaskName);
+#DECLARE Out_SampleFile_ja string = string.Format("{0}ja/Samples{1}_ja.ss", @AutoMeasurementDir, @TaskName);
+#DECLARE Out_SampleFile_de string = string.Format("{0}de/Samples{1}_de.ss", @AutoMeasurementDir, @TaskName);
+#DECLARE Out_SampleFile_id string = string.Format("{0}id/Samples{1}_id.ss", @AutoMeasurementDir, @TaskName);
+#DECLARE title_not_found string = "/local/Prod/Image/Prism/Data/title_not_found.ss";
+#DECLARE Out_Stats string = string.Format("{0}stats/SamplesStats{1}.ss", @AutoMeasurementDir, @TaskName);
+#IF(@JobName.Contains("Regular"))
+    #IF(@In_Language == "en")
+        #SET Out_Stats = string.Format("{0}stats/SamplesStats{1}_en.ss", @AutoMeasurementDir, @TaskName);
+    #ELSE
+        #SET Out_Stats = string.Format("{0}stats/SamplesStats{1}_other.ss", @AutoMeasurementDir, @TaskName);
+    #ENDIF
+#ENDIF
+
+#IF(!EXISTS(@Out_Stats))
+    
+    Sample =
+        SSTREAM @In_SampleIndex;
+    
+    PageTitle =
+        EXTRACT Key,
+                Title
+        FROM @In_PageTitle
+        USING DefaultTextExtractor();
+    
+    Sample_with_title =
+        SELECT Key,
+               PKey,
+               Sample.MUrl AS image_url,
+               Sample.PUrl AS page_url,
+               Sample.Language,
+               PageTitle.Title AS title
+        FROM Sample
+             LEFT JOIN
+                 PageTitle
+             ON Sample.PKey == PageTitle.Key;
+
+// Start: List ten languages
+    #IF(@In_Language.Contains("en"))
+        Sample_with_title_lang =
+            SELECT *
+            FROM Sample_with_title
+            WHERE Language == "en";
+OUTPUT Sample_with_title_lang TO SSTREAM @Out_SampleFile_en HASH CLUSTERED BY Key SORTED BY Key, PKey;
+    #ENDIF
+
+    #IF(@In_Language.Contains("fr"))
+        Sample_with_title_lang =
+            SELECT *
+            FROM Sample_with_title
+            WHERE Language == "fr";
+    OUTPUT Sample_with_title_lang TO SSTREAM @Out_SampleFile_fr HASH CLUSTERED BY Key SORTED BY Key, PKey;
+    #ENDIF
+
+    #IF(@In_Language.Contains("ar"))
+        Sample_with_title_lang =
+            SELECT *
+            FROM Sample_with_title
+            WHERE Language == "ar";
+    OUTPUT Sample_with_title_lang TO SSTREAM @Out_SampleFile_ar HASH CLUSTERED BY Key SORTED BY Key, PKey;
+    #ENDIF
+
+    #IF(@In_Language.Contains("ru"))
+        Sample_with_title_lang =
+            SELECT *
+            FROM Sample_with_title
+            WHERE Language == "ru";
+    OUTPUT Sample_with_title_lang TO SSTREAM @Out_SampleFile_ru HASH CLUSTERED BY Key SORTED BY Key, PKey;
+    #ENDIF
+
+    #IF(@In_Language.Contains("zh_chs"))
+        Sample_with_title_lang =
+            SELECT *
+            FROM Sample_with_title
+            WHERE Language == "zh_chs";
+    OUTPUT Sample_with_title_lang TO SSTREAM @Out_SampleFile_zh_chs HASH CLUSTERED BY Key SORTED BY Key, PKey;
+    #ENDIF
+
+    #IF(@In_Language.Contains("es"))
+        Sample_with_title_lang =
+            SELECT *
+            FROM Sample_with_title
+            WHERE Language == "es";
+    OUTPUT Sample_with_title_lang TO SSTREAM @Out_SampleFile_es HASH CLUSTERED BY Key SORTED BY Key, PKey;
+    #ENDIF
+
+    #IF(@In_Language.Contains("ja"))
+        Sample_with_title_lang =
+            SELECT *
+            FROM Sample_with_title
+            WHERE Language == "ja";
+    OUTPUT Sample_with_title_lang TO SSTREAM @Out_SampleFile_ja HASH CLUSTERED BY Key SORTED BY Key, PKey;
+    #ENDIF
+
+    #IF(@In_Language.Contains("de"))
+        Sample_with_title_lang =
+            SELECT *
+            FROM Sample_with_title
+            WHERE Language == "de";
+    OUTPUT Sample_with_title_lang TO SSTREAM @Out_SampleFile_de HASH CLUSTERED BY Key SORTED BY Key, PKey;
+    #ENDIF
+
+    #IF(@In_Language.Contains("id"))
+        Sample_with_title_lang =
+            SELECT *
+            FROM Sample_with_title
+            WHERE Language == "id";
+    OUTPUT Sample_with_title_lang TO SSTREAM @Out_SampleFile_id HASH CLUSTERED BY Key SORTED BY Key, PKey;
+    #ENDIF
+    // End: List ten languages
+    
+    stats =
+        SELECT "# Samples" AS Item,
+               COUNT(1) AS Value
+        FROM Sample_with_title
+        UNION ALL
+        SELECT "# Samples with title" AS Item,
+               COUNTIF(title != null AND title != "") AS Value
+        FROM Sample_with_title
+        UNION ALL
+        SELECT
+        Language + " # Samples" AS Item,
+        COUNT(1) AS Value
+        FROM Sample_with_title GROUP BY Item
+        UNION ALL
+        SELECT
+        Language + " # Samples with title" AS Item,
+        COUNTIF(title != null AND title != "") AS Value
+        FROM Sample_with_title GROUP BY Item;
+
+OUTPUT stats TO SSTREAM @Out_Stats;
+    
+    Sample_with_title =
+        SELECT Key,
+               PKey,
+               image_url,
+               page_url,
+               title,
+               Language,
+               COUNT(1) AS occurrence
+        FROM Sample_with_title
+        GROUP BY Key,
+                 PKey,
+                 image_url,
+                 page_url,
+                 title,
+                 Language;   
+    
+    Sample_with_title =
+        SELECT image_url,
+               page_url,
+               IF(title != null AND title != "", title, b.title_not_found) AS title,
+               Language
+        FROM Sample_with_title AS a
+             LEFT JOIN
+             (SSTREAM @title_not_found) AS b
+             ON a.Language == b.language;
+    
+    OUTPUT Sample_with_title
+    TO @Out_SampleForMeasurement
+    USING DefaultTextOutputter(delimiter: '\t', outputHeader: true);
+
+#ENDIF
