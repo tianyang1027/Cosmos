@@ -10,7 +10,7 @@
 #DECLARE Out_SampleIndex string ="";
 #DECLARE UtcNow DateTime = DateTime.UtcNow;
 #DECLARE Now DateTime = @UtcNow.AddHours(-8);
-#DECLARE Par_Date string = @Now.ToString("yyyy-MM-dd");
+#DECLARE Par_Date string = @Now.ToString("yyyy_MM_dd");
 #IF(@In_Language == "en")
     #SET @Out_SampleIndex = $"/local/users/v-yangtian/Image/Prism/{@Par_Date}/SampleIndex_en.ss";
 #ELSE
