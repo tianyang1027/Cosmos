@@ -83,7 +83,7 @@ Sample =
 
 OUTPUT Sample TO SSTREAM @Out_SampleIndex;
 
-Pagekey =
+PageKey =
     SELECT PKey
     FROM Sample
     UNION
