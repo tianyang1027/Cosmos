@@ -6,7 +6,7 @@
 
 #DECLARE NumberLanguage int = @In_Language.Split(',').Length;
 #DECLARE Seed string = ((int)DateTime.Now.Ticks).ToString();
-#DECLARE In_Pagekey string = "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/PageKey/2022-07-25/PageKey.tsv";
+#DECLARE In_Pagekey string = "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/PageKey/2022_07_25/PageKey.tsv";
 #DECLARE Out_SampleIndex string ="";
 #DECLARE UtcNow DateTime = DateTime.UtcNow;
 #DECLARE Now DateTime = @UtcNow.AddHours(-8);
