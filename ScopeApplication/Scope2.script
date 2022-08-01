@@ -1,9 +1,69 @@
-﻿title_not_found_file =
-    EXTRACT language,
-            title_not_found
-    FROM "/local/Prod/Image/Prism/Data/title_not_found1.tsv"
-    USING DefaultTextExtractor()
-    HAVING language != "language";
+﻿//Script GUID:2b22868e-a94e-4602-8c4a-c68adc72df99
+//Used for tracking history
 
-OUTPUT title_not_found_file
-TO SSTREAM "/local/Prod/Image/Prism/Data/title_not_found.ss";
+#DECLARE In_DefectJudgment    string = "/local/Prod/Image/Prism/UHRS_Archival/Prism_pointwise_defect/Crowd_en/AutoUpload-Impression_Regular_2022_07_25_en-2022-07-25-22-56-4896011_2022-07-26_00-12-48";
+
+
+
+#DECLARE Out_StatsPerRecallPath3 string = "/local/users/siyuchen/testValues.ss";
+
+
+
+
+data =
+    EXTRACT *
+    FROM @In_DefectJudgment
+    USING CustomerReadColumnsExtractor("-serially");
+    //HAVING JudgeID != "JudgeID";
+
+OUTPUT data TO SSTREAM  @Out_StatsPerRecallPath3;
+
+#CS
+//public static string readHeadColumns(string filePath)
+//{
+//    char delimiter = '\t';
+//    using (StreamReader sr = new StreamReader()
+//    {
+//        string line;
+//        line = sr.ReadLine();
+//        string[] tokens = line.Split(delimiter); // Consider using IndexOf() or IndexOfAny() instead of Split() for your extractor for improved performance
+//        string customerColumn = "";
+//        for (int i = 0; i < tokens.Length; ++i)
+//        {
+//            customerColumn = customerColumn + "," + tokens[i];
+//        }
+//        return customerColumn.Trim(',');
+//    }
+//}
+
+public class CustomerReadColumnsExtractor : Extractor
+{
+   public override Schema Produces(string[] requestedColumns, string[] args)
+   {
+    if ((requestedColumns.Length == 1) && (requestedColumns[0] == "*"))
+    {
+        return new Schema("a:int,b:string,c:double"); // or whatever your schema is
+    }
+    return new Schema(requestedColumns);
+   }
+
+    public override IEnumerable<Row> Extract(StreamReader reader, Row outputRow, string[] args)
+    {
+        char delimiter = '\t';
+        string line;
+        while ((line = reader.ReadLine()) != null)
+        {
+            string[] tokens = line.Split(delimiter);
+            for (int i = 0; i < tokens.Length; ++i)
+            {
+                outputRow[i].UnsafeSet(tokens[i]);
+            }
+            yield return outputRow;
+        }
+    }
+}
+
+
+
+
+#ENDCS

@@ -57,6 +57,7 @@
     <Script Include="page_title.script" />
     <Script Include="PIVOT.script" />
     <Script Include="Scope2.script" />
+    <Script Include="Scope3.script" />
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
     <ScriptCode Include="ContentCoverage_6_IndexCoverage.script.cs">
       <DependentUpon>ContentCoverage_6_IndexCoverage.script</DependentUpon>
@@ -126,6 +127,9 @@
     </ScriptCode>
     <ScriptCode Include="Scope2.script.cs">
       <DependentUpon>Scope2.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Scope3.script.cs">
+      <DependentUpon>Scope3.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="UpdateLabeledDetrimentalNodules.script.cs">
       <DependentUpon>UpdateLabeledDetrimentalNodules.script</DependentUpon>
