@@ -29,6 +29,7 @@
     <Script Include="DebugToolToTestGivenSetOfImages.script" />
     <Script Include="DebugTool_PPE.script" />
     <Script Include="DebugTool_PROD.script" />
+    <Script Include="FileSetsSample.script" />
     <Script Include="Generate_Detrimental.script" />
     <Script Include="Generate_LatestDetrimental.script" />
     <Script Include="Generate_PageTitle.script" />
@@ -70,6 +71,9 @@
     </ScriptCode>
     <ScriptCode Include="DebugTool_PROD.script.cs">
       <DependentUpon>DebugTool_PROD.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FileSetsSample.script.cs">
+      <DependentUpon>FileSetsSample.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="Generate_Detrimental.script.cs">
       <DependentUpon>Generate_Detrimental.script</DependentUpon>

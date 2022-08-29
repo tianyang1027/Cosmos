@@ -1,0 +1,67 @@
+﻿
+//#DECLARE In_DetrimentalJudgment    string = @@In_DetrimentalJudgment@@;
+//RESOURCE @In_DetrimentalJudgment;
+
+
+data =
+    EXTRACT JudgeID,
+            HitGroupDataInt,
+            HitDataInt,
+            HitState,
+            HitType,
+            Price,
+            JudgmentState,
+            JudgmentDataInt,
+            JudgmentDataIntName,
+            JudgmentSubmitTime,
+            JudgmentTypeID,
+            JudgmentType,
+            Consensus,
+            TimeSpentOnJudgment,
+            ConsensusModifiedTime,
+            HitGroupID,
+            HitID,
+            image_url,
+            page_url,
+            title,
+            JudgmentID,
+            label,
+            poor_image_quality,
+            disgusting_horrifying_depressing,
+            watermark_is_distracting,
+            inappropriate,
+            categories,
+            created = FILE.CREATED()
+    FROM "/local/Prod/Image/Prism/UHRS_Archival/Prism_pointwise_defect/Crowd_en/AutoUpload-{*}"
+    USING DefaultTextExtractor()
+    HAVING JudgeID != "JudgeID";
+
+
+OUTPUT data
+TO "/local/users/v-yangtian/FileSets.tsv";
+
+//#CS
+//    
+//public class CustomerReadColumnsExtractor : Extractor
+//{
+//    public override Schema Produces(string[] requestedColumns, string[] args)
+//    {
+//        return new Schema(ReadFileHeaderColumns(args[0]));
+//    }
+// 
+//    public override IEnumerable<Row> Extract(StreamReader reader, Row outputRow, string[] args)
+//    {
+//        char delimiter = '\t';
+//        string line;
+//        while ((line = reader.ReadLine()) != null)
+//        {
+//            string[] tokens = line.Split(delimiter); 
+//            for (int i = 0; i < tokens.Length; ++i)
+//            {
+//                outputRow[i].UnsafeSet(tokens[i]);
+//            }
+//            yield return outputRow;
+//        }
+//    }
+//}
+//#ENDCS
