@@ -1,4 +1,7 @@
-﻿//Script GUID:58d513d0-aff3-41de-9165-80c5728f00b2
+﻿
+//Used for tracking history
+
+//Script GUID:58d513d0-aff3-41de-9165-80c5728f00b2
 //Used for tracking history
 
 REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
@@ -9,532 +12,99 @@ REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image
 RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
 RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\tld.txt";
 
-SELECT Key,
-       ImageUrl AS ImageUrl
-FROM
-(
-    SSTREAM "/local/Prod/Image/Selection/GeoRep/FromCosmos08/Prism/GoldenSetNodule-2022-06-05.ss"
-)
-UNION ALL
-SELECT QueryKey,
-       MatchUrl AS ImageUrl
-FROM
-(
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/AvatarScrape_Pinterest_DupMapping.ss"
-);
+#DECLARE In_Nodule                  string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/en/Out_SamplesOutstandingImpression_Regular_2022_08_10_en.ss";
+#DECLARE In_Mapping                 string = "/local/Prod/Image/Prism/2022-08-29/AvatarScrape_Impression_Outstanding_DupMapping.ss";
+#DECLARE In_PinSource               string = "/local/Prod/Image/Selection/GeoRep/FromCosmos08/SocialGraph/2022_08_29/PinSource.ss";
 
-PinterestImage =
+#DECLARE Out_Stats       string = "/local/Prod/Image/Prism/Metrics/Coverage/2022/08/29/PrismProdRankReverseContentCoverage_Outstanding.ss";
+#DECLARE Out_StatsTsv       string = "/local/Prod/Image/Prism/Metrics/Coverage/2022/08/29/PrismProdRankReverseContentCoverage_Outstanding.tsv";
+
+
+#DECLARE NeedSubstringLen int = "yyyy-MM-dd.ss".Length;
+#DECLARE FileDateFormatLength int = "yyyy-MM-dd".Length;
+#DECLARE StartIdx int = @In_Nodule.Length - @NeedSubstringLen;
+#IF(@In_Nodule.Contains("Out_SamplesOutstandingImpression_Regular_"))
+    #SET StartIdx = @In_Nodule.LastIndexOf("Out_SamplesOutstandingImpression_Regular_") + "Out_SamplesOutstandingImpression_Regular_".Length;
+#ENDIF
+#DECLARE Date DateTime = Convert.ToDateTime(@In_Nodule.Substring(@StartIdx, @FileDateFormatLength).Replace("_", "-") + " 23:59:59");
+
+ImpressionImage =
     SELECT DISTINCT Key,
-                    ImageUrl;
-
-Rank1 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_0.ss";
-Rank1 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank1
-         ON PinterestImage.Key == Rank1.Key;
-Rank1MatchedCnt =
-    SELECT "IndexPool" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank2 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_NoDetrimental.ss";
-Rank2 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank2
-         ON PinterestImage.Key == Rank2.Key;
-Rank2MatchedCnt =
-    SELECT "NonDetrimental" AS RankFile,
-           COUNT( * ) AS Matched;
-
-
-Rank3 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_NoDefect.ss";
-Rank3 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank3
-         ON PinterestImage.Key == Rank3.Key;
-Rank3MatchedCnt =
-    SELECT "NonDefect" AS RankFile,
-           COUNT( * ) AS Matched;
-
-ImageUrl_NonDetrimental_Defect =
-    SELECT a.ImageUrl
-    FROM Rank2 AS a
-         LEFT ANTISEMIJOIN
-             Rank3 AS b
-         ON a.ImageUrl == b.ImageUrl;
-
-PrismProdRank_1_NoDetrimental =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_NoDetrimental.ss";
-
-PinterestImage_NonDetrimental_Defect =
-    SELECT DISTINCT a.ImageUrl,
-                    c.Key,
-                    c.RepinCount,
-                    c.AttractivenessScore
-    FROM ImageUrl_NonDetrimental_Defect AS a
-         LEFT JOIN
-             PinterestImage AS b
-         ON a.ImageUrl == b.ImageUrl
-         LEFT JOIN
-             PrismProdRank_1_NoDetrimental AS c
-         ON b.Key == c.Key;
-
-OUTPUT
-TO SSTREAM "local/users/v-yangtian/PinterestImage_NonDetrimental_Defect.ss";
-
-OUTPUT
-TO "local/users/v-yangtian/PinterestImage_NonDetrimental_Defect.tsv"
-USING DefaultTextOutputter(outputHeader: true);
-
-
-Rank4 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1.ss";
-Rank4 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank4
-         ON PinterestImage.Key == Rank4.Key;
-Rank4MatchedCnt =
-    SELECT "PrismRank" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank5 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_0_PPE.ss";
-Rank5 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank5
-         ON PinterestImage.Key == Rank5.Key;
-Rank5MatchedCnt =
-    SELECT "IndexPool_PPE" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank6 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_NoDetrimental_PPE.ss";
-Rank6 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank6
-         ON PinterestImage.Key == Rank6.Key;
-Rank6MatchedCnt =
-    SELECT "NonDetrimental_PPE" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank7 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_NoDefect_PPE.ss";
-Rank7 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT ANTISEMIJOIN
-             Rank7
-         ON PinterestImage.Key == Rank7.Key;
-Rank7MatchedCnt =
-    SELECT "NonDefect_PPE" AS RankFile,
-           COUNT( * ) AS Matched;
-
-ImageUrl_NonDetrimental_Defect_PPE =
-    SELECT a.ImageUrl
-    FROM Rank6 AS a
-         LEFT ANTISEMIJOIN
-             Rank7 AS b
-         ON a.ImageUrl == b.ImageUrl;
-
-PrismProdRank_1_NoDetrimental_PPE =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_NoDetrimental_PPE.ss";
-
-PinterestImage_NonDetrimental_Defect_PPE =
-    SELECT DISTINCT a.ImageUrl,
-                    c.Key,
-                    c.RepinCount,
-                    c.AttractivenessScore
-    FROM ImageUrl_NonDetrimental_Defect_PPE AS a
-         LEFT JOIN
-             PinterestImage AS b
-         ON a.ImageUrl == b.ImageUrl
-         LEFT JOIN
-             PrismProdRank_1_NoDetrimental_PPE AS c
-         ON b.Key == c.Key;
-
-OUTPUT
-TO SSTREAM "local/users/v-yangtian/PinterestImage_NonDetrimental_Defect_PPE.ss";
-
-OUTPUT
-TO "local/users/v-yangtian/PinterestImage_NonDetrimental_Defect_PPE.tsv"
-USING DefaultTextOutputter(outputHeader: true);
-
-
-Rank8 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_PPE.ss";
-Rank8 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank8
-         ON PinterestImage.Key == Rank8.Key;
-Rank8MatchedCnt =
-    SELECT "PrismRank_PPE" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank9 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_2_EnOnly.ss";
-Rank9 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank9
-         ON PinterestImage.Key == Rank9.Key;
-Rank9MatchedCnt =
-    SELECT "PrismRank_En" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank10 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_2_EnOnly_PPE.ss";
-Rank10 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank10
-         ON PinterestImage.Key == Rank10.Key;
-Rank10MatchedCnt =
-    SELECT "PrismRank_En_PPE" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank11 =
-    SSTREAM "/local/Prod/Image/Prism/IndexGen/2022_06_07/CurrentIndex.ss";
-Rank11 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank11
-         ON PinterestImage.Key == Rank11.ImageKey;
-Rank11MatchedCnt =
-    SELECT "CurrentIndex" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank12 =
-    SSTREAM "/local/Prod/Image/Prism/IndexGen/2022_06_07/CurrentIndexV1.ss";
-Rank12 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank12
-         ON PinterestImage.Key == Rank12.ImageKey;
-Rank12MatchedCnt =
-    SELECT "CurrentIndexV1" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Stats =
-    SELECT *
-    FROM Rank1MatchedCnt
-    UNION ALL
-    SELECT *
-    FROM Rank2MatchedCnt UNION ALL
-    SELECT * FROM Rank3MatchedCnt UNION ALL 
-    SELECT * FROM Rank4MatchedCnt UNION ALL
-    SELECT * FROM Rank5MatchedCnt UNION ALL 
-    SELECT * FROM Rank6MatchedCnt UNION ALL
-    SELECT * FROM Rank7MatchedCnt UNION ALL 
-    SELECT * FROM Rank8MatchedCnt UNION ALL
-    SELECT * FROM Rank9MatchedCnt UNION ALL 
-    SELECT * FROM Rank10MatchedCnt UNION ALL
-    SELECT * FROM Rank11MatchedCnt UNION ALL 
-    SELECT * FROM Rank12MatchedCnt;
-
-TotalNodules =
-    SELECT DISTINCT Key
-    FROM
-    (
-        SSTREAM "/local/Prod/Image/Selection/GeoRep/FromCosmos08/Prism/GoldenSetNodule-2022-06-05.ss"
-    );
-
-TotalCnt =
-    SELECT COUNT() AS Total;
-
-Stats =
-    SELECT RankFile,
-           Matched,
-           Total
-    FROM Stats
-         CROSS JOIN
-             TotalCnt;
-
-Stats =
-    SELECT RankFile,
-           Matched,
-           Total AS TotalNoduleCnt,
-           1.0 * Matched / Total AS Coverage;
-
-OUTPUT
-TO SSTREAM "/local/users/v-yangtian/Image/Prism/Metrics/Coverage/2022/06/05/PrismProdRankContentCoverage.ss";
-OUTPUT
-TO "/local/users/v-yangtian/Image/Prism/Metrics/Coverage/2022/06/05/PrismProdRankContentCoverage.tsv"
-USING DefaultTextOutputter(outputHeader: true);
-
-// Content + PageDomain
-
-SELECT Key,
-       ImageUrl AS ImageUrl,
-       PageDomain
-FROM
-(
-    SSTREAM "/local/Prod/Image/Selection/GeoRep/FromCosmos08/Prism/GoldenSetNodule-2022-06-05.ss"
-)
-UNION ALL
-SELECT QueryKey,
-       MatchUrl AS ImageUrl,
-       PageDomain
-FROM
-(
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/AvatarScrape_Pinterest_DupMapping.ss"
-);
-
-PinterestImage =
-    SELECT DISTINCT Key,
-                    ImageUrl,
-                    PageDomain;
-
-Rank1 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_0.ss";
-Rank1 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank1
-         ON PinterestImage.Key == Rank1.Key AND PinterestImage.PageDomain == Rank1.PDomain;
-Rank1MatchedCnt =
-    SELECT "IndexPool" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank2 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_NoDetrimental.ss";
-Rank2 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank2
-         ON PinterestImage.Key == Rank2.Key AND PinterestImage.PageDomain == Rank2.PDomain;
-Rank2MatchedCnt =
-    SELECT "NonDetrimental" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank3 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_NoDefect.ss";
-Rank3 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank3
-         ON PinterestImage.Key == Rank3.Key AND PinterestImage.PageDomain == Rank3.PDomain;
-Rank3MatchedCnt =
-    SELECT "NonDefect" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank4 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1.ss";
-Rank4 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank4
-         ON PinterestImage.Key == Rank4.Key AND PinterestImage.PageDomain == Rank4.PDomain;
-Rank4MatchedCnt =
-    SELECT "PrismRank" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank5 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_0_PPE.ss";
-Rank5 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank5
-         ON PinterestImage.Key == Rank5.Key AND PinterestImage.PageDomain == Rank5.PDomain;
-Rank5MatchedCnt =
-    SELECT "IndexPool_PPE" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank6 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_NoDetrimental_PPE.ss";
-Rank6 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank6
-         ON PinterestImage.Key == Rank6.Key AND PinterestImage.PageDomain == Rank6.PDomain;
-Rank6MatchedCnt =
-    SELECT "NonDetrimental_PPE" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank7 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_NoDefect_PPE.ss";
-Rank7 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank7
-         ON PinterestImage.Key == Rank7.Key AND PinterestImage.PageDomain == Rank7.PDomain;
-Rank7MatchedCnt =
-    SELECT "NonDefect_PPE" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank8 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_1_PPE.ss";
-Rank8 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank8
-         ON PinterestImage.Key == Rank8.Key AND PinterestImage.PageDomain == Rank8.PDomain;
-Rank8MatchedCnt =
-    SELECT "PrismRank_PPE" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank9 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_2_EnOnly.ss";
-Rank9 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank9
-         ON PinterestImage.Key == Rank9.Key AND PinterestImage.PageDomain == Rank9.PDomain;
-Rank9MatchedCnt =
-    SELECT "PrismRank_En" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank10 =
-    SSTREAM "/local/Prod/Image/Prism/2022-06-05/PrismProdRank_2_EnOnly_PPE.ss";
-Rank10 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank10
-         ON PinterestImage.Key == Rank10.Key AND PinterestImage.PageDomain == Rank10.PDomain;
-Rank10MatchedCnt =
-    SELECT "PrismRank_En_PPE" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank11 =
-    SELECT *,
-           GetDomain(PUrl) AS PDomain
-    FROM
-    (
-        SSTREAM "/local/Prod/Image/Prism/IndexGen/2022_06_07/CurrentIndex.ss"
-    );
-Rank11 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank11
-         ON PinterestImage.Key == Rank11.ImageKey AND PinterestImage.PageDomain == Rank11.PDomain;
-Rank11MatchedCnt =
-    SELECT "CurrentIndex" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Rank12 =
-    SELECT *,
-           GetDomain(PUrl) AS PDomain
-    FROM
-    (
-        SSTREAM "/local/Prod/Image/Prism/IndexGen/2022_06_07/CurrentIndexV1.ss"
-    );
-Rank12 =
-    SELECT DISTINCT ImageUrl
-    FROM PinterestImage
-         LEFT SEMIJOIN
-             Rank12
-         ON PinterestImage.Key == Rank12.ImageKey AND PinterestImage.PageDomain == Rank12.PDomain;
-Rank12MatchedCnt =
-    SELECT "CurrentIndexV1" AS RankFile,
-           COUNT( * ) AS Matched;
-
-Stats =
-    SELECT *
-    FROM Rank1MatchedCnt
-    UNION ALL
-    SELECT *
-    FROM Rank2MatchedCnt UNION ALL
-    SELECT * FROM Rank3MatchedCnt UNION ALL 
-    SELECT * FROM Rank4MatchedCnt UNION ALL
-    SELECT * FROM Rank5MatchedCnt UNION ALL 
-    SELECT * FROM Rank6MatchedCnt UNION ALL
-    SELECT * FROM Rank7MatchedCnt UNION ALL 
-    SELECT * FROM Rank8MatchedCnt UNION ALL
-    SELECT * FROM Rank9MatchedCnt UNION ALL 
-    SELECT * FROM Rank10MatchedCnt UNION ALL
-    SELECT * FROM Rank11MatchedCnt UNION ALL 
-    SELECT * FROM Rank12MatchedCnt;
-
-TotalNodules =
-    SELECT DISTINCT Key,
+                    ImageUrl AS ImageUrl,
+                    PKey,
                     PageDomain
     FROM
     (
-        SSTREAM "/local/Prod/Image/Selection/GeoRep/FromCosmos08/Prism/GoldenSetNodule-2022-06-05.ss"
+        SSTREAM @In_Nodule
     );
+
+PinSource = SELECT PageUrl,
+               MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(PageUrl) AS PKey FROM (SSTREAM @In_PinSource);
+Rank1 =
+    SELECT DISTINCT ImageUrl FROM ImpressionImage LEFT SEMIJOIN  PinSource  ON ImpressionImage.PKey ==  PinSource.PKey;
+Rank1MatchedCnt = SELECT
+        "PinSource" AS RankFile,
+        COUNT( * ) AS Matched;
+
+ImpressionImageT2S2 = 
+    SELECT Key, ImageUrl AS ImageUrl FROM (SSTREAM @In_Nodule)
+    UNION ALL
+    SELECT QueryKey, MatchUrl  AS ImageUrl FROM ( SSTREAM @In_Mapping);
+
+ActiveIndex =
+    VIEW @"/local/Prod/Image/Repository/ActiveDocsCombined/LatestActiveNodulesList.view"
+    PARAMS
+    (
+        SegmentsList = "GenericLatest"
+    );
+
+ActiveIndex = SELECT MUrlKey AS Key, PUrlKey AS PKey, MUrl, PUrl;
+
+ImpressionImageT2S2 =
+    SELECT DISTINCT b.Key,
+           b.PKey,
+           a.ImageUrl,
+           b.PUrl
+    FROM ImpressionImageT2S2 AS a
+         LEFT JOIN
+             ActiveIndex AS b
+         ON a.ImageUrl == b.MUrl;
+
+OUTPUT TO SSTREAM "/local/users/v-yangtian/ImpressionImageT2S2/ImpressionImageT2S2_1.ss";
+
+Rank2 =
+    SELECT DISTINCT ImageUrl FROM ImpressionImageT2S2 LEFT SEMIJOIN  PinSource  ON ImpressionImageT2S2.PKey ==  PinSource.PKey;
+
+OUTPUT TO SSTREAM "/local/users/v-yangtian/ImpressionImageT2S2/ImpressionImageT2S2_2.ss";
+
+Rank2MatchedCnt = SELECT
+        "PinSource_t2s2" AS RankFile,
+        COUNT( * ) AS Matched;
+
+Stats =
+    SELECT *
+    FROM Rank1MatchedCnt
+    UNION ALL
+    SELECT *
+    FROM Rank2MatchedCnt;
+
+TotalNodules = SELECT DISTINCT Key FROM (SSTREAM @In_Nodule);
 
 TotalCnt =
     SELECT COUNT() AS Total;
 
-Stats =
-    SELECT RankFile,
-           Matched,
-           Total
-    FROM Stats
-         CROSS JOIN
-             TotalCnt;
+Stats = SELECT RankFile,
+               Matched,
+               Total
+    FROM Stats CROSS JOIN TotalCnt;
 
-Stats =
-    SELECT RankFile,
-           Matched,
-           Total AS TotalNoduleCnt,
-           1.0 * Matched / Total AS Coverage;
+Stats = SELECT RankFile,
+               Matched,
+               Total AS TotalNoduleCnt,
+               1.0*Matched/Total AS Coverage,
+               @Date AS Date;
 
-OUTPUT
-TO SSTREAM "/local/users/v-yangtian/Image/Prism/Metrics/Coverage/2022/06/05/PrismProdRankContentCoverage2.ss";
-OUTPUT
-TO "/local/users/v-yangtian/Image/Prism/Metrics/Coverage/2022/06/05/PrismProdRankContentCoverage2.tsv"
-USING DefaultTextOutputter(outputHeader: true);
+OUTPUT TO SSTREAM @Out_Stats;
+OUTPUT TO @Out_StatsTsv USING DefaultTextOutputter( outputHeader: true );
 
-#CS
-public static string GetDomain(string url)
-{
-   string domain, host, l1path;
-    
-    if (MMRV2.ScheduleSelection.Tool.ParseUrl(out domain, out host, out l1path, url)) 
-    {
-        return domain;
-    }
-    
-    return null;
-}
-
-public static int GetAttractivenessScore(string data)
-{
-    var dataList = data.Split('\t');
-    try {
-        
-        for (int i=0; i <dataList.Length;i+=2)
-        {
-                if(dataList[i] == "8_S")
-                {
-                   return Convert.ToInt16(dataList[i+1]);
-                }
-        }
-    }
-    catch 
-    {
-    }
-    return 0;
-}
-#ENDCS
+// Generated by ScopeStudio, version 3.1.2000.2

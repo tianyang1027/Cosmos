@@ -24,44 +24,63 @@ data =
             image_url,
             page_url,
             title,
-            JudgmentID,
-            label,
-            poor_image_quality,
-            disgusting_horrifying_depressing,
-            watermark_is_distracting,
-            inappropriate,
-            categories,
-            created = FILE.CREATED()
-    FROM "/local/Prod/Image/Prism/UHRS_Archival/Prism_pointwise_defect/Crowd_en/AutoUpload-{*}"
-    USING DefaultTextExtractor()
-    HAVING JudgeID != "JudgeID";
+            JudgmentID
+    FROM STREAMSET "/local/Prod/Image/Prism/UHRS_Archival/Detrimental_categorization/Crowd_ja/{*}"
+         PATTERN " AutoUpload-{*}_%Y-%m-%d_{*}"
+         RANGE __date = ["2022-08-31", "2022-09-02"]
+    USING DefaultTextExtractor();
+
+
+
+
+
+
 
 
 OUTPUT data
 TO "/local/users/v-yangtian/FileSets.tsv";
 
-//#CS
-//    
-//public class CustomerReadColumnsExtractor : Extractor
-//{
-//    public override Schema Produces(string[] requestedColumns, string[] args)
-//    {
-//        return new Schema(ReadFileHeaderColumns(args[0]));
-//    }
-// 
-//    public override IEnumerable<Row> Extract(StreamReader reader, Row outputRow, string[] args)
-//    {
-//        char delimiter = '\t';
-//        string line;
-//        while ((line = reader.ReadLine()) != null)
-//        {
-//            string[] tokens = line.Split(delimiter); 
-//            for (int i = 0; i < tokens.Length; ++i)
-//            {
-//                outputRow[i].UnsafeSet(tokens[i]);
-//            }
-//            yield return outputRow;
-//        }
-//    }
-//}
-//#ENDCS
+#CS
+ 
+ 
+public static string ReadFileHeaderColumns(string filePath)
+{
+    char delimiter = '\t';
+    using (StreamReader sr = new StreamReader(filePath))
+    {
+        string line;
+        line = sr.ReadLine();
+        string[] tokens = line.Split(delimiter);
+        string customerColumn = "";
+        for (int i = 0; i < tokens.Length; i++)
+        {
+            customerColumn = customerColumn + "," + tokens[i];
+        }
+        return customerColumn.Trim(',');
+    }
+}
+ 
+ 
+public class CustomerReadColumnsExtractor : Extractor
+{
+    public override Schema Produces(string[] requestedColumns, string[] args)
+    {
+        return new Schema(ReadFileHeaderColumns(args[0]));
+    }
+ 
+    public override IEnumerable<Row> Extract(StreamReader reader, Row outputRow, string[] args)
+    {
+        char delimiter = '\t';
+        string line;
+        while ((line = reader.ReadLine()) != null)
+        {
+            string[] tokens = line.Split(delimiter); 
+            for (int i = 0; i < tokens.Length; ++i)
+            {
+                outputRow[i].UnsafeSet(tokens[i]);
+            }
+            yield return outputRow;
+        }
+    }
+}
+#ENDCS

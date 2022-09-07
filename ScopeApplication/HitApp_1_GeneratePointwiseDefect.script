@@ -6,15 +6,19 @@ REFERENCE "/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bi
 USING MMRV2.Utility;
 USING MMRV2.Core;
 
-#DECLARE In_DetrimentalJudgment    string = @@In_DetrimentalJudgment@@;
+
+#DECLARE FeatureStreamPaths string = "/local/Prod/Image/Prism/UHRS_Archival/Detrimental_categorization/Crowd_ja/AutoUpload-Index_PPE_Regular_2022_08_03_ja-2022-08-10-22-35-5113988_2022-08-11_04-51-11,/local/Prod/Image/Prism/UHRS_Archival/Detrimental_categorization/Crowd_ja/AutoUpload-Index_PPE_Regular_2022_08_13_ja-2022-08-15-05-26-5144546_2022-08-15_09-03-13,/local/Prod/Image/Prism/UHRS_Archival/Detrimental_categorization/Crowd_ja/AutoUpload-Index_PPE_Regular_2022_08_16_ja-2022-08-17-05-38-5155394_2022-08-17_07-27-17";
+#DECLARE length int = @FeatureStreamPaths.Split(',').Length;
+LOOP(i, @length)
+{
+#DECLARE In_DetrimentalJudgment    string =@FeatureStreamPaths.Split(',')[@@i@@];
 RESOURCE @In_DetrimentalJudgment;
 #DECLARE JudgmentFileName string = System.IO.Path.GetFileName(@In_DetrimentalJudgment);
-#DECLARE SampleNumber string = @@SampleNumber@@;
-#DECLARE In_CurrentIndexV1 string = @@In_CurrentIndexV1@@;
-#DECLARE In_DetrimentalDocs string = @@In_DetrimentalDocs@@;
+#DECLARE SampleNumber string = "500";
+#DECLARE In_CurrentIndexV1 string = "";
+#DECLARE In_DetrimentalDocs string = "";
 
 #DECLARE In_Original     string = @In_DetrimentalJudgment.Substring(@In_DetrimentalJudgment.LastIndexOf("AutoUpload-"));
-#DECLARE Out_SucceedFile string = string.Format("{0}/Archival/{1}.succeed", @In_DetrimentalJudgment.Substring(0, @In_DetrimentalJudgment.LastIndexOf("/")), @In_Original);
 // "AutoUpload-{Name}{Suffix}" -> "{Name}"
 #DECLARE In_Original_1 string = @In_Original.Substring("AutoUpload-".Length, @In_Original.Length-56);
 #DECLARE LanguageName string = @In_DetrimentalJudgment.Split('/')[@In_DetrimentalJudgment.Split('/').Length - 2].Replace("Crowd_","");
@@ -48,19 +52,19 @@ RESOURCE @In_DetrimentalJudgment;
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
     #SET prefix = "Index_PPE_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET NeedOutputDetrimentalDoc = true;
+    #SET NeedOutputDetrimentalDoc = false;
 #ELSEIF (@In_Original_1.StartsWith("Index_Regular"))
     #SET prefix = "Index_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET NeedOutputDetrimentalDoc = true;
+    #SET NeedOutputDetrimentalDoc = false;
 #ELSEIF (@In_Original_1.StartsWith("Impression_Regular"))
     #SET prefix = "Impression_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET NeedOutputDetrimentalDoc = true;
+    #SET NeedOutputDetrimentalDoc = false;
 #ELSEIF (@In_Original_1.StartsWith("Click_Regular"))
     #SET prefix = "Click_Detrimental";
     #SET NeedSaveDashboard = true;
-    #SET NeedOutputDetrimentalDoc = true;
+    #SET NeedOutputDetrimentalDoc = false;
 #ENDIF
 
 #DECLARE Out_Stats_DashBoard string = "";
@@ -76,15 +80,11 @@ RESOURCE @In_DetrimentalJudgment;
     @prefix, @Now.Year.ToString(), @Now.Month.ToString("00"), @Now.Day.ToString("00"), @DashboardStatsSuffix);
 #ENDIF
 
-#IF(!EXISTS(@Out_SampleFile))
 data =
     EXTRACT *
     FROM @In_DetrimentalJudgment
     USING CustomerReadColumnsExtractor(@JudgmentFileName)
     HAVING JudgeID != "JudgeID";
-    
-OUTPUT data 
-TO @Out_SucceedFile;
 
 data =
     SELECT str2int(JudgmentDataInt) AS JudgmentDataInt,
@@ -467,8 +467,8 @@ OUTPUT DetrimentalDoc
 TO @Out_DetrimentalDoc
 USING DefaultTextOutputter(delimiter:'\t', outputHeader:true);
 #ENDIF
+}
 
-#ENDIF
 
 #CS
 public static int str2int(string input)
@@ -613,4 +613,5 @@ public class CustomerReadColumnsExtractor : Extractor
         }
     }
 }
+
 #ENDCS

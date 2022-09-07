@@ -31,6 +31,7 @@
     <Script Include="DebugTool_PROD.script" />
     <Script Include="FileSetsSample.script" />
     <Script Include="Generate_Detrimental.script" />
+    <Script Include="Generate_DomainantColorBackgroundRankFile.script" />
     <Script Include="Generate_LatestDetrimental.script" />
     <Script Include="Generate_PageTitle.script" />
     <Script Include="HitApp_0_SampleIndex.script" />
@@ -77,6 +78,9 @@
     </ScriptCode>
     <ScriptCode Include="Generate_Detrimental.script.cs">
       <DependentUpon>Generate_Detrimental.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Generate_DomainantColorBackgroundRankFile.script.cs">
+      <DependentUpon>Generate_DomainantColorBackgroundRankFile.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="Generate_LatestDetrimental.script.cs">
       <DependentUpon>Generate_LatestDetrimental.script</DependentUpon>
