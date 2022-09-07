@@ -20,7 +20,6 @@ Prismy =
     USING MMRV2.Core.MmrScopeTypeProcessor("-schemaPath", @Par_MediaSnapshotSchema, "-outputFeatures", "MediaFeature__DomainantColorBackground")
     HAVING MediaFeature__DomainantColorBackground == 10;
 
-
 samplePool =
     SELECT a.*,
            b.MediaFeature__DomainantColorBackground AS MediaFeature__whiteBackground,
