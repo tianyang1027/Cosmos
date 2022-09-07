@@ -1,2 +1,13 @@
 ﻿//Script GUID:cb44451e-9bc1-4b2b-a045-e2a054c22a5b
 //Used for tracking history
+
+
+RankeFile_MediaFeature__whiteBackground =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/users/v-yangtian/RankeFile_MediaFeature__whiteBackground.ss"
+    );
+
+OUTPUT TO "/local/users/v-yangtian/RankeFile_MediaFeature__whiteBackground.tsv"
+USING DefaultTextOutputter(delimiter:'\t', outputHeader:true);
