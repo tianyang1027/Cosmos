@@ -22,7 +22,7 @@ Prismy =
 
 samplePool =
     SELECT a.*,
-           b.MediaFeature__DomainantColorBackground AS MediaFeature__whiteBackground,
+           b.MediaFeature__DomainantColorBackground,
            (double) 1 AS Weight
     FROM Index AS a
          INNER JOIN
