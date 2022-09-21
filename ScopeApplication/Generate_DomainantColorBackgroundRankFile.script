@@ -1,0 +1,37 @@
+﻿REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
+
+RESOURCE "/local/Prod/Image/Repository/Snapshot/Media/2022_09_06/Image_Media_Schema.xml";
+#DECLARE Par_MediaSnapshotSchema string = String.Concat("Metadata:", "Image_Media_Schema.xml");
+#DECLARE Seed string =((int)DateTime.Now.Ticks).ToString();
+
+PrismyMetaDataRaw =
+    SSTREAM "/local/Prod/Image/Repository/Snapshot/Media/2022_09_06/Image_Media_Metadata.ss";
+
+Index =
+    SSTREAM "/local/Prod/Image/Prism/2022-09-03/PrismProdRank_2_PPE.ss";
+
+Prismy =
+    PROCESS PrismyMetaDataRaw
+    USING MMRV2.Core.MmrScopeTypeProcessor("-schemaPath", @Par_MediaSnapshotSchema, "-outputFeatures", "MediaFeature__DomainantColorBackground")
+    HAVING MediaFeature__DomainantColorBackground == 10;
+
+samplePool =
+    SELECT a.*,
+           b.MediaFeature__DomainantColorBackground,
+           (double) 1 AS Weight
+    FROM Index AS a
+         INNER JOIN
+             Prismy AS b
+         ON a.Key == b.Key;
+
+Sample =
+    REDUCE samplePool ALL
+    USING TopNReducer("500", "-random", @Seed, "-WeightCol", "Weight");
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/RankeFile_MediaFeature__whiteBackground.ss";
