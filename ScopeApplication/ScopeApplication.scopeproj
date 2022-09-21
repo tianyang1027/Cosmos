@@ -60,6 +60,7 @@
     <Script Include="Scope2.script" />
     <Script Include="Scope3.script" />
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
+    <Script Include="WrapStarCosmosData.script" />
     <ScriptCode Include="ContentCoverage_6_IndexCoverage.script.cs">
       <DependentUpon>ContentCoverage_6_IndexCoverage.script</DependentUpon>
     </ScriptCode>
@@ -137,6 +138,9 @@
     </ScriptCode>
     <ScriptCode Include="UpdateLabeledDetrimentalNodules.script.cs">
       <DependentUpon>UpdateLabeledDetrimentalNodules.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="WrapStarCosmosData.script.cs">
+      <DependentUpon>WrapStarCosmosData.script</DependentUpon>
     </ScriptCode>
   </ItemGroup>
   <Import Project="$(AppData)\Microsoft\ScopeStudio\MsBuild\1.0\Scope.targets" />
