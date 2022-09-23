@@ -1,80 +1,168 @@
-﻿
-RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
-REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
-REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
-REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
-REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\IdfCooking2\MMRV2.SnapshotMerger.dll";
-USING MMRV2.Utility;
+﻿REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtonsoft.Json.dll";
 
-#DECLARE SampleNumber string = "500";
-#DECLARE Platform string = "PPE";
-#DECLARE In_indexFile string = "/local/Prod/Image/Prism/2022-07-11/PrismProdRank_2_PPE.ss";
-//#DECLARE In_Language string = "en";
-//#DECLARE Out_SampleFile string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SamplesIndex_PPE_Regular_2022_06_27.ss";
-//#DECLARE Out_SampleForMeasurement string = "/local/Prod/Image/Prism/UHRS_Uploads/Detrimental_categorization/Crowd/Index_PPE_Regular_2022_06_27.tsv";
-//#DECLARE Out_Stats string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/SampleStatsIndex_PPE_Regular_2022_06_27.ss";
-#DECLARE Seed string =((int)DateTime.Now.Ticks).ToString();
-#DECLARE In_Lang string = "pt, fr, ar, ru, zh_chs, es, ja, de, id";
-#DECLARE loop_number_minus_one int = 3;
+#DECLARE inputStream string = "/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/2022_09_22/%h/%n.dat?&hour=0...23&serialnum=0...1&sparsestreamset=true";
+#DECLARE outputStream string = "/users/v-yangtian/WrapStarStream/2022_09_22.ss";
 
-index_file =
-    SSTREAM @In_indexFile;
+ModelData =
+    EXTRACT DocumentURL,
+            Model_ID,
+            Model_Version,
+            Model_Ontology,
+            Model_Latest,
+            Model_Timestamp,
+            Model_Json
 
-// pt, fr, ar, ru, zh_chs, es, ja, de, id
-index_file_lang =
-    SELECT *
-    FROM index_file
-    WHERE Language == getLang(@In_Lang, 0);
-samplePool =
-    SELECT DISTINCT Key,
-                    PKey,
-                    MUrl,
-                    PUrl,
-                    Language,
-                    (double) 1 AS Weight
-    FROM index_file_lang;
-Sample =
-    REDUCE samplePool ALL
-    USING TopNReducer(@SampleNumber, "-random", @Seed, "-WeightCol", "Weight");
+    FROM @inputStream
+    USING WrapStarExtractor()
 
-                       
-LOOP(n, @loop_number_minus_one)
-{
-index_file_lang =
-    SELECT *
-    FROM index_file
-    WHERE Language == getLang(@In_Lang, @@n@@ + 1);
-samplePool =
-    SELECT DISTINCT Key,
-                    PKey,
-                    MUrl,
-                    PUrl,
-                    Language,
-                    (double) 1 AS Weight
-    FROM index_file_lang;
-Sample_pt =
-    REDUCE samplePool ALL
-    USING TopNReducer(@SampleNumber, "-random", @Seed, "-WeightCol", "Weight");
+    HAVING
+    Model_Version == "146881" AND Model_Ontology == "Image"
 
-//OUTPUT Sample_pt
-//TO  $"/local/users/v-yangtian/lang_test/Index_{getLang(@In_Lang, @@n@@ + 1)}.tsv";
+    WITH SAMPLE 10 PERCENT;
+
+OUTPUT
+TO SSTREAM "/users/v-yangtian/ModelData.ss";
+
+ExtractedAttribute =
+    PROCESS
+    ModelData
+    USING WrapStarProcessor
+    PRODUCE PageUrl,
+            ImageUrl,
+            Description,
+            Title,
+            Width,
+            Heigth;
 
 
-OUTPUT Sample_pt
-TO  "/local/users/v-yangtian/lang_test/Index_{Language}.tsv";
-
-}
-
+OUTPUT
+TO SSTREAM @outputStream;
 
 
 #CS
-public static string getLang(string s, int i)
+using System;
+using System.IO;
+using System.Text;
+using System.Collections.Generic;
+using ScopeRuntime;
+using Newtonsoft.Json.Linq;
+
+// processor to further handle WrapStar output and return particular attributes
+public class WrapStarProcessor : Processor
 {
-    if(string.IsNullOrEmpty(s))return "";
-    string[] tokens = s.Split(',');
-    return tokens[i]; 
+    public override Schema Produces(string[] columns, string[] args, Schema input)
+    {
+        return new Schema("PageUrl,ImageUrl,Title,Width,Heigth,Description");
+    }
+
+    private static int GetColumnIndex(Schema schema, string name)
+    {
+        return schema.Contains(name) ? schema.IndexOf(name) : -1;
+    }
+
+    public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
+    {
+        int idxModelJson = GetColumnIndex(input.Schema, "Model_Json");
+        foreach (Row row in input.Rows)
+        {
+            if (idxModelJson >= 0)
+            {
+                string model_jsonStr = row["Model_Json"].ToString();
+                string pageUrl = row["DocumentURL"].ToString();
+                if (JObject.Parse(model_jsonStr)["Entities"].Count() > 0 && JObject.Parse(model_jsonStr)["Entities"][0]["Properties"].Count() > 0)
+                {
+                    var description = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][0]["Value"][0].ToString();
+                    var title = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][1]["Value"][0].ToString();
+                    var url = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][2]["Value"][0].ToString();
+                    var height = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"][0].ToString();
+                    var width = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"][0].ToString();
+                    output[0].Set(pageUrl);
+                    output[1].Set(url);
+                    output[2].Set(title);
+                    output[3].Set(width);
+                    output[4].Set(height);
+                    output[5].Set(description);
+                }
+                yield return output;
+
+            }
+            else
+            {
+                throw new Exception("No WrapStar data available");
+            }
+        }
+    }
+}
+
+// extract wrapstar data from cosmos stream
+public class WrapStarExtractor : Extractor
+{
+    public override Schema Produces(string[] columns, string[] args)
+    {
+        Schema defaultSchema = new Schema("DocumentURL, Timestamp, HttpReturnCode, Version, Error, ModelCount, Model_ID, Model_Version, Model_Ontology, Model_Latest, Model_Timestamp, Model_Json, Model_Json_Length, Model_TemplateIndex");
+
+        for (int i = 0; i < columns.Length; i++)
+        {
+            if (columns[i] == "WrapStarJsonOutput")
+            {
+                defaultSchema.Add(new ColumnInfo("WrapStarJsonOutput", ColumnDataType.String));
+                return defaultSchema;
+            }
+            if (columns[i] == "Model_Extraction")
+            {
+                defaultSchema.Add(new ColumnInfo("Model_Extraction", ColumnDataType.String));
+                return defaultSchema;
+            }
+        }
+        return defaultSchema;
+    }
+
+    public override IEnumerable<Row> Extract(StreamReader reader, Row output, string[] args)
+    {
+        bool showError = false;
+        if (args != null)
+        {
+            foreach (string arg in args)
+            {
+                if (arg == "showError") showError = true;
+            }
+        }
+
+        int outputCount = output.Count;
+        int level = 1;
+        if (output.Schema.Contains("WrapStarJsonOutput"))
+        {
+            level = 0;
+        }
+        else if (output.Schema.Contains("Model_Extraction"))
+        {
+            level = 2;
+        }
+
+        string line;
+        while ((line = reader.ReadLine()) != null)
+        {
+            foreach (Dictionary<string, string> wsOutput in WrapStarJsonParser.Parse(line, level))
+            {
+                // Skip error by default.
+                if (!showError && !string.IsNullOrEmpty(wsOutput["Error"])) continue;
+
+                for (int i = 0; i < outputCount; i++)
+                {
+                    string value;
+                    if (wsOutput.TryGetValue(output.Schema[i].Name, out value))
+                    {
+                        output[i].Set(value);
+                    }
+                    else
+                    {
+                        output[i].Set("");
+                    }
+                }
+
+                yield return output;
+            }
+        }
+    }
 }
 #ENDCS
-    
-
-// Generated by ScopeStudio, version 3.1.2000.2

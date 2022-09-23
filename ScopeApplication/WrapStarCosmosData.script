@@ -1,7 +1,11 @@
-﻿REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Microsoft.WrapStar.Shared.dll";
+﻿
 
-#DECLARE inputStream string = "/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/2022_09_22/%h/%n.dat?&hour=0...23&serialnum=0...1&sparsestreamset=true"; 
-#DECLARE outputStream string = "/users/v-yangtian/WrapStarStream/2022_09_22.ss";
+REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Microsoft.WrapStar.Shared.dll";
+REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtonsoft.Json.dll";
+
+
+#DECLARE inputStream string = "/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/2022_09_22/%h/%n.dat?&hour=0...23&serialnum=0...1&sparsestreamset=true";
+#DECLARE outputStream string = "/users/v-yangtian/WrapStarStream/reddit_2022_09_22.ss";
 
 ModelData =
     EXTRACT DocumentURL,
@@ -16,29 +20,28 @@ ModelData =
     USING WrapStarExtractor()
 
     HAVING
-    Model_Version =="146881" AND Model_Ontology == "Image" 
+    Model_Version == "146881" AND Model_Ontology == "Image"
 
     WITH SAMPLE 10 PERCENT;
+
+OUTPUT
+TO SSTREAM "/users/v-yangtian/ModelData.ss";
 
 ExtractedAttribute =
     PROCESS
     ModelData
-
-    USING
-    WrapStarProcessor 
-    //WrapStarBusinessListProcessor
-
-PRODUCE
-    DocumentURL,
-    Model_ID,
-    Latitude,
-    Longitude
-;
+    USING WrapStarProcessor
+    PRODUCE PageUrl,
+            ImageUrl,
+            Description,
+            Title,
+            Width,
+            Heigth;
 
 
 OUTPUT
 TO SSTREAM @outputStream;
- 
+
 
 #CS
 using System;
@@ -47,98 +50,50 @@ using System.Text;
 using System.Collections.Generic;
 using ScopeRuntime;
 using Microsoft.WrapStar.Shared;
+using Newtonsoft.Json.Linq;
 
 // processor to further handle WrapStar output and return particular attributes
 public class WrapStarProcessor : Processor
 {
     public override Schema Produces(string[] columns, string[] args, Schema input)
     {
-        return new Schema("DocumentURL, Model_ID, Latitude, Longitude");
+        return new Schema("PageUrl,ImageUrl,Title,Width,Heigth,Description");
     }
 
     private static int GetColumnIndex(Schema schema, string name)
     {
         return schema.Contains(name) ? schema.IndexOf(name) : -1;
     }
+
     public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
     {
-        // weird schema.IndexOf throw exceptions on non-existing columns
-        int idxExtraction = GetColumnIndex(input.Schema, "Model_Extraction");
         int idxModelJson = GetColumnIndex(input.Schema, "Model_Json");
-        int idxJsonOutput = GetColumnIndex(input.Schema, "WrapStarJsonOutput");
-
         foreach (Row row in input.Rows)
         {
-            Dictionary<string, string> attributes = null;
-            if (idxExtraction >= 0)
+            if (idxModelJson >= 0)
             {
-                // flatten extraction available
-                string extraction = row[idxExtraction].String;
-                attributes = WrapStarJsonParser.DeserializeJsonData(extraction);
-
-            }
-            else if (idxModelJson >= 0)
-            {
-                // need to flatten model json before doing lookup
-                string modelJson = row[idxModelJson].String;
-                attributes = new Dictionary<string, string>();
-                JsonParser jp = new JsonParser(modelJson);
-                WrapStarJsonParser.SerializeWrapStarDataV2(jp.Root, attributes, null, modelJson);
-
-                // alternatively, can use these two commented lines
-                // but it will require additional serialization and deserialization steps
-                //string extraction = WrapStarJsonParser.FlattenWrapStarJsonV2(json);
-                //attributes = WrapStarJsonParser.DeserializeJsonData(extraction);
-            }
-            else if (idxJsonOutput >= 0)
-            {
-                // now handle full JSON blob. refer to sample code of WrapStarExtractor below
-                // invoke ParseJson to remove Kif schema and unroll multiple models
-                // by default, the extraction output at level 1 (just model json without flattening)
-                string wrapstarJson = row[idxJsonOutput].String;
-                foreach (Dictionary<string, string> extraction in WrapStarJsonParser.ParseJsonV2(wrapstarJson))
+                string model_jsonStr = row["Model_Json"].ToString();
+                string pageUrl = row["DocumentURL"].ToString();
+                if (JObject.Parse(model_jsonStr)["Entities"].Count() > 0 && JObject.Parse(model_jsonStr)["Entities"][0]["Properties"].Count() > 0)
                 {
-                    // zoom-in to business models
-                    if (extraction["Model_Ontology"] == "Business")
-                    {
-                        // now parse json and flatten it out
-                        attributes = new Dictionary<string, string>();
-                        string modelJson = extraction["Model_Json"];
-                        JsonParser jp = new JsonParser(modelJson);
-                        WrapStarJsonParser.SerializeWrapStarDataV2(jp.Root, attributes, null, modelJson);
-                        break;
-                    }
+                    var description = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][0]["Value"][0].ToString();
+                    var title = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][1]["Value"][0].ToString();
+                    var url = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][2]["Value"][0].ToString();
+                    var height = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"][0].ToString();
+                    var width = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"][0].ToString();
+                    output[0].Set(pageUrl);
+                    output[1].Set(url);
+                    output[2].Set(title);
+                    output[3].Set(width);
+                    output[4].Set(height);
+                    output[5].Set(description);
                 }
+                yield return output;
+
             }
             else
             {
                 throw new Exception("No WrapStar data available");
-            }
-
-            // get attribute based on full path
-            // complete path available per ontology at file://wrapstar/WrapStarShare/Ontology 
-            // selected path can be generated in WrapStar client for selected attribute
-            
-            // if want more flexibility when handling list, full JSON tree is available in JsonParser.
-            // It simply removed the Kif schema for easy access.
-            // sample code for JSON parser is shared with sample scripts as well at
-            // file://WrapStar/WrapStarShare/Extractor
-            //
-            if (attributes != null)
-            {
-                string latitude, longitude;
-                attributes.TryGetValue("/Business/Location.Location[0]/Location.Geocode.Latitude", out latitude);
-                attributes.TryGetValue("/Business/Location.Location[0]/Location.Geocode.Longitude", out longitude);
-
-                // need to unescape quote in raw JSON string
-                latitude = JsonParser.UnescapeString(latitude);
-                longitude = JsonParser.UnescapeString(longitude);
-
-                output[0].Set(row[0].String);
-                output[1].Set(row[3].String);
-                output[2].Set(latitude);
-                output[3].Set(longitude);
-                yield return output;
             }
         }
     }
