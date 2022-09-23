@@ -60,6 +60,7 @@
     <Script Include="PIVOT.script" />
     <Script Include="Scope2.script" />
     <Script Include="Scope3.script" />
+    <Script Include="Scope4.script" />
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
     <Script Include="WrapStarCosmosData.script" />
     <ScriptCode Include="ContentCoverage_6_IndexCoverage.script.cs">
@@ -139,6 +140,9 @@
     </ScriptCode>
     <ScriptCode Include="Scope3.script.cs">
       <DependentUpon>Scope3.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Scope4.script.cs">
+      <DependentUpon>Scope4.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="UpdateLabeledDetrimentalNodules.script.cs">
       <DependentUpon>UpdateLabeledDetrimentalNodules.script</DependentUpon>
