@@ -1,6 +1,6 @@
 ﻿REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Microsoft.WrapStar.Shared.dll";
 
-#DECLARE inputStream string = "/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/2022_09_22/%h/%n.dat?&hour=0...23&serialnum=0...255&sparsestreamset=true"; 
+#DECLARE inputStream string = "/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/2022_09_22/%h/%n.dat?&hour=0...23&serialnum=0...1&sparsestreamset=true"; 
 #DECLARE outputStream string = "/users/v-yangtian/WrapStarStream/2022_09_22.ss";
 
 ModelData =
