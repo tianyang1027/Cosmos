@@ -35,12 +35,16 @@ public class WrapStarProcessor : Processor
                     var url = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][2]["Value"][0].ToString();
                     var height = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"][0].ToString();
                     var width = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"][0].ToString();
+                    var community = title.Split('-')[0].Replace("r/");
                     output[0].Set(pageUrl);
                     output[1].Set(url);
                     output[2].Set(title);
                     output[3].Set(width);
                     output[4].Set(height);
                     output[5].Set(description);
+                    output[6].Set(description);
+                    output[7].Set(description);
+                    output[8].Set(description);
                 }
                 yield return output;
 
