@@ -110,8 +110,8 @@ public class WrapStarProcessor : Processor
                     var height = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"][0].ToString();
                     var width = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"][0].ToString();
                     var community = title.Split('-')[0].Replace("r/",""); 
-                    var vote = str.Contains("votes") ? str.Split(' ')[0] : "0";
-                    var comment = str.Contains("comment") ? str.Split(' ')[3] : "0";
+                    var vote = description.Contains("votes") ? str.Split(' ')[0] : "0";
+                    var comment = description.Contains("comment") ? str.Split(' ')[3] : "0";
                     output[0].Set(pageUrl);
                     output[1].Set(url);
                     output[2].Set(title);
