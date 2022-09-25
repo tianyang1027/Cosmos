@@ -1,9 +1,9 @@
 ﻿REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Microsoft.WrapStar.Shared.dll";
 REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtonsoft.Json.dll";
 
-#DECLARE date = "2022_09_22";
-#DECLARE inputStream string = "/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/2022_09_22/%h/%n.dat?&hour=0...23&serialnum=0...511&sparsestreamset=true";
-#DECLARE outputStream string = "/users/v-yangtian/WrapStar/Reddit/Index_2022_09_22.ss";
+#DECLARE date = "2022_09_23";
+#DECLARE inputStream string = $"/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/{@date}/%h/%n.dat?&hour=0...23&serialnum=0...511&sparsestreamset=true";
+#DECLARE outputStream string = $"/users/v-yangtian/WrapStar/Reddit/Index_{@date}.ss";
 
 ModelData =
     EXTRACT DocumentURL,
@@ -16,11 +16,7 @@ ModelData =
     FROM @inputStream
     USING WrapStarExtractor()
     HAVING
-    Model_Version == "146881" AND Model_Ontology == "Image"
-    WITH SAMPLE 10 PERCENT;
-
-//OUTPUT
-//TO SSTREAM $"/users/v-yangtian/WrapStar/ModelData/model_data_{@date}.ss";
+    Model_Version == "146881" AND Model_Ontology == "Image";
 
 ExtractedAttribute =
     PROCESS
