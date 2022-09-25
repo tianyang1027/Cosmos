@@ -35,7 +35,7 @@ ExtractedAttribute =
 ExtractedAttribute =
     SELECT DISTINCT *
     FROM ExtractedAttribute
-    WHERE Community == "midjourney" OR Community == "dalle2" OR Community == "stablediffusion";
+    WHERE Title.ToLower().Contains("midjourney") OR Title.ToLower().Contains("dalle2") OR Title.ToLower().Contains("stablediffusion");
 
 OUTPUT
 TO SSTREAM @outputStream;
