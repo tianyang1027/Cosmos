@@ -3,7 +3,7 @@ REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtons
 
 #DECLARE date = "2022_09_23";
 #DECLARE inputStream string = $"/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/{@date}/%h/%n.dat?&hour=0...23&serialnum=0...511&sparsestreamset=true";
-#DECLARE outputStream string = $"/users/v-yangtian/WrapStar/Reddit/Index_{@date}.ss";
+#DECLARE outputStream string = $"/users/v-yangtian/WrapStar/{@date}/reddit.ss";
 
 ModelData =
     EXTRACT DocumentURL,
