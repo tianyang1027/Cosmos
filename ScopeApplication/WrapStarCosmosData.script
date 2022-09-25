@@ -1,9 +1,9 @@
 ﻿REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Microsoft.WrapStar.Shared.dll";
 REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtonsoft.Json.dll";
 
-
+#DECLARE date = "2022_09_22";
 #DECLARE inputStream string = "/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/2022_09_22/%h/%n.dat?&hour=0...23&serialnum=0...511&sparsestreamset=true";
-#DECLARE outputStream string = "/users/v-yangtian/WrapStarStream/reddit_2022_09_22.ss";
+#DECLARE outputStream string = "/users/v-yangtian/WrapStar/Reddit/Index_2022_09_22.ss";
 
 ModelData =
     EXTRACT DocumentURL,
@@ -20,7 +20,7 @@ ModelData =
     WITH SAMPLE 10 PERCENT;
 
 OUTPUT
-TO SSTREAM "/users/v-yangtian/ModelData.ss";
+TO SSTREAM $"/users/v-yangtian/WrapStar/ModelData/model_data_{@date}.ss";
 
 ExtractedAttribute =
     PROCESS
@@ -36,7 +36,6 @@ ExtractedAttribute =
             Vote,
             Comment;
 
-
 ExtractedAttribute =
     SELECT DISTINCT *
     FROM ExtractedAttribute
@@ -44,7 +43,6 @@ ExtractedAttribute =
 
 OUTPUT
 TO SSTREAM @outputStream;
-
 
 #CS
 using System;
