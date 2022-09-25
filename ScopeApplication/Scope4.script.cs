@@ -31,11 +31,11 @@ public class WrapStarProcessor : Processor
                 var propertiesCount = JObject.Parse(model_jsonStr)["Entities"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"].Count() : 0;
                 if (JObject.Parse(model_jsonStr)["Entities"].Count() > 0 && propertiesCount > 0)
                 {
-                    var description = propertiesCount > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][0]["Value"][0].ToString() : "";
-                    var title = propertiesCount > 1 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][1]["Value"][0].ToString() : "";
-                    var url = propertiesCount > 2 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][2]["Value"][0].ToString() : "";
-                    var height = propertiesCount > 3 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"][0].ToString() : "";
-                    var width = propertiesCount > 4 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"][0].ToString() : "";
+                    var description = propertiesCount > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][0]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][0]["Value"][0].ToString() : "" : "";
+                    var title = propertiesCount > 1 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][1]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][1]["Value"][0].ToString() : "" : "";
+                    var url = propertiesCount > 2 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][2]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][2]["Value"][0].ToString() : "" : "";
+                    var height = propertiesCount > 3 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"][0].ToString() : "" : "";
+                    var width = propertiesCount > 4 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"][0].ToString() : "" : "";
                     var vote = !string.IsNullOrEmpty(description) ? description.Contains("votes") ? description.Split(' ')[0] : "0" : "0";
                     var comment = !string.IsNullOrEmpty(description) ? description.Contains("comment") ? description.Split(' ')[3] : "0" : "0";
                     var community = !string.IsNullOrEmpty(title) ? title.Split('-').Length > 0 ? title.Split('-')[0].Replace("r/", "") : "" : "";
