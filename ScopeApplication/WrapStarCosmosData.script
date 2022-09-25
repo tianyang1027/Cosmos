@@ -13,13 +13,10 @@ ModelData =
             Model_Latest,
             Model_Timestamp,
             Model_Json
-
     FROM @inputStream
     USING WrapStarExtractor()
-
     HAVING
     Model_Version == "146881" AND Model_Ontology == "Image"
-
     WITH SAMPLE 10 PERCENT;
 
 OUTPUT
@@ -44,8 +41,6 @@ ExtractedAttribute =
     SELECT DISTINCT *
     FROM ExtractedAttribute
     WHERE Community == "midjourney" OR Community == "dalle2" OR Community == "stablediffusion";
-
-
 
 OUTPUT
 TO SSTREAM @outputStream;
