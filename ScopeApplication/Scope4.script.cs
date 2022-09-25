@@ -11,7 +11,7 @@ public class WrapStarProcessor : Processor
 {
     public override Schema Produces(string[] columns, string[] args, Schema input)
     {
-        return new Schema("PageUrl,ImageUrl,Title,Width,Heigth,Description");
+        return new Schema("PageUrl,ImageUrl,Title,Width,Heigth,Description,Community,Vote,Comment");
     }
 
     private static int GetColumnIndex(Schema schema, string name)
@@ -28,23 +28,26 @@ public class WrapStarProcessor : Processor
             {
                 string model_jsonStr = row["Model_Json"].ToString();
                 string pageUrl = row["DocumentURL"].ToString();
-                if (JObject.Parse(model_jsonStr)["Entities"].Count() > 0 && JObject.Parse(model_jsonStr)["Entities"][0]["Properties"].Count() > 0)
+                var propertiesCount = JObject.Parse(model_jsonStr)["Entities"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"].Count() : 0;
+                if (JObject.Parse(model_jsonStr)["Entities"].Count() > 0 && propertiesCount > 0)
                 {
-                    var description = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][0]["Value"][0].ToString();
-                    var title = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][1]["Value"][0].ToString();
-                    var url = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][2]["Value"][0].ToString();
-                    var height = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"][0].ToString();
-                    var width = JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"][0].ToString();
-                    var community = title.Split('-')[0].Replace("r/");
+                    var description = propertiesCount > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][0]["Value"][0].ToString() : "";
+                    var title = propertiesCount > 1 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][1]["Value"][0].ToString() : "";
+                    var url = propertiesCount > 2 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][2]["Value"][0].ToString() : "";
+                    var height = propertiesCount > 3 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"][0].ToString() : "";
+                    var width = propertiesCount > 4 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"][0].ToString() : "";
+                    var vote = !string.IsNullOrEmpty(description) ? description.Contains("votes") ? description.Split(' ')[0] : "0" : "0";
+                    var comment = !string.IsNullOrEmpty(description) ? description.Contains("comment") ? description.Split(' ')[3] : "0" : "0";
+                    var community = !string.IsNullOrEmpty(title) ? title.Split('-').Length > 0 ? title.Split('-')[0].Replace("r/", "") : "" : "";
                     output[0].Set(pageUrl);
                     output[1].Set(url);
                     output[2].Set(title);
                     output[3].Set(width);
                     output[4].Set(height);
                     output[5].Set(description);
-                    output[6].Set(description);
-                    output[7].Set(description);
-                    output[8].Set(description);
+                    output[6].Set(community);
+                    output[7].Set(vote);
+                    output[8].Set(comment);
                 }
                 yield return output;
 
@@ -56,4 +59,3 @@ public class WrapStarProcessor : Processor
         }
     }
 }
-
