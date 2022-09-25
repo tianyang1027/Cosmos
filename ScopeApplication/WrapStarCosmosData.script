@@ -1,7 +1,7 @@
 ﻿REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Microsoft.WrapStar.Shared.dll";
 REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtonsoft.Json.dll";
 
-#DECLARE date = "2022_09_23";
+#DECLARE date = "2022_09_22";
 #DECLARE inputStream string = $"/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/{@date}/%h/%n.dat?&hour=0...23&serialnum=0...511&sparsestreamset=true";
 #DECLARE outputStream string = $"/users/v-yangtian/WrapStar/{@date}/reddit.ss";
 
@@ -35,7 +35,7 @@ ExtractedAttribute =
 ExtractedAttribute =
     SELECT DISTINCT *
     FROM ExtractedAttribute
-    WHERE Title.ToLower().Contains("midjourney") OR Title.ToLower().Contains("dalle2") OR Title.ToLower().Contains("stablediffusion");
+    WHERE Title !="" AND Title!= null AND (Title.ToLower().Contains("midjourney") OR Title.ToLower().Contains("dalle2") OR Title.ToLower().Contains("stablediffusion"));
 
 OUTPUT
 TO SSTREAM @outputStream;
