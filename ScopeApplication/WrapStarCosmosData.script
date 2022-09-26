@@ -35,7 +35,7 @@ ExtractedAttribute =
 ExtractedAttribute =
     SELECT DISTINCT *
     FROM ExtractedAttribute
-    WHERE Community =="StableDiffusion" OR Community =="dalle2" OR Community =="midjourney";
+    WHERE Community IN ("StableDiffusion","dalle2","midjourney");
 
 OUTPUT
 TO SSTREAM @outputStream;
