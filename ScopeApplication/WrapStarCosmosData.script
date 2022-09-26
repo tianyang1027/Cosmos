@@ -35,7 +35,7 @@ ExtractedAttribute =
 ExtractedAttribute =
     SELECT DISTINCT *
     FROM ExtractedAttribute
-    WHERE Community IN ("StableDiffusion","dalle2","midjourney");
+    WHERE Community.Trim() IN ("StableDiffusion","dalle2","midjourney");
 
 OUTPUT
 TO SSTREAM @outputStream;
@@ -77,11 +77,11 @@ public class WrapStarProcessor : Processor
                     var description = propertiesCount > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][0]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][0]["Value"][0].ToString() : "" : "";
                     var title = propertiesCount > 1 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][1]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][1]["Value"][0].ToString().Replace("r/", "") : "" : "";
                     var url = propertiesCount > 2 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][2]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][2]["Value"][0].ToString() : "" : "";
-                    var height = propertiesCount > 3 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"][0].ToString() : "" : "";
-                    var width = propertiesCount > 4 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"][0].ToString() : "" : "";
-                    var vote = !string.IsNullOrEmpty(description) ? description.Contains("votes") || description.Contains("vote") ? description.Split(' ').Length > 0 ? description.Split(' ')[0] : "" : "" : "";
-                    var comment = !string.IsNullOrEmpty(description) ? description.Contains("comments") || description.Contains("comment") ? description.Split(' ').Length > 3 ? description.Split(' ')[3] : "" : "" : "";
-                    var community = !string.IsNullOrEmpty(title) ? title.Split('-').Length > 0 ? title.Split('-')[0]: "" : "";
+                    var height = propertiesCount > 3 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][3]["Value"][0].ToString().Trim() : "" : "";
+                    var width = propertiesCount > 4 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"].Count() > 0 ? JObject.Parse(model_jsonStr)["Entities"][0]["Properties"][4]["Value"][0].ToString().Trim() : "" : "";
+                    var vote = !string.IsNullOrEmpty(description) ? description.Contains("votes") || description.Contains("vote") ? description.Split(' ').Length > 0 ? description.Split(' ')[0].Trim() : "" : "" : "";
+                    var comment = !string.IsNullOrEmpty(description) ? description.Contains("comments") || description.Contains("comment") ? description.Split(' ').Length > 3 ? description.Split(' ')[3].Trim() : "" : "" : "";
+                    var community = !string.IsNullOrEmpty(title) ? title.Split('-').Length > 0 ? title.Split('-')[0].Trim(): "" : "";
                     output[0].Set(pageUrl);
                     output[1].Set(url);
                     output[2].Set(title);
