@@ -1,7 +1,7 @@
 ﻿REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Microsoft.WrapStar.Shared.dll";
 REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtonsoft.Json.dll";
 
-#DECLARE date = "2022_09_22";
+#DECLARE date = "2022_09_24";
 #DECLARE inputStream string = $"/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/{@date}/%h/%n.dat?&hour=0...23&serialnum=0...511&sparsestreamset=true";
 #DECLARE outputStream string = $"/users/v-yangtian/WrapStar/{@date}/reddit.ss";
 
@@ -35,7 +35,7 @@ ExtractedAttribute =
 ExtractedAttribute =
     SELECT DISTINCT *
     FROM ExtractedAttribute
-    WHERE Community.Trim() IN ("StableDiffusion","dalle2","midjourney");
+    WHERE Community IN ("StableDiffusion","dalle2","midjourney");
 
 OUTPUT
 TO SSTREAM @outputStream;
