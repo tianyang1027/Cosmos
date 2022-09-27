@@ -1,13 +1,12 @@
-﻿//Script GUID:cb44451e-9bc1-4b2b-a045-e2a054c22a5b
-//Used for tracking history
+﻿
+#DECLARE input string = "/users/v-yangtian/WrapStar/%Y_%m_%d/reddit.ss?date=2022-09-20...2022-09-27";
 
-
-RankeFile_MediaFeature__whiteBackground =
-    SELECT *
+ouput_latest_week =
+    SELECT DISTINCT *
     FROM
     (
-        SSTREAM "/local/users/v-yangtian/RankeFile_MediaFeature__whiteBackground.ss"
+        SSTREAM @input
     );
 
-OUTPUT TO "/local/users/v-yangtian/RankeFile_MediaFeature__whiteBackground.tsv"
-USING DefaultTextOutputter(delimiter:'\t', outputHeader:true);
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/ouput_latest_week.ss";
