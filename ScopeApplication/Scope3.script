@@ -9,6 +9,27 @@ ouput_latest_week =
     );
 
 
+ExtractedAttribute =
+    SELECT PageUrl,
+           ImageUrl,
+           Description,
+           Title,
+           Width,
+           Heigth,
+           Community,
+           MAX(string.IsNullOrEmpty(Vote) ? - 1 : int.Parse(Vote.Replace(",", ""))) AS Vote,
+           MAX(string.IsNullOrEmpty(Comment) ? - 1 : int.Parse(Comment.Replace(",", ""))) AS Comment
+    FROM
+    (
+        SSTREAM @input
+    )
+    GROUP BY PageUrl,
+             ImageUrl,
+             Description,
+             Title,
+             Width,
+             Heigth,
+             Community;
 
 OUTPUT
 TO SSTREAM "/local/users/v-yangtian/ouput_latest_week.ss";
