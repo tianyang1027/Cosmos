@@ -1,12 +1,9 @@
 ﻿data =
-    SELECT *
+    SELECT COUNT( * ) AS  count
     FROM
     (
-        SSTREAM "/users/v-yangtian/WrapStar/2022_09_23/reddit.ss"
-    )
-    WHERE Community.Trim() == "StableDiffusion" || Community.Trim() == "dalle2"||Community.Trim()== "midjourney";
+        SSTREAM @"C:\Users\v-yangtian\\Downloads\ouput_latest_week.ss"
+    );
 
 OUTPUT
-TO SSTREAM "/users/v-yangtian/WrapStar/test.ss";
-
-
+TO @"C:\Users\v-yangtian\Downloads\ouput_latest_week_count.txt";

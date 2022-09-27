@@ -8,5 +8,7 @@ ouput_latest_week =
         SSTREAM @input
     );
 
+
+
 OUTPUT
 TO SSTREAM "/local/users/v-yangtian/ouput_latest_week.ss";
