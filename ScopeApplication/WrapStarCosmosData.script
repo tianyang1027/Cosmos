@@ -24,8 +24,6 @@ ModelData =
     HAVING
     Model_Version == "146881" AND Model_Ontology == "Image";
 
-
-
 OutputData =
     PROCESS
     ModelData
