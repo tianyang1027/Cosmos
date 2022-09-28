@@ -1,9 +1,92 @@
-﻿data =
-    SELECT COUNT( * ) AS  count
+﻿
+//index =
+//    SELECT *
+//    FROM
+//    (
+//        SSTREAM @"C:\Users\v-yangtian\\Downloads\ouput_latest_week.ss"
+//    );
+
+//rankData =
+//    SELECT *
+//    FROM index
+//    WHERE Description.Contains("votes") OR Description.Contains("vote");
+//
+//
+//duplicate_rank =
+//    SELECT PageUrl,
+//           ImageUrl,
+//           Title,
+//           Width,
+//           Heigth,
+//           Community,
+//           ARRAY_AGG(Description).OrderByDescending(x => x.Split(' ') [0].All(char.IsDigit) ? Convert.ToInt32(x.Split(' ') [0]) : 0).First() AS Description,
+//           MAX(string.IsNullOrEmpty(Vote) ? - 1 : int.Parse(Vote.Replace(",", ""))) AS Vote,
+//           MAX(string.IsNullOrEmpty(Comment) ? - 1 : int.Parse(Comment.Replace(",", ""))) AS Comment
+//    FROM rankData
+//    GROUP BY PageUrl,
+//             ImageUrl,
+//             Title,
+//             Width,
+//             Heigth,
+//             Community;
+//
+//
+//
+//NorData =
+//    SELECT *
+//    FROM index
+//    WHERE !Description.Contains("votes") AND !Description.Contains("vote");
+//
+//
+//duplicate_rank_no =
+//    SELECT PageUrl,
+//           ImageUrl,
+//           Title,
+//           Width,
+//           Heigth,
+//           Community,
+//           ANY_VALUE(Description) AS Description,
+//           MAX(string.IsNullOrEmpty(Vote) ? - 1 : int.Parse(Vote.Replace(",", ""))) AS Vote,
+//           MAX(string.IsNullOrEmpty(Comment) ? - 1 : int.Parse(Comment.Replace(",", ""))) AS Comment
+//    FROM rankData
+//    GROUP BY PageUrl,
+//             ImageUrl,
+//             Title,
+//             Width,
+//             Heigth,
+//             Community;
+//
+//
+//result =
+//    SELECT *
+//    FROM duplicate_rank_no
+//    UNION 
+//    SELECT *
+//    FROM duplicate_rank;
+
+
+
+data =
+    SELECT PageUrl,
+           ImageUrl,
+           Title,
+           Width,
+           Heigth,
+           Community,
+           ARRAY_AGG(Description).OrderByDescending(x => x.Split(' ') [0].All(char.IsDigit) ? Convert.ToInt32(x.Split(' ') [0]) : 0).First() AS Description,
+           MAX(string.IsNullOrEmpty(Vote) ? - 1 : int.Parse(Vote.Replace(",", ""))) AS Vote,
+           MAX(string.IsNullOrEmpty(Comment) ? - 1 : int.Parse(Comment.Replace(",", ""))) AS Comment
     FROM
     (
         SSTREAM @"C:\Users\v-yangtian\\Downloads\ouput_latest_week.ss"
-    );
+    )
+    GROUP BY PageUrl,
+             ImageUrl,
+             Title,
+             Width,
+             Heigth,
+             Community;
 
 OUTPUT
-TO @"C:\Users\v-yangtian\Downloads\ouput_latest_week_count.txt";
+TO @"C:\Users\v-yangtian\Downloads\ouput_latest_week_dedupe.tsv"
+USING DefaultTextOutputter(delimiter: '\t', outputHeader: true);
