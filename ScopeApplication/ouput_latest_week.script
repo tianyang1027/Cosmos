@@ -1,0 +1,28 @@
+﻿
+#DECLARE input string = "/local/users/v-yangtian/WrapStar/%Y_%m_%d/reddit.ss?date=2022-09-21..2022-09-27";
+
+
+
+ExtractedAttribute =
+    SELECT PageUrl,
+           ImageUrl,
+           Title,
+           Width,
+           Heigth,
+           Community,
+           ARRAY_AGG(Description).OrderByDescending(x => x.Split(' ') [0].All(char.IsDigit) ? Convert.ToDouble(x.Split(' ') [0]) : 0).First() AS Description,
+           MAX(Vote) AS Vote,
+           MAX(Comment) AS Comment
+    FROM
+    (
+        SSTREAM @input
+    )
+    GROUP BY PageUrl,
+             ImageUrl,
+             Title,
+             Width,
+             Heigth,
+             Community;
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/ouput_latest_week.ss";
