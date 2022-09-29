@@ -107,9 +107,9 @@ public class WrapStarProcessor : Processor
                                     output[2].Set(title);
                                     output[3].Set(width);
                                     output[4].Set(height);
-                                    output[7].Set(likes);
-                                    output[8].Set(comments);
-                                    output[9].Set(tags);
+                                    output[5].Set(likes);
+                                    output[6].Set(comments);
+                                    output[7].Set(tags);
                                 }
                             }
                         }
