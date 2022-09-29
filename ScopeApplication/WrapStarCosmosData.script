@@ -2,7 +2,7 @@
 REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtonsoft.Json.dll";
 
 
-#DECLARE date string = "2022_09_29";
+#DECLARE date string = "2022_09_27";
 #DECLARE inputStream string =  $"/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/{@date}/%h/%n.dat?&hour=0...23&serialnum=0...511&sparsestreamset=true";
 #DECLARE outputStream string =  $"/local/users/v-yangtian/WrapStar/{@date}/reddit.ss";
 
