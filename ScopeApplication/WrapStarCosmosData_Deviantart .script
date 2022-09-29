@@ -32,7 +32,7 @@ ExtractedAttribute =
 ExtractedAttribute =
     SELECT DISTINCT *
     FROM ExtractedAttribute
-    WHERE Tags!=null AND Tags!= "";
+    WHERE Tags.Contains("dalle") OR Tags.Contains("midjourney") OR Tags.Contains("stablediffusion") OR Tags.Contains("nightcafe");
 
 OUTPUT
 TO SSTREAM @outputStream;
@@ -75,31 +75,35 @@ public class WrapStarProcessor : Processor
                     var rootProperties = rootEntities[0]["Properties"];
                     if (rootProperties.Count() > 0)
                     {
-                        var tagsObjList = rootProperties[0]["Entities"][0]["Properties"][0]["Entities"];
-                        List<string> tagList = new List<string>();
-                        foreach (var item in tagsObjList)
+                        if (rootProperties[0]["Entities"].Count() > 0 && rootProperties[0]["Entities"][0]["Properties"].Count() > 0)
                         {
-                            if (item["Properties"].Count() > 0 && item["Properties"][0]["Value"].Count() > 0)
+                            var tagsObjList = rootProperties[0]["Entities"][0]["Properties"][0]["Entities"];
+                            List<string> tagList = new List<string>();
+                            foreach (var item in tagsObjList)
                             {
-                                tagList.Add(item["Properties"][0]["Value"][0].ToString().Trim());
+                                if (item["Properties"].Count() > 0 && item["Properties"][0]["Value"].Count() > 0)
+                                {
+                                    string tag = item["Properties"][0]["Value"][0].ToString().Trim();
+                                    tagList.Add(tag);
+                                }
                             }
+                            string imageUrl = rootProperties.Count() > 1 ? rootProperties[1]["Value"].Count() > 0 ? rootProperties[1]["Value"][0].ToString().Trim() : "" : "";
+                            var likes = rootProperties.Count() > 2 ? rootProperties[2]["Value"].Count() > 0 ? Convert.ToDouble(rootProperties[2]["Value"][0].ToString().Trim().Replace("k", "0000")) : -1 : -1;
+                            var comments = rootProperties.Count() > 3 ? rootProperties[3]["Value"].Count() > 0 ? Convert.ToDouble(rootProperties[3]["Value"][0].ToString().Trim().Replace("k", "0000")) : -1 : -1;
+                            var views = rootProperties.Count() > 4 ? rootProperties[4]["Value"].Count() > 0 ? Convert.ToDouble(rootProperties[4]["Value"][0].ToString().Trim().Replace("k", "0000")) : -1 : -1;
+                            string title = rootProperties.Count() > 5 ? rootProperties[5]["Value"].Count() > 0 ? rootProperties[5]["Value"][0].ToString().Trim() : "" : "";
+                            string width = rootProperties.Count() > 6 ? rootProperties[6]["Value"].Count() > 0 ? rootProperties[6]["Value"][0].ToString().Trim() : "" : "";
+                            string height = rootProperties.Count() > 7 ? rootProperties[7]["Value"].Count() > 0 ? rootProperties[7]["Value"][0].ToString().Trim() : "" : "";
+                            string tags = string.Join(",", tagList);
+                            output[0].Set(pageUrl);
+                            output[1].Set(imageUrl);
+                            output[2].Set(title);
+                            output[3].Set(width);
+                            output[4].Set(height);
+                            output[7].Set(likes);
+                            output[8].Set(comments);
+                            output[9].Set(tags);
                         }
-                        string imageUrl = rootProperties[1]["Value"][0].ToString().Trim();
-                        string likes = rootProperties[2]["Value"][0].ToString().Trim();
-                        string comments = rootProperties[3]["Value"][0].ToString().Trim();
-                        string views = rootProperties[4]["Value"][0].ToString().Trim();
-                        string title = rootProperties[5]["Value"][0].ToString().Trim();
-                        string width = rootProperties[6]["Value"][0].ToString().Trim();
-                        string height = rootProperties[7]["Value"][0].ToString().Trim();
-                        string tags = string.Join(",", tagList);
-                        output[0].Set(pageUrl);
-                        output[1].Set(imageUrl);
-                        output[2].Set(title);
-                        output[3].Set(width);
-                        output[4].Set(height);
-                        output[7].Set(likes);
-                        output[8].Set(comments);
-                        output[9].Set(tags);
                     }
                 }
                 yield return output;
