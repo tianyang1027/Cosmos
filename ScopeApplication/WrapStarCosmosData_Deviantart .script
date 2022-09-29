@@ -94,9 +94,9 @@ public class WrapStarProcessor : Processor
                                         }
                                     }
                                     string imageUrl = rootProperties.Count() > 1 ? rootProperties[1]["Value"].Count() > 0 ? rootProperties[1]["Value"][0].ToString().Trim() : "" : "";
-                                    var likes = rootProperties.Count() > 2 ? rootProperties[2]["Value"].Count() > 0 ? rootProperties[2]["Value"][0].ToString().Trim().Replace("k", "0000") : "" : "";
-                                    var comments = rootProperties.Count() > 3 ? rootProperties[3]["Value"].Count() > 0 ?rootProperties[3]["Value"][0].ToString().Trim().Replace("k", "0000") : "" : "";
-                                    var views = rootProperties.Count() > 4 ? rootProperties[4]["Value"].Count() > 0 ? rootProperties[4]["Value"][0].ToString().Trim().Replace("k", "0000") :  "" : "";
+                                    var likes = rootProperties.Count() > 2 ? rootProperties[2]["Value"].Count() > 0 ?rootProperties[2]["Value"][0].ToString().Trim().Replace("k", "0000").All(char.IsDigit) ?rootProperties[2]["Value"][0].ToString().Trim().Replace("k", "0000").Trim() :  : "";
+                                    var comments = rootProperties.Count() > 3 ? rootProperties[3]["Value"].Count() > 0 ?rootProperties[3]["Value"][0].ToString().Trim().Replace("k", "0000").Trim() : "" : "";
+                                    var views = rootProperties.Count() > 4 ? rootProperties[4]["Value"].Count() > 0 ? rootProperties[4]["Value"][0].ToString().Trim().Replace("k", "0000")>Trim() :  "" : "";
                                     string title = rootProperties.Count() > 5 ? rootProperties[5]["Value"].Count() > 0 ? rootProperties[5]["Value"][0].ToString().Trim() : "" : "";
                                     string width = rootProperties.Count() > 6 ? rootProperties[6]["Value"].Count() > 0 ? rootProperties[6]["Value"][0].ToString().Trim() : "" : "";
                                     string height = rootProperties.Count() > 7 ? rootProperties[7]["Value"].Count() > 0 ? rootProperties[7]["Value"][0].ToString().Trim() : "" : "";
