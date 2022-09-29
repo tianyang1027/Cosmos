@@ -1,7 +1,7 @@
 ﻿REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Microsoft.WrapStar.Shared.dll";
 REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtonsoft.Json.dll";
 
-#DECLARE date = "2022_09_29";
+#DECLARE date = "2022_09_28";
 #DECLARE inputStream string = $"/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/{@date}/%h/%n.dat?&hour=0...23&serialnum=0...511&sparsestreamset=true";
 #DECLARE outputStream string = $"/local/users/v-yangtian/WrapStar/{@date}/deviantart.ss";
 
@@ -94,9 +94,9 @@ public class WrapStarProcessor : Processor
                                         }
                                     }
                                     string imageUrl = rootProperties.Count() > 1 ? rootProperties[1]["Value"].Count() > 0 ? rootProperties[1]["Value"][0].ToString().Trim() : "" : "";
-                                    var likes = rootProperties.Count() > 2 ? rootProperties[2]["Value"].Count() > 0 ? rootProperties[2]["Value"][0].ToString().Replace("k", "000").Trim():  : "";
+                                    var likes = rootProperties.Count() > 2 ? rootProperties[2]["Value"].Count() > 0 ? rootProperties[2]["Value"][0].ToString().Replace("k", "000").Trim(): "" : "";
                                     var comments = rootProperties.Count() > 3 ? rootProperties[3]["Value"].Count() > 0 ?rootProperties[3]["Value"][0].ToString().Replace("k", "000").Trim() : "" : "";
-                                    var views = rootProperties.Count() > 4 ? rootProperties[4]["Value"].Count() > 0 ? rootProperties[4]["Value"][0].ToString()..Replace("k", "000")>Trim() :  "" : "";
+                                    var views = rootProperties.Count() > 4 ? rootProperties[4]["Value"].Count() > 0 ? rootProperties[4]["Value"][0].ToString().Replace("k", "000").Trim() :  "" : "";
                                     string title = rootProperties.Count() > 5 ? rootProperties[5]["Value"].Count() > 0 ? rootProperties[5]["Value"][0].ToString().Trim() : "" : "";
                                     string width = rootProperties.Count() > 6 ? rootProperties[6]["Value"].Count() > 0 ? rootProperties[6]["Value"][0].ToString().Trim() : "" : "";
                                     string height = rootProperties.Count() > 7 ? rootProperties[7]["Value"].Count() > 0 ? rootProperties[7]["Value"][0].ToString().Trim() : "" : "";
