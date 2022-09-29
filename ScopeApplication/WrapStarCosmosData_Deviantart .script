@@ -3,7 +3,7 @@ REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtons
 
 #DECLARE date = "2022_09_29";
 #DECLARE inputStream string = $"/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/{@date}/%h/%n.dat?&hour=0...23&serialnum=0...511&sparsestreamset=true";
-#DECLARE outputStream string = $"/users/v-yangtian/WrapStar/{@date}/deviantart.ss";
+#DECLARE outputStream string = $"/local/users/v-yangtian/WrapStar/{@date}/deviantart.ss";
 
 ModelData =
     EXTRACT DocumentURL,
@@ -17,7 +17,6 @@ ModelData =
     USING WrapStarExtractor()
     HAVING
     Model_Version == "147050" AND Model_Ontology == "Image";
-
 
 OUTPUT
 TO SSTREAM "/local/users/v-yangtian/MoDelData__Deviantart.ss";
@@ -95,9 +94,9 @@ public class WrapStarProcessor : Processor
                                         }
                                     }
                                     string imageUrl = rootProperties.Count() > 1 ? rootProperties[1]["Value"].Count() > 0 ? rootProperties[1]["Value"][0].ToString().Trim() : "" : "";
-                                    var likes = rootProperties.Count() > 2 ? rootProperties[2]["Value"].Count() > 0 ? Convert.ToDouble(rootProperties[2]["Value"][0].ToString().Trim().Replace("k", "0000")) : -1 : -1;
-                                    var comments = rootProperties.Count() > 3 ? rootProperties[3]["Value"].Count() > 0 ? Convert.ToDouble(rootProperties[3]["Value"][0].ToString().Trim().Replace("k", "0000")) : -1 : -1;
-                                    var views = rootProperties.Count() > 4 ? rootProperties[4]["Value"].Count() > 0 ? Convert.ToDouble(rootProperties[4]["Value"][0].ToString().Trim().Replace("k", "0000")) : -1 : -1;
+                                    var likes = rootProperties.Count() > 2 ? rootProperties[2]["Value"].Count() > 0 ? rootProperties[2]["Value"][0].ToString().Trim().Replace("k", "0000") : "" : "";
+                                    var comments = rootProperties.Count() > 3 ? rootProperties[3]["Value"].Count() > 0 ?rootProperties[3]["Value"][0].ToString().Trim().Replace("k", "0000") : "" : "";
+                                    var views = rootProperties.Count() > 4 ? rootProperties[4]["Value"].Count() > 0 ? rootProperties[4]["Value"][0].ToString().Trim().Replace("k", "0000") :  "" : "";
                                     string title = rootProperties.Count() > 5 ? rootProperties[5]["Value"].Count() > 0 ? rootProperties[5]["Value"][0].ToString().Trim() : "" : "";
                                     string width = rootProperties.Count() > 6 ? rootProperties[6]["Value"].Count() > 0 ? rootProperties[6]["Value"][0].ToString().Trim() : "" : "";
                                     string height = rootProperties.Count() > 7 ? rootProperties[7]["Value"].Count() > 0 ? rootProperties[7]["Value"][0].ToString().Trim() : "" : "";
