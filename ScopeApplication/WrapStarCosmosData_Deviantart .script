@@ -1,14 +1,16 @@
 ﻿REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Microsoft.WrapStar.Shared.dll";
 REFERENCE "/shares/DocumentUnderstanding.Prod/WrapStarStream/DistribBeta/Newtonsoft.Json.dll";
+RESOURCE "/local/users/v-yangtian/DeviantartTags.tsv";
 
 //#DECLARE date = "2022_09_28";
 //#DECLARE inputStream string = $"/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/{@date}/%h/%n.dat?&hour=0...23&serialnum=0...511&sparsestreamset=true";
 //#DECLARE outputStream string = $"/local/users/v-yangtian/WrapStar/{@date}/deviantart.ss";
 
 #DECLARE startDate = "2022-09-28";
-#DECLARE endDate = "2022-09-29";
+#DECLARE endDate = "2022-09-30";
 #DECLARE inputStream string = $"/shares/DocumentUnderstanding.Prod/WrapStarStream/Callisto/Prod/%Y_%m_%d/%h/%n.dat?date={@startDate}...{@endDate}&hour=0...23&serialnum=0...511&sparsestreamset=true";
-#DECLARE outputStream string = $"/local/users/v-yangtian/WrapStar/period/{@startDate}_{@endDate}/reddit.ss";
+#DECLARE outputStream string = $"/local/users/v-yangtian/period/{@startDate}_{@endDate}/deviantart.ss";
+#DECLARE outputTsv string = $"/local/users/v-yangtian/period/{@startDate}_{@endDate}/deviantart.tsv";
 
 ModelData =
     EXTRACT DocumentURL,
@@ -33,13 +35,21 @@ ExtractedAttribute =
     PRODUCE
         PageUrl,ImageUrl,Title,Width,Heigth,Likes,Comments,Views,Tags;
 
+
+
+
 ExtractedAttribute =
     SELECT DISTINCT *
     FROM ExtractedAttribute
-    WHERE Tags.Contains("dalle") OR Tags.Contains("midjourney") OR Tags.Contains("stablediffusion") OR Tags.Contains("nightcafe");
+    WHERE IsContainsDeviantartTags(Tags);
 
 OUTPUT
 TO SSTREAM @outputStream;
+
+OUTPUT
+TO @outputTsv
+USING DefaultTextOutputter(outputHeader: true);
+
 
 #CS
 using System;
@@ -203,4 +213,18 @@ public class WrapStarExtractor : Extractor
         }
     }
 }
+
+
+static HashSet<string> deviantartTags = new HashSet<string>(File.ReadAllLines(Path.GetFileName("/local/users/v-yangtian/DeviantartTags.tsv")));
+
+public static bool IsContainsDeviantartTags(string tags)
+{
+    foreach (var tag in tags.Split(','))
+    {
+        if (deviantartTags.Contains(tag))
+            return true;
+    }
+    return false;
+}
+
 #ENDCS

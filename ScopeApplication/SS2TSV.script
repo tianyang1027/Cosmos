@@ -1,0 +1,10 @@
+﻿data =
+    SELECT *
+    FROM
+    (
+        SSTREAM @"C:\Users\v-yangtian\Downloads\deviantart.ss"
+    );
+
+OUTPUT
+TO @"C:\Users\v-yangtian\Downloads\deviantart.tsv"
+USING DefaultTextOutputter(outputHeader: true);

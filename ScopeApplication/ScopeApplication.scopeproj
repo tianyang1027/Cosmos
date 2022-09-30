@@ -60,6 +60,7 @@
     <Script Include="PIVOT.script" />
     <Script Include="ouput_latest_week_dedupe.script" />
     <Script Include="ouput_latest_week.script" />
+    <Script Include="SS2TSV.script" />
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
     <Script Include="WrapStarCosmosData.script" />
     <Script Include="WrapStarCosmosData_Deviantart .script" />
@@ -140,6 +141,9 @@
     </ScriptCode>
     <ScriptCode Include="ouput_latest_week.script.cs">
       <DependentUpon>ouput_latest_week.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="SS2TSV.script.cs">
+      <DependentUpon>SS2TSV.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="UpdateLabeledDetrimentalNodules.script.cs">
       <DependentUpon>UpdateLabeledDetrimentalNodules.script</DependentUpon>
