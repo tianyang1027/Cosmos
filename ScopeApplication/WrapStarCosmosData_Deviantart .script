@@ -216,12 +216,14 @@ static HashSet<string> deviantartTags = new HashSet<string>(File.ReadAllLines(Pa
 
 public static bool IsContainsDeviantartTags(string tags)
 {
-    foreach (var tag in tags.Split(','))
+    if (!string.IsNullOrEmpty(tags))
     {
-        if (deviantartTags.Contains(tag))
-            return true;
+        foreach (var tag in tags.Split(','))
+        {
+            if (deviantartTags.Contains(tag))
+                return true;
+        }
     }
     return false;
 }
-
 #ENDCS
