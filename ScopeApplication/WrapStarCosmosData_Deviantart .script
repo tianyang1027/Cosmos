@@ -35,9 +35,6 @@ ExtractedAttribute =
     PRODUCE
         PageUrl,ImageUrl,Title,Width,Heigth,Likes,Comments,Views,Tags;
 
-
-
-
 ExtractedAttribute =
     SELECT DISTINCT *
     FROM ExtractedAttribute
