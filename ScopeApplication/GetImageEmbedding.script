@@ -1,0 +1,146 @@
+﻿//Script GUID:25ac4774-e27b-4fdb-8c31-afdb9c4af2f8
+//Used for tracking history
+#DECLARE SG_Dir  string = @"C:\Users\jichen4.REDMOND\Documents\work\code\SearchGold\deploy\builds\data\latest\";
+
+REFERENCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+//REFERENCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+REFERENCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Injection.dll";
+RESOURCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+USING MMRV2.Utility;
+USING MMRV2.Core;
+
+#DECLARE In_Data  string = @"/local/users/jichen4/PrismV2/HitApp/Output/OutstandingSliderV2_Agg_09152022.ss";
+#DECLARE Out_Data  string = @"/local/users/jichen4/PrismV2/HitApp/Output/OutstandingSliderV2_Agg_09152022-SIEM.ss";
+#DECLARE Out_DataVis  string = @"/local/users/jichen4/PrismV2/HitApp/Output/OutstandingSliderV2_Agg_09152022-SIEM.tsv";
+#DECLARE Out_Stat  string = @"/local/users/jichen4/PrismV2/HitApp/Output/stat/OutstandingSliderV2_Agg_09152022-SIEM.ss";
+
+
+img =
+//    EXTRACT MUrl : string,
+//            PUrl : string,
+//            PDomain : string,
+//            Key : string,
+//            PKey : string,
+//            Min : string,
+//            Max : string,
+//            PrismyScore : float,
+//            ID : int
+//    FROM @In_Data
+//    USING DefaultTextExtractor(skipFirstNRows: 1);
+    SSTREAM(@In_Data);
+
+//img =
+//    SELECT MUrl,
+//           PUrl,
+//           PDomain,
+//           Key,
+//           PKey,
+//           PrismyScore
+////           MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MUrl) AS Key
+//    FROM img;
+
+// Blob
+#DECLARE imageBlobBaseSchemaPath string = @"/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Snapshot/Blob/Base/2022_09_12/Image_BlobBase_Schema.xml";
+#DECLARE imageBlobBaseRepoPath string = Path.GetDirectoryName(@imageBlobBaseSchemaPath).Replace("\\", "/");
+RESOURCE @imageBlobBaseSchemaPath;
+
+
+//-------------- Process image blob base data -------------------
+
+LOOP(I, 8)
+{   
+    #DECLARE imageBlobBaseMetaDataPath string = @imageBlobBaseRepoPath + "/Image_BlobBase_Metadata.@@I@@.ss";
+
+    imageBlob = SSTREAM @imageBlobBaseMetaDataPath;
+    
+    imageBlobFiltered =
+        SELECT *
+        FROM imageBlob 
+             LEFT SEMIJOIN img
+             ON imageBlob.Key == img.Key;
+
+    imgDNN@@I@@ =
+        PROCESS imageBlobFiltered
+        USING MMRV2.Core.MmrScopeTypeProcessor(
+                    "-schemaPath", "Metadata:Image_BlobBase_Schema.xml", 
+                    "-outputFeatures",
+            "LargeFeature__SIEMv3ImageEncoded_Binary")
+        HAVING LargeFeature__SIEMv3ImageEncoded_Binary != null;   
+}
+
+imgDNN =
+LOOP(I, 7)
+{
+    SELECT * 
+    FROM  imgDNN@@I@@
+    UNION
+}
+    SELECT *
+    FROM  imgDNN7;
+
+
+
+imgComb =
+    SELECT img.*.Except(PrismyScore_Bucket),
+           MediaFeature__PrismyContentScore.HasValue ? Math.Round(MediaFeature__PrismyContentScore.GetValueOrDefault() * 10) : 0 AS PrismyScore_Bucket,
+           ArrayConvertor.FloatArrayToString(ArrayConvertor.Bytes2Floats(LargeFeature__SIEMv3ImageEncoded_Binary)) AS LargeFeature__SIEMv3ImageEncoded_Binary
+    FROM img
+         LEFT OUTER JOIN
+             imgDNN
+         ON img.Key == imgDNN.Key;
+
+
+OUTPUT imgComb
+//TO  @Out_Data
+//USING DefaultTextOutputter(outputHeader:true);
+TO SSTREAM @Out_Data
+   HASH CLUSTERED BY Key
+      INTO 500
+       SORTED BY Key;
+
+
+#CS
+public static string NormalizeDocEmbedding(string doc_feature)
+{
+    List<float> vector = new List<float>();
+    var imageStrings = doc_feature.Split(',');
+    for (int i = 0; i < imageStrings.Length; i++)
+    {
+        // values are quantized to 8 bits (numbers are between 0 - 255), it means that to get the original values, we need to run this operation on each vector x: (x/127.5) - 1
+        vector.Add((float)((float.Parse(imageStrings[i]) / 127.5) - 1));
+    }
+    string normalized_doc_feature = string.Join(" ",vector);
+    return normalized_doc_feature;
+}
+
+
+public class ArrayConvertor
+{
+    public static float[] Bytes2Floats(byte[] bytes)
+    {
+        if (bytes == null)
+        {
+            return null;
+        }
+        if ((bytes.Length & 0x03) != 0)
+        {
+            return null;
+        }
+        float[] res = new float[bytes.Length >> 2];
+        Buffer.BlockCopy(bytes, 0, res, 0, bytes.Length);
+        return res;
+    }
+ 
+    public static string FloatArrayToString(float[] floats)
+    {
+        if (floats == null)
+        {
+            return null;
+        }
+        return string.Join(" ", floats);
+    }
+}
+
+#ENDCS

@@ -25,6 +25,7 @@
     <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Script Include="Clustering.script" />
     <Script Include="ContentCoverage_6_IndexCoverage.script" />
     <Script Include="DebugToolToTestGivenSetOfImages.script" />
     <Script Include="DebugTool_PPE.script" />
@@ -34,6 +35,8 @@
     <Script Include="Generate_DomainantColorBackgroundRankFile.script" />
     <Script Include="Generate_LatestDetrimental.script" />
     <Script Include="Generate_PageTitle.script" />
+    <Script Include="GetImageEmbedding.script" />
+    <Script Include="HitApp_0_SampleImpression.script" />
     <Script Include="HitApp_0_SampleIndex.script" />
     <Script Include="HitApp_0_SampleIndex_SendDetrimental.script" />
     <Script Include="HitApp_1_GeneratePointwiseDefect.script" />
@@ -64,6 +67,9 @@
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
     <Script Include="WrapStarCosmosData.script" />
     <Script Include="WrapStarCosmosData_Deviantart .script" />
+    <ScriptCode Include="Clustering.script.cs">
+      <DependentUpon>Clustering.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="ContentCoverage_6_IndexCoverage.script.cs">
       <DependentUpon>ContentCoverage_6_IndexCoverage.script</DependentUpon>
     </ScriptCode>
@@ -90,6 +96,12 @@
     </ScriptCode>
     <ScriptCode Include="Generate_PageTitle.script.cs">
       <DependentUpon>Generate_PageTitle.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="GetImageEmbedding.script.cs">
+      <DependentUpon>GetImageEmbedding.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="HitApp_0_SampleImpression.script.cs">
+      <DependentUpon>HitApp_0_SampleImpression.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="HitApp_0_SampleIndex.script.cs">
       <DependentUpon>HitApp_0_SampleIndex.script</DependentUpon>

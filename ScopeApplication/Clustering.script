@@ -1,0 +1,153 @@
+﻿//Script GUID:1b1842e3-92e3-4619-a23e-4938e9dfa2db
+//Used for tracking history
+//#DECLARE SG_Dir  string = @"C:\Users\jichen4.REDMOND\Documents\work\code\SearchGold\deploy\builds\data\latest\";
+
+#DECLARE Par_Date                   string = "2022_10_09";
+
+#DECLARE Dir string="/local/users/jichen4/PrismV2/HitApp/Input/";
+
+#DECLARE In_ImageFeat string = @Dir + @Par_Date + "/PrismIndex_Sample.ss";
+#DECLARE Out_Clustering string = @Dir + @Par_Date + "/PrismIndex_Cluster.ss"; 
+#DECLARE Out_Vis string = @Dir + @Par_Date + "/PrismIndex_Sample.tsv"; 
+#DECLARE Out_Stats string = @Dir + @Par_Date + "/stat/PrismIndex_Sample_Cluster.stt";
+
+RESOURCE @"C:\Users\jichen4.REDMOND\OneDrive - Microsoft\Documents\code\MM_Image_PrismV2\MM_Image_PrismV2\ClusteringReducer.py";
+//RESOURCE @"C:\Users\jichen4\OneDrive - Microsoft\Documents\code\MM_Image_PrismV2\MM_Image_PrismV2\ClusteringReducer.py";
+#DECLARE N_Clusters int = 100;// for 10k , start with 200 ; 
+//#DECLARE Feat_Delim char = ",";
+#DECLARE setupReducerScript string = @"import ClusteringReducer";
+#DECLARE udoReducerExpression string = string.Format(@"ClusteringReducer.WardClusterReducer({0})",@N_Clusters);
+
+// [1/3] Read the image embedding
+imgInfo =
+    SSTREAM @In_ImageFeat;
+
+//imgBad = 
+//    SELECT *,
+//           CheckFeatureLen(LargeFeature__SIEMv3ImageEncoded_Binary) AS FeatLen
+//    FROM imgInfo
+//    HAVING FeatLen != 32;
+
+           
+
+
+imgEmbedding =
+    SELECT 0 AS GroupKey,
+           Key,
+           // convert feature into string format: a string of float array
+//           ArrayConvertor.FloatArrayToString(ArrayConvertor.Bytes2Floats(LargeFeature__SIEMv3ImageEncoded_Binary)) AS ImgEmbedding,
+           LargeFeature__SIEMv3ImageEncoded_Binary AS ImgEmbedding,
+           1 AS Weight
+           // LargeFeature__SIEMv3ImageEncoded_Binary is byte[] & string format (read from a tsv file)
+//           NormalizeDocEmbedding(LargeFeature__SIEMv3ImageEncoded_Binary) AS ImgEmbedding
+    FROM imgInfo;
+
+
+// [2/3] Clustering
+imgClustering =
+    REDUCE imgEmbedding
+    ON GroupKey
+    PRODUCE Key string,
+            ClusterWeight float,
+            ClusterIndex int
+    USING Reducers.Python(
+        prologue: @setupReducerScript, 
+        expression: @udoReducerExpression
+    );
+
+imgClustering = 
+    SELECT imgInfo.*.Except(LargeFeature__SIEMv3ImageEncoded_Binary),
+           ClusterIndex
+    FROM imgInfo
+         INNER JOIN imgClustering
+         ON imgInfo.Key == imgClustering.Key;
+
+
+OUTPUT imgClustering
+TO SSTREAM @Out_Clustering
+   HASH CLUSTERED BY Key
+       INTO 500
+       SORTED BY Key;
+
+
+// [3/3] Sample for visualization
+sample =
+    SELECT murl,
+           ClusterIndex,
+           ROW_NUMBER() OVER(PARTITION BY ClusterIndex ORDER BY Key) AS ID
+    FROM imgClustering
+    HAVING ID <= 200;
+
+OUTPUT sample
+TO @Out_Vis
+USING DefaultTextOutputter(outputHeader: true);
+
+stat =
+    SELECT "#Cluster" AS Name,
+           COUNT(DISTINCT ClusterIndex) AS Value
+    FROM imgClustering
+    UNION
+    SELECT "#img input" AS Name,
+           COUNT() AS Value
+    FROM imgInfo
+    UNION
+    SELECT "#img output" AS Name,
+           COUNT() AS Value
+    FROM imgClustering;
+
+
+OUTPUT stat
+TO @Out_Stats;
+
+
+#CS
+
+public static int CheckFeatureLen(string doc_feature)
+{
+    return doc_feature.Split(',').Length;
+}
+
+
+public static string NormalizeDocEmbedding(string doc_feature)
+{
+    List<float> vector = new List<float>();
+    var imageStrings = doc_feature.Split(',');
+    for (int i = 0; i < imageStrings.Length; i++)
+    {
+        // values are quantized to 8 bits (numbers are between 0 - 255), it means that to get the original values, we need to run this operation on each vector x: (x/127.5) - 1
+        vector.Add((float)((float.Parse(imageStrings[i]) / 127.5) - 1));
+    }
+    string normalized_doc_feature = string.Join(" ",vector);
+    return normalized_doc_feature;
+}
+
+
+
+public class ArrayConvertor
+{
+    public static float[] Bytes2Floats(byte[] bytes)
+    {
+        if (bytes == null)
+        {
+            return null;
+        }
+        if ((bytes.Length & 0x03) != 0)
+        {
+            return null;
+        }
+        float[] res = new float[bytes.Length >> 2];
+        Buffer.BlockCopy(bytes, 0, res, 0, bytes.Length);
+        return res;
+    }
+ 
+    public static string FloatArrayToString(float[] floats)
+    {
+        if (floats == null)
+        {
+            return null;
+        }
+        return string.Join(" ", floats);
+    }
+}
+
+#ENDCS
