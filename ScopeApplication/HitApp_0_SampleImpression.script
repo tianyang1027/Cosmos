@@ -7,13 +7,13 @@ REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image
 USING MMRV2.Utility;
 #DECLARE InputStartDate string = "2022-09-25";
 #DECLARE InputEndDate string = "2022-10-09";
-#DECLARE In_LwNodule string = "/local/Prod/Image/Prism/IndexGen/PPE/2022_10_09/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
+//#DECLARE In_LwNodule string = "/local/Prod/Image/Prism/IndexGen/PPE/2022_10_09/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
 #DECLARE In_Language string = "en";
 #DECLARE SampleNumber string = "5000";
 #DECLARE TODAY string = "2022-10-09";
-#DECLARE Par_Event string = "Seen";
+#DECLARE Par_Event string = "save";
 #DECLARE FlightID string = "imgfeedprod";
-#DECLARE JobName string = "Impression_imgfeedprod_5000_Like";
+#DECLARE JobName string = "Impression_Sample_5000_save";
 #DECLARE StartDate string = (DateTime.Parse(@TODAY).AddDays(Int32.Parse("-8"))).ToString("yyyy-MM-dd");
 #DECLARE EndDate string = (DateTime.Parse(@TODAY).AddDays(Int32.Parse("-2"))).ToString("yyyy-MM-dd");
 
@@ -41,7 +41,7 @@ USING MMRV2.Utility;
 //#ENDIF
 //#IF(EXISTS(@Out_SampleFile))
 
-LwNodule = SSTREAM @In_LwNodule;
+//LwNodule = SSTREAM @In_LwNodule;
 
 SearchLogPageBingView =
     VIEW @"/shares/searchDM/distrib/released/SLAPI/SearchLogPageView.view"
@@ -71,8 +71,8 @@ UserHistory =
            T.Item6 AS Position
      FROM SearchLogPageBingView
     CROSS APPLY GetImageDetails(DataSources) AS T
-    WHERE (Page_Name=="Page.Image.Feed") AND NOT User_HasMsIp
-    AND Page_Experiments[@IN_NumberLine].Level.ToLower() == @FlightID;
+    WHERE (Page_Name=="Page.Image.Feed") AND NOT User_HasMsIp;
+    //AND Page_Experiments[@IN_NumberLine].Level.ToLower() == @FlightID;
 
  #IF(@In_Language == "zh_chs")
    UserHistory = 
@@ -100,49 +100,49 @@ Sample = SELECT MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(image_url) AS
          *
          FROM Sample;
 
-Sample_with_title = 
-    SELECT Sample.Key,
-           Sample.PKey,
-           Sample.image_url,
-           Sample.page_url,
-           Sample.Market,
-           Sample.RecallPath,
-           Sample.AnID,
-           LwNodule.TextFeatures__PageTitle AS title 
-    FROM Sample 
-         LEFT JOIN LwNodule
-         ON Sample.Key == LwNodule.Key 
-            AND Sample.PKey == LwNodule.PageKey;
-
-//OUTPUT Sample_with_title TO SSTREAM @Out_SampleFile HASH CLUSTERED BY Key SORTED BY Key, PKey WITH STREAMEXPIRY @StreamExpiry;
-
-stats = SELECT "# Samples" AS Item,
-        COUNT(1) AS Value
-        FROM Sample_with_title
-        UNION ALL
-        SELECT
-        "# Samples with title" AS Item,
-        COUNTIF(title != null AND title != "") AS Value
-        FROM Sample_with_title;
+//Sample_with_title = 
+//    SELECT Sample.Key,
+//           Sample.PKey,
+//           Sample.image_url,
+//           Sample.page_url,
+//           Sample.Market,
+//           Sample.RecallPath,
+//           Sample.AnID,
+//           LwNodule.TextFeatures__PageTitle AS title 
+//    FROM Sample 
+//         LEFT JOIN LwNodule
+//         ON Sample.Key == LwNodule.Key 
+//            AND Sample.PKey == LwNodule.PageKey;
+//
+////OUTPUT Sample_with_title TO SSTREAM @Out_SampleFile HASH CLUSTERED BY Key SORTED BY Key, PKey WITH STREAMEXPIRY @StreamExpiry;
+//
+//stats = SELECT "# Samples" AS Item,
+//        COUNT(1) AS Value
+//        FROM Sample_with_title
+//        UNION ALL
+//        SELECT
+//        "# Samples with title" AS Item,
+//        COUNTIF(title != null AND title != "") AS Value
+//        FROM Sample_with_title;
 
 //OUTPUT stats TO SSTREAM @Out_Stats WITH STREAMEXPIRY @StreamExpiry;
+//
+//Sample_with_title =
+//    PROCESS Sample_with_title USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "Market");
+//
+//Sample_with_title =
+//    SELECT Key, PKey, image_url, page_url, RecallPath, title, COUNT(1) AS occurrence
+//    FROM Sample_with_title
+//    GROUP BY Key, PKey, image_url, page_url, RecallPath, title;
+//
+//// Remove recall path when sending to hitapp as we don't need it for the judgement but have it in previous file when we want it for dashboards
+//Sample_with_title = 
+//    SELECT DISTINCT image_url,
+//           page_url,
+//           IF(title != null AND title != "", title, "title not found") AS title 
+//    FROM Sample_with_title;
 
-Sample_with_title =
-    PROCESS Sample_with_title USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune", "Market");
-
-Sample_with_title =
-    SELECT Key, PKey, image_url, page_url, RecallPath, title, COUNT(1) AS occurrence
-    FROM Sample_with_title
-    GROUP BY Key, PKey, image_url, page_url, RecallPath, title;
-
-// Remove recall path when sending to hitapp as we don't need it for the judgement but have it in previous file when we want it for dashboards
-Sample_with_title = 
-    SELECT DISTINCT image_url,
-           page_url,
-           IF(title != null AND title != "", title, "title not found") AS title 
-    FROM Sample_with_title;
-
-OUTPUT Sample_with_title TO @Out_SampleForMeasurement WITH STREAMEXPIRY @StreamExpiry USING DefaultTextOutputter(delimiter:'\t', outputHeader:true);
+OUTPUT Sample TO @Out_SampleForMeasurement WITH STREAMEXPIRY @StreamExpiry USING DefaultTextOutputter(delimiter:'\t', outputHeader:true);
 
 
 
@@ -167,10 +167,7 @@ public static IEnumerable<Tuple<string, string, string, string, string,string>> 
                      var imageUrl = item.GetDataPropertyOrDefault("Murl", "");
                      var recall = dsl.FindElementsWithProperty("T", "D.Top.ImageFeed").FindElementsWithProperty("T", "D.ImageFeed.Item").FindElementsWithProperty("ItemId", ItemId)[0].GetDataPropertyOrDefault("TopicSource",""); // get recall path 
                      var position = dsl.FindElementsWithProperty("T", "D.Top.ImageFeed").FindElementsWithProperty("T", "D.ImageFeed.Item").FindElementsWithProperty("ItemId", ItemId)[0].GetDataPropertyOrDefault("Position",""); // get position of image in the 35 fetch 
-                    if (engagement == "Like")
-				    {
-					    result.Add(Tuple.Create(recall, pageUrl, imageUrl, ItemId, engagement,position));
-				    }
+					 result.Add(Tuple.Create(recall, pageUrl, imageUrl, ItemId, engagement,position));
                 }
            }
 

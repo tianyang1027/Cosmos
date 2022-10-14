@@ -9,25 +9,36 @@ RESOURCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
 USING MMRV2.Utility;
 USING MMRV2.Core;
 
-#DECLARE In_Data  string = @"/local/users/v-yangtian/input/Impression_imgfeedprod_5000_Click.tsv";
+#DECLARE In_Data  string = @"/local/users/v-yangtian/input/Impression_Sample_5000_Click.tsv";
 
 RESOURCE @"C:\Users\v-yangtian\Downloads\ClusteringReducer.py";
 #DECLARE N_Clusters int = 100;// for 10k , start with 200 ; 
 #DECLARE setupReducerScript string = @"import ClusteringReducer";
 #DECLARE udoReducerExpression string = string.Format(@"ClusteringReducer.WardClusterReducer({0})",@N_Clusters);
-//#DECLARE Out_Vis string = "/local/users/v-yangtian/imgComb/PrismIndex_Sample_imgComb_Click.tsv"; 
-#DECLARE Out_Data string ="/local/users/v-yangtian/imgComb/PrismIndex_imgComb_Cluster_Click.ss";
+#DECLARE Out_Vis string = "/local/users/v-yangtian/Cluster/PrismIndex_Sample_5000_Cluster_Click.tsv"; 
+#DECLARE Out_Clustering string ="/local/users/v-yangtian/Cluster/PrismIndex_Sample_Cluster_Click.ss";
 
 img =
-    EXTRACT image_url : string,
-            paget_url : string,
-            title : string
+    EXTRACT Key: string,
+            PKey: string,
+            Date: string,
+            ImpressionID: string,
+            SessionID: string,
+            Flight: string,
+            AnID: string,
+            ClientID: string,
+            StableID: string,
+            UserType: string,
+            Market: string,
+            RecallPath: string,
+            page_url: string,
+            image_url: string,
+            ItemID: string,
+            Event: string,
+            Position: string,
+            Weight: string
     FROM @In_Data
     USING DefaultTextExtractor(skipFirstNRows: 1);
-
-img= SELECT *,
-            MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(image_url) AS Key
-    FROM img;
 
 // Blob
 #DECLARE imageBlobBaseSchemaPath string = @"/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Snapshot/Blob/Base/2022_10_10/Image_BlobBase_Schema.xml";
@@ -70,7 +81,7 @@ LOOP(I, 7)
 
 
 
-imgComb =
+imgInfo =
     SELECT img.*,//.Except(PrismyScore_Bucket),
 //           MediaFeature__PrismyContentScore.HasValue ? Math.Round(MediaFeature__PrismyContentScore.GetValueOrDefault() * 10) : 0 AS PrismyScore_Bucket,
            ArrayConvertor.FloatArrayToString(ArrayConvertor.Bytes2Floats(LargeFeature__SIEMv3ImageEncoded_Binary)) AS LargeFeature__SIEMv3ImageEncoded_Binary
@@ -80,17 +91,62 @@ imgComb =
          ON img.Key == imgDNN.Key;
 
 
-OUTPUT imgComb
-TO SSTREAM @Out_Data
+//OUTPUT imgComb
+//TO SSTREAM @Out_Data
+//   HASH CLUSTERED BY Key
+//      INTO 500
+//       SORTED BY Key;
+
+imgEmbedding =
+    SELECT 0 AS GroupKey,
+           Key,
+           // convert feature into string format: a string of float array
+//           ArrayConvertor.FloatArrayToString(ArrayConvertor.Bytes2Floats(LargeFeature__SIEMv3ImageEncoded_Binary)) AS ImgEmbedding,
+           LargeFeature__SIEMv3ImageEncoded_Binary AS ImgEmbedding,
+           1 AS Weight
+           // LargeFeature__SIEMv3ImageEncoded_Binary is byte[] & string format (read from a tsv file)
+//           NormalizeDocEmbedding(LargeFeature__SIEMv3ImageEncoded_Binary) AS ImgEmbedding
+    FROM imgInfo;
+
+
+// [2/3] Clustering
+imgClustering =
+    REDUCE imgEmbedding
+    ON GroupKey
+    PRODUCE Key string,
+            ClusterWeight float,
+            ClusterIndex int
+    USING Reducers.Python(
+        prologue: @setupReducerScript, 
+        expression: @udoReducerExpression
+    );
+
+imgClustering = 
+    SELECT imgInfo.*.Except(LargeFeature__SIEMv3ImageEncoded_Binary),
+           ClusterIndex
+    FROM imgInfo
+         INNER JOIN imgClustering
+         ON imgInfo.Key == imgClustering.Key;
+
+
+OUTPUT imgClustering
+TO SSTREAM @Out_Clustering
    HASH CLUSTERED BY Key
-      INTO 500
+       INTO 500
        SORTED BY Key;
 
 
+// [3/3] Sample for visualization
+sample =
+    SELECT image_url AS  murl,
+           ClusterIndex,
+           ROW_NUMBER() OVER(PARTITION BY ClusterIndex ORDER BY Key) AS ID
+    FROM imgClustering
+    HAVING ID <= 200;
 
-//OUTPUT sample
-////TO @Out_Vis
-////USING DefaultTextOutputter(outputHeader: true);
+OUTPUT sample
+TO @Out_Vis
+USING DefaultTextOutputter(outputHeader: true);
 
 
 #CS

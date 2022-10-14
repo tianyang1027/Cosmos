@@ -40,6 +40,7 @@
     <Script Include="HitApp_0_SampleIndex.script" />
     <Script Include="HitApp_0_SampleIndex_SendDetrimental.script" />
     <Script Include="HitApp_1_GeneratePointwiseDefect.script" />
+    <Script Include="ImageTypeAnalysis.script" />
     <Script Include="IndexSelection_0_GenerateFeatures.script" />
     <Script Include="IndexSelection_0_GenerateFeatures_PPE.script" />
     <Script Include="IndexSelection_1_GenerateRankFile2.script" />
@@ -111,6 +112,9 @@
     </ScriptCode>
     <ScriptCode Include="HitApp_1_GeneratePointwiseDefect.script.cs">
       <DependentUpon>HitApp_1_GeneratePointwiseDefect.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="ImageTypeAnalysis.script.cs">
+      <DependentUpon>ImageTypeAnalysis.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="IndexSelection_0_GenerateFeatures.script.cs">
       <DependentUpon>IndexSelection_0_GenerateFeatures.script</DependentUpon>
