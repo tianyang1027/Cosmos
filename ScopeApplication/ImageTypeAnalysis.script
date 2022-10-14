@@ -12,7 +12,7 @@ USING MMRV2.Core;
 #DECLARE In_Data  string = @"/local/users/v-yangtian/input/Impression_Sample_5000_Click.tsv";
 
 RESOURCE @"C:\Users\v-yangtian\Downloads\ClusteringReducer.py";
-#DECLARE N_Clusters int = 100;// for 10k , start with 200 ; 
+#DECLARE N_Clusters int = 27;
 #DECLARE setupReducerScript string = @"import ClusteringReducer";
 #DECLARE udoReducerExpression string = string.Format(@"ClusteringReducer.WardClusterReducer({0})",@N_Clusters);
 #DECLARE Out_Vis string = "/local/users/v-yangtian/Cluster/PrismIndex_Sample_5000_Cluster_Click.tsv"; 
