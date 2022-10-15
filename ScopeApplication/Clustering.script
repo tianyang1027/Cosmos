@@ -8,9 +8,9 @@
 
 //#DECLARE In_ImageFeat string = "/local/users/jichen4/PrismV2/HitApp/Input/2022_10_09/PrismIndex_Sample.ss";
 
-#DECLARE In_ImageFeat string = "/local/users/v-yangtian/imgComb/PrismIndex_imgComb_Cluster_Click.ss";
-#DECLARE Out_Clustering string ="/local/users/v-yangtian/Clustering/PrismIndex_Cluster_Click.ss"; 
-#DECLARE Out_Vis string = "/local/users/v-yangtian/Clustering/PrismIndex_Cluster_Click.tsv"; 
+#DECLARE In_ImageFeat string = "/local/users/v-yangtian/imgComb/ImageEmbedding_5000_Like.ss";
+#DECLARE Out_Clustering string ="/local/users/v-yangtian/Clustering/Clustering_5000_Like.ss"; 
+#DECLARE Out_Vis string = "/local/users/v-yangtian/Clustering/Clustering_5000_Like.tsv"; 
 
 RESOURCE @"C:\Users\v-yangtian\Downloads\ClusteringReducer.py";
 //RESOURCE @"C:\Users\jichen4\OneDrive - Microsoft\Documents\code\MM_Image_PrismV2\MM_Image_PrismV2\ClusteringReducer.py";
@@ -44,7 +44,7 @@ imgEmbedding =
     FROM imgInfo WHERE LargeFeature__SIEMv3ImageEncoded_Binary!=null AND LargeFeature__SIEMv3ImageEncoded_Binary!="";
 
 OUTPUT imgEmbedding
-TO "/local/users/v-yangtian/imgEmbedding.tsv"
+TO "/local/users/v-yangtian/Clustering_5000_Like_imgEmbedding.tsv"
 USING DefaultTextOutputter(outputHeader: true);
 //
 
@@ -66,6 +66,11 @@ imgClustering =
     FROM imgInfo
          INNER JOIN imgClustering
          ON imgInfo.Key == imgClustering.Key;
+
+
+imgClustering =
+    SELECT DISTINCT *
+    FROM imgClustering;
 
 
 OUTPUT imgClustering
