@@ -6,6 +6,8 @@
 
 #DECLARE Dir string="/local/users/v-yangtian/Clustering/";
 
+//#DECLARE In_ImageFeat string = "/local/users/jichen4/PrismV2/HitApp/Input/2022_10_09/PrismIndex_Sample.ss";
+
 #DECLARE In_ImageFeat string = "/local/users/v-yangtian/imgComb/PrismIndex_imgComb_Cluster_Click.ss";
 #DECLARE Out_Clustering string ="/local/users/v-yangtian/Clustering/PrismIndex_Cluster_Click.ss"; 
 #DECLARE Out_Vis string = "/local/users/v-yangtian/Clustering/PrismIndex_Cluster_Click.tsv"; 

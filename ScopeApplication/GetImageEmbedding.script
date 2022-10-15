@@ -9,25 +9,30 @@ RESOURCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
 USING MMRV2.Utility;
 USING MMRV2.Core;
 
-#DECLARE In_Data  string = @"/local/users/v-yangtian/input/Impression_Sample_5000_Like.tsv";
-
-RESOURCE @"C:\Users\v-yangtian\Downloads\ClusteringReducer.py";
-#DECLARE N_Clusters int = 100;// for 10k , start with 200 ; 
-#DECLARE setupReducerScript string = @"import ClusteringReducer";
-#DECLARE udoReducerExpression string = string.Format(@"ClusteringReducer.WardClusterReducer({0})",@N_Clusters);
-//#DECLARE Out_Vis string = "/local/users/v-yangtian/imgComb/PrismIndex_Sample_imgComb_Click.tsv"; 
-#DECLARE Out_Data string ="/local/users/v-yangtian/imgComb/ImageEmbedding_5000_Like.ss";
+#DECLARE In_Data  string = @"/local/users/v-yangtian/input/Impression_Sample_5000_Click.tsv";
+#DECLARE Out_Data string ="/local/users/v-yangtian/imgComb/ImageEmbedding_5000_Click.ss";
 
 img =
-    EXTRACT image_url : string,
-            paget_url : string,
-            title : string
+    EXTRACT Key: string,
+            PKey: string,
+            Date: string,
+            ImpressionID: string,
+            SessionID: string,
+            Flight: string,
+            AnID: string,
+            ClientID: string,
+            StableID: string,
+            UserType: string,
+            Market: string,
+            RecallPath: string,
+            page_url: string,
+            image_url: string,
+            ItemID: string,
+            Event: string,
+            Position: string,
+            Weight: string
     FROM @In_Data
     USING DefaultTextExtractor(skipFirstNRows: 1);
-
-img= SELECT *,
-            MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(image_url) AS Key
-    FROM img;
 
 // Blob
 #DECLARE imageBlobBaseSchemaPath string = @"/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Snapshot/Blob/Base/2022_10_10/Image_BlobBase_Schema.xml";
