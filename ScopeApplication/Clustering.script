@@ -29,20 +29,24 @@ imgInfo =
 //    FROM imgInfo
 //    HAVING FeatLen != 32;
 
-           
+
 
 
 imgEmbedding =
     SELECT 0 AS GroupKey,
            Key,
            // convert feature into string format: a string of float array
-//           ArrayConvertor.FloatArrayToString(ArrayConvertor.Bytes2Floats(LargeFeature__SIEMv3ImageEncoded_Binary)) AS ImgEmbedding,
-           LargeFeature__SIEMv3ImageEncoded_Binary AS ImgEmbedding,
+           //           ArrayConvertor.FloatArrayToString(ArrayConvertor.Bytes2Floats(LargeFeature__SIEMv3ImageEncoded_Binary)) AS ImgEmbedding,
+           LargeFeature__SIEMv3ImageEncoded_Binary.Replace(" ",",") AS ImgEmbedding,
            1 AS Weight
-           // LargeFeature__SIEMv3ImageEncoded_Binary is byte[] & string format (read from a tsv file)
-//           NormalizeDocEmbedding(LargeFeature__SIEMv3ImageEncoded_Binary) AS ImgEmbedding
-    FROM imgInfo;
+    // LargeFeature__SIEMv3ImageEncoded_Binary is byte[] & string format (read from a tsv file)
+    //           NormalizeDocEmbedding(LargeFeature__SIEMv3ImageEncoded_Binary) AS ImgEmbedding
+    FROM imgInfo WHERE LargeFeature__SIEMv3ImageEncoded_Binary!=null AND LargeFeature__SIEMv3ImageEncoded_Binary!="";
 
+OUTPUT imgEmbedding
+TO "/local/users/v-yangtian/imgEmbedding.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+//
 
 // [2/3] Clustering
 imgClustering =

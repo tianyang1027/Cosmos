@@ -2,7 +2,7 @@
     SELECT *
     FROM
     (
-        SSTREAM @"C:\Users\v-yangtian\Downloads\PrismIndex_imgComb_Cluster_Click.ss"
+        SSTREAM @"C:\Users\v-yangtian\Downloads\PrismIndex_Sample.ss"
     );
 
 
@@ -13,7 +13,7 @@ USING DefaultTextOutputter(outputHeader: true);
 data1 =
     SELECT *
     FROM data
-    WHERE LargeFeature__SIEMv3ImageEncoded_Binary.Contains(" ");
+    WHERE LargeFeature__SIEMv3ImageEncoded_Binary.Contains(",");
 
 
 OUTPUT
@@ -28,7 +28,7 @@ TO SSTREAM @"C:\Users\v-yangtian\Downloads\test1.ss";
 data1 =
     SELECT *
     FROM data
-    WHERE !LargeFeature__SIEMv3ImageEncoded_Binary.Contains(" ");
+    WHERE !LargeFeature__SIEMv3ImageEncoded_Binary.Contains(",");
 
 
 OUTPUT
