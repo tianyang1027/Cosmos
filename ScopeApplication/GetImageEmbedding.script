@@ -9,8 +9,8 @@ RESOURCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
 USING MMRV2.Utility;
 USING MMRV2.Core;
 
-#DECLARE In_Data  string = @"/local/users/v-yangtian/input/Impression_Sample_5000_Click.tsv";
-#DECLARE Out_Data string ="/local/users/v-yangtian/imgComb/ImageEmbedding_5000_Click.ss";
+#DECLARE In_Data  string = @"/local/users/v-yangtian/input/Impression_Sample_5000_save.tsv";
+#DECLARE Out_Data string ="/local/users/v-yangtian/GetImageEmbedding/ImageEmbedding_5000_save.ss";
 
 img =
     EXTRACT Key: string,
@@ -136,7 +136,7 @@ public class ArrayConvertor
         {
             return null;
         }
-        return string.Join(" ", floats);
+        return string.Join(",", floats);
     }
 }
 

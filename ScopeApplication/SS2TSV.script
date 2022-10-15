@@ -2,9 +2,35 @@
     SELECT *
     FROM
     (
-        SSTREAM @"C:\Users\v-yangtian\Downloads\deviantart.ss"
+        SSTREAM @"C:\Users\v-yangtian\Downloads\PrismIndex_imgComb_Cluster_Click.ss"
     );
 
+
 OUTPUT
-TO @"C:\Users\v-yangtian\Downloads\deviantart.tsv"
+TO @"C:\Users\v-yangtian\Downloads\test.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+data1 =
+    SELECT *
+    FROM data
+    WHERE LargeFeature__SIEMv3ImageEncoded_Binary.Contains(" ");
+
+
+OUTPUT
+TO @"C:\Users\v-yangtian\Downloads\test1.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+OUTPUT
+TO SSTREAM @"C:\Users\v-yangtian\Downloads\test1.ss";
+ 
+
+
+data1 =
+    SELECT *
+    FROM data
+    WHERE !LargeFeature__SIEMv3ImageEncoded_Binary.Contains(" ");
+
+
+OUTPUT
+TO @"C:\Users\v-yangtian\Downloads\test2.tsv"
 USING DefaultTextOutputter(outputHeader: true);
