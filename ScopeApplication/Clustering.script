@@ -4,14 +4,13 @@
 
 #DECLARE Par_Date                   string = "2022_10_09";
 
-#DECLARE Dir string="/local/users/jichen4/PrismV2/HitApp/Input/";
+#DECLARE Dir string="/local/users/v-yangtian/Clustering/";
 
-#DECLARE In_ImageFeat string = @Dir + @Par_Date + "/PrismIndex_Sample.ss";
-#DECLARE Out_Clustering string = @Dir + @Par_Date + "/PrismIndex_Cluster.ss"; 
-#DECLARE Out_Vis string = @Dir + @Par_Date + "/PrismIndex_Sample.tsv"; 
-#DECLARE Out_Stats string = @Dir + @Par_Date + "/stat/PrismIndex_Sample_Cluster.stt";
+#DECLARE In_ImageFeat string = "/local/users/v-yangtian/imgComb/PrismIndex_imgComb_Cluster_Click.ss";
+#DECLARE Out_Clustering string ="/local/users/v-yangtian/Clustering/PrismIndex_Cluster_Click.ss"; 
+#DECLARE Out_Vis string = "/local/users/v-yangtian/Clustering/PrismIndex_Cluster_Click.tsv"; 
 
-RESOURCE @"C:\Users\jichen4.REDMOND\OneDrive - Microsoft\Documents\code\MM_Image_PrismV2\MM_Image_PrismV2\ClusteringReducer.py";
+RESOURCE @"C:\Users\v-yangtian\Downloads\ClusteringReducer.py";
 //RESOURCE @"C:\Users\jichen4\OneDrive - Microsoft\Documents\code\MM_Image_PrismV2\MM_Image_PrismV2\ClusteringReducer.py";
 #DECLARE N_Clusters int = 100;// for 10k , start with 200 ; 
 //#DECLARE Feat_Delim char = ",";
@@ -71,33 +70,33 @@ TO SSTREAM @Out_Clustering
 
 
 // [3/3] Sample for visualization
-sample =
-    SELECT murl,
-           ClusterIndex,
-           ROW_NUMBER() OVER(PARTITION BY ClusterIndex ORDER BY Key) AS ID
-    FROM imgClustering
-    HAVING ID <= 200;
+//sample =
+//    SELECT murl,
+//           ClusterIndex,
+//           ROW_NUMBER() OVER(PARTITION BY ClusterIndex ORDER BY Key) AS ID
+//    FROM imgClustering
+//    HAVING ID <= 200;
 
-OUTPUT sample
+OUTPUT imgClustering
 TO @Out_Vis
 USING DefaultTextOutputter(outputHeader: true);
-
-stat =
-    SELECT "#Cluster" AS Name,
-           COUNT(DISTINCT ClusterIndex) AS Value
-    FROM imgClustering
-    UNION
-    SELECT "#img input" AS Name,
-           COUNT() AS Value
-    FROM imgInfo
-    UNION
-    SELECT "#img output" AS Name,
-           COUNT() AS Value
-    FROM imgClustering;
-
-
-OUTPUT stat
-TO @Out_Stats;
+//
+//stat =
+//    SELECT "#Cluster" AS Name,
+//           COUNT(DISTINCT ClusterIndex) AS Value
+//    FROM imgClustering
+//    UNION
+//    SELECT "#img input" AS Name,
+//           COUNT() AS Value
+//    FROM imgInfo
+//    UNION
+//    SELECT "#img output" AS Name,
+//           COUNT() AS Value
+//    FROM imgClustering;
+//
+//
+//OUTPUT stat
+//TO @Out_Stats;
 
 
 #CS

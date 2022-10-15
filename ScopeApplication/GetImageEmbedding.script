@@ -9,14 +9,14 @@ RESOURCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
 USING MMRV2.Utility;
 USING MMRV2.Core;
 
-#DECLARE In_Data  string = @"/local/users/v-yangtian/input/Impression_imgfeedprod_5000_Click.tsv";
+#DECLARE In_Data  string = @"/local/users/v-yangtian/input/Impression_Sample_5000_Like.tsv";
 
 RESOURCE @"C:\Users\v-yangtian\Downloads\ClusteringReducer.py";
 #DECLARE N_Clusters int = 100;// for 10k , start with 200 ; 
 #DECLARE setupReducerScript string = @"import ClusteringReducer";
 #DECLARE udoReducerExpression string = string.Format(@"ClusteringReducer.WardClusterReducer({0})",@N_Clusters);
 //#DECLARE Out_Vis string = "/local/users/v-yangtian/imgComb/PrismIndex_Sample_imgComb_Click.tsv"; 
-#DECLARE Out_Data string ="/local/users/v-yangtian/imgComb/PrismIndex_imgComb_Cluster_Click.ss";
+#DECLARE Out_Data string ="/local/users/v-yangtian/imgComb/ImageEmbedding_5000_Like.ss";
 
 img =
     EXTRACT image_url : string,
