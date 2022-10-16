@@ -8,9 +8,10 @@
 
 //#DECLARE In_ImageFeat string = "/local/users/jichen4/PrismV2/HitApp/Input/2022_10_09/PrismIndex_Sample.ss";
 
-#DECLARE In_ImageFeat string = "/local/users/v-yangtian/imgComb/ImageEmbedding_5000_Like.ss";
-#DECLARE Out_Clustering string ="/local/users/v-yangtian/Clustering/Clustering_5000_Like.ss"; 
-#DECLARE Out_Vis string = "/local/users/v-yangtian/Clustering/Clustering_5000_Like.tsv"; 
+#DECLARE In_ImageFeat string = "/local/users/v-yangtian/GetImageEmbedding/ImageEmbedding_5000_save.ss";
+#DECLARE Out_Clustering string ="/local/users/v-yangtian/Clustering/Clustering_5000_save.ss"; 
+#DECLARE Out_Vis string = "/local/users/v-yangtian/Clustering/Clustering_5000_save.tsv"; 
+#DECLARE Out_Stats string = "/local/users/v-yangtian/Stats/Clustering_Stats_save";
 
 RESOURCE @"C:\Users\v-yangtian\Downloads\ClusteringReducer.py";
 //RESOURCE @"C:\Users\jichen4\OneDrive - Microsoft\Documents\code\MM_Image_PrismV2\MM_Image_PrismV2\ClusteringReducer.py";
@@ -22,6 +23,9 @@ RESOURCE @"C:\Users\v-yangtian\Downloads\ClusteringReducer.py";
 // [1/3] Read the image embedding
 imgInfo =
     SSTREAM @In_ImageFeat;
+
+
+
 
 //imgBad = 
 //    SELECT *,
@@ -43,13 +47,10 @@ imgEmbedding =
     //           NormalizeDocEmbedding(LargeFeature__SIEMv3ImageEncoded_Binary) AS ImgEmbedding
     FROM imgInfo WHERE LargeFeature__SIEMv3ImageEncoded_Binary!=null AND LargeFeature__SIEMv3ImageEncoded_Binary!="";
 
-OUTPUT imgEmbedding
-TO "/local/users/v-yangtian/Clustering_5000_Like_imgEmbedding.tsv"
-USING DefaultTextOutputter(outputHeader: true);
 //
 
 // [2/3] Clustering
-imgClustering =
+imgClustering1 =
     REDUCE imgEmbedding
     ON GroupKey
     PRODUCE Key string,
@@ -60,54 +61,59 @@ imgClustering =
         expression: @udoReducerExpression
     );
 
-imgClustering = 
+
+
+imgClustering2 = 
     SELECT imgInfo.*.Except(LargeFeature__SIEMv3ImageEncoded_Binary),
            ClusterIndex
     FROM imgInfo
-         INNER JOIN imgClustering
-         ON imgInfo.Key == imgClustering.Key;
+         INNER JOIN imgClustering1
+         ON imgInfo.Key == imgClustering1.Key;
 
 
-imgClustering =
+imgClustering3 =
     SELECT DISTINCT *
-    FROM imgClustering;
+    FROM imgClustering2;
 
 
-OUTPUT imgClustering
+
+
+OUTPUT imgClustering3
 TO SSTREAM @Out_Clustering
    HASH CLUSTERED BY Key
        INTO 500
        SORTED BY Key;
 
 
-// [3/3] Sample for visualization
-//sample =
-//    SELECT murl,
-//           ClusterIndex,
-//           ROW_NUMBER() OVER(PARTITION BY ClusterIndex ORDER BY Key) AS ID
-//    FROM imgClustering
-//    HAVING ID <= 200;
 
-OUTPUT imgClustering
+OUTPUT imgClustering3
 TO @Out_Vis
 USING DefaultTextOutputter(outputHeader: true);
 //
-//stat =
-//    SELECT "#Cluster" AS Name,
-//           COUNT(DISTINCT ClusterIndex) AS Value
-//    FROM imgClustering
-//    UNION
-//    SELECT "#img input" AS Name,
-//           COUNT() AS Value
-//    FROM imgInfo
-//    UNION
-//    SELECT "#img output" AS Name,
-//           COUNT() AS Value
-//    FROM imgClustering;
-//
-//
-//OUTPUT stat
-//TO @Out_Stats;
+stat =
+    SELECT "#img input" AS Name,
+           COUNT() AS Value
+    FROM imgInfo
+    UNION
+    SELECT "#img imgEmbedding" AS Name,
+           COUNT() AS Value
+    FROM imgEmbedding
+    UNION
+    SELECT "#img imgClustering1" AS Name,
+           COUNT() AS Value
+    FROM imgClustering1
+    UNION
+    SELECT "#img imgClustering2" AS Name,
+           COUNT() AS Value
+    FROM imgClustering2
+    UNION
+    SELECT "#img imgClustering3" AS Name,
+           COUNT() AS Value
+    FROM imgClustering3;
+
+
+OUTPUT stat
+TO @Out_Stats;
 
 
 #CS

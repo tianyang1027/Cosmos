@@ -2,7 +2,7 @@
     SELECT *
     FROM
     (
-        SSTREAM @"C:\Users\v-yangtian\Downloads\PrismIndex_Sample.ss"
+        SSTREAM @"C:\Users\v-yangtian\Downloads\ImageEmbedding_5000_Like.ss"
     );
 
 

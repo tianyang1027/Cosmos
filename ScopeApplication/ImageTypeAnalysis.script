@@ -1,199 +1,36 @@
-﻿
-#DECLARE SG_Dir  string = @"D:\data\";
+﻿#DECLARE inputClustering string = "/local/users/v-yangtian/Clustering/Clustering_5000_Click.ss";
+#DECLARE Clustering_Categories_Mapping string = "/local/users/v-yangtian/Clustering_Categories_Mapping/Clustering_Categories_Like.tsv";
+#DECLARE Out_image_type_results_stream string = "/local/users/v-yangtian/Image_type_results/Sample5000_Categories_result_Click.ss";
+#DECLARE Out_image_type_results_tsv string = "/local/users/v-yangtian/Image_type_results/Sample5000_Categories_result_Click.ss";
 
-REFERENCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
-REFERENCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
-REFERENCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
-REFERENCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Injection.dll";
-RESOURCE @SG_Dir + @"MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
-USING MMRV2.Utility;
-USING MMRV2.Core;
-
-#DECLARE In_Data  string = @"/local/users/v-yangtian/input/Impression_Sample_5000_Click.tsv";
-
-RESOURCE @"C:\Users\v-yangtian\Downloads\ClusteringReducer.py";
-#DECLARE N_Clusters int = 27;
-#DECLARE setupReducerScript string = @"import ClusteringReducer";
-#DECLARE udoReducerExpression string = string.Format(@"ClusteringReducer.WardClusterReducer({0})",@N_Clusters);
-#DECLARE Out_Vis string = "/local/users/v-yangtian/Cluster/PrismIndex_Sample_5000_Cluster_Click.tsv"; 
-#DECLARE Out_Clustering string ="/local/users/v-yangtian/Cluster/PrismIndex_Sample_Cluster_Click.ss";
-
-img =
-    EXTRACT Key: string,
-            PKey: string,
-            Date: string,
-            ImpressionID: string,
-            SessionID: string,
-            Flight: string,
-            AnID: string,
-            ClientID: string,
-            StableID: string,
-            UserType: string,
-            Market: string,
-            RecallPath: string,
-            page_url: string,
-            image_url: string,
-            ItemID: string,
-            Event: string,
-            Position: string,
-            Weight: string
-    FROM @In_Data
-    USING DefaultTextExtractor(skipFirstNRows: 1);
-
-// Blob
-#DECLARE imageBlobBaseSchemaPath string = @"/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Snapshot/Blob/Base/2022_10_10/Image_BlobBase_Schema.xml";
-#DECLARE imageBlobBaseRepoPath string = Path.GetDirectoryName(@imageBlobBaseSchemaPath).Replace("\\", "/");
-RESOURCE @imageBlobBaseSchemaPath;
-
-
-//-------------- Process image blob base data -------------------
-
-LOOP(I, 8)
-{   
-    #DECLARE imageBlobBaseMetaDataPath string = @imageBlobBaseRepoPath + "/Image_BlobBase_Metadata.@@I@@.ss";
-
-    imageBlob = SSTREAM @imageBlobBaseMetaDataPath;
-    
-    imageBlobFiltered =
-        SELECT *
-        FROM imageBlob 
-             LEFT SEMIJOIN img
-             ON imageBlob.Key == img.Key;
-
-    imgDNN@@I@@ =
-        PROCESS imageBlobFiltered
-        USING MMRV2.Core.MmrScopeTypeProcessor(
-                    "-schemaPath", "Metadata:Image_BlobBase_Schema.xml", 
-                    "-outputFeatures",
-            "LargeFeature__SIEMv3ImageEncoded_Binary")
-        HAVING LargeFeature__SIEMv3ImageEncoded_Binary != null;   
-}
-
-imgDNN =
-LOOP(I, 7)
-{
-    SELECT * 
-    FROM  imgDNN@@I@@
-    UNION
-}
+Clustering =
     SELECT *
-    FROM  imgDNN7;
-
-
-
-imgInfo =
-    SELECT img.*,//.Except(PrismyScore_Bucket),
-//           MediaFeature__PrismyContentScore.HasValue ? Math.Round(MediaFeature__PrismyContentScore.GetValueOrDefault() * 10) : 0 AS PrismyScore_Bucket,
-           ArrayConvertor.FloatArrayToString(ArrayConvertor.Bytes2Floats(LargeFeature__SIEMv3ImageEncoded_Binary)) AS LargeFeature__SIEMv3ImageEncoded_Binary
-    FROM img
-         LEFT OUTER JOIN
-             imgDNN
-         ON img.Key == imgDNN.Key;
-
-
-//OUTPUT imgComb
-//TO SSTREAM @Out_Data
-//   HASH CLUSTERED BY Key
-//      INTO 500
-//       SORTED BY Key;
-
-imgEmbedding =
-    SELECT 0 AS GroupKey,
-           Key,
-           // convert feature into string format: a string of float array
-//           ArrayConvertor.FloatArrayToString(ArrayConvertor.Bytes2Floats(LargeFeature__SIEMv3ImageEncoded_Binary)) AS ImgEmbedding,
-           LargeFeature__SIEMv3ImageEncoded_Binary AS ImgEmbedding,
-           1 AS Weight
-           // LargeFeature__SIEMv3ImageEncoded_Binary is byte[] & string format (read from a tsv file)
-//           NormalizeDocEmbedding(LargeFeature__SIEMv3ImageEncoded_Binary) AS ImgEmbedding
-    FROM imgInfo;
-
-
-// [2/3] Clustering
-imgClustering =
-    REDUCE imgEmbedding
-    ON GroupKey
-    PRODUCE Key string,
-            ClusterWeight float,
-            ClusterIndex int
-    USING Reducers.Python(
-        prologue: @setupReducerScript, 
-        expression: @udoReducerExpression
+    FROM
+    (
+        SSTREAM @inputClustering
     );
 
-imgClustering = 
-    SELECT imgInfo.*.Except(LargeFeature__SIEMv3ImageEncoded_Binary),
-           ClusterIndex
-    FROM imgInfo
-         INNER JOIN imgClustering
-         ON imgInfo.Key == imgClustering.Key;
+Clustering_Categories_Mapping =
+    EXTRACT ClusterIndex : string,
+            Categories : string
+    FROM @Clustering_Categories_Mapping
+    USING Extractors.Tsv()
+    HAVING ClusterIndex != "ClusterIndex" AND Categories != "Categories";
 
+Out_image_type_results =
+    SELECT a.Key,
+           a.image_url AS MUrl,
+           a.Event,
+           a.ClusterIndex,
+           b.Categories
+    FROM Clustering AS a
+         LEFT JOIN
+             Clustering_Categories_Mapping AS b
+         ON a.ClusterIndex == b.ClusterIndex;
 
-OUTPUT imgClustering
-TO SSTREAM @Out_Clustering
-   HASH CLUSTERED BY Key
-       INTO 500
-       SORTED BY Key;
+OUTPUT Out_image_type_results
+TO SSTREAM @Out_image_type_results_stream;
 
-
-// [3/3] Sample for visualization
-sample =
-    SELECT image_url AS  murl,
-           ClusterIndex,
-           ROW_NUMBER() OVER(PARTITION BY ClusterIndex ORDER BY Key) AS ID
-    FROM imgClustering
-    HAVING ID <= 200;
-
-OUTPUT sample
-TO @Out_Vis
+OUTPUT Out_image_type_results
+TO @Out_image_type_results_tsv
 USING DefaultTextOutputter(outputHeader: true);
-
-
-#CS
-public static string NormalizeDocEmbedding(string doc_feature)
-{
-    List<float> vector = new List<float>();
-    var imageStrings = doc_feature.Split(',');
-    for (int i = 0; i < imageStrings.Length; i++)
-    {
-        // values are quantized to 8 bits (numbers are between 0 - 255), it means that to get the original values, we need to run this operation on each vector x: (x/127.5) - 1
-        vector.Add((float)((float.Parse(imageStrings[i]) / 127.5) - 1));
-    }
-    string normalized_doc_feature = string.Join(" ",vector);
-    return normalized_doc_feature;
-}
-
-
-public class ArrayConvertor
-{
-    public static float[] Bytes2Floats(byte[] bytes)
-    {
-        if (bytes == null)
-        {
-            return null;
-        }
-        if ((bytes.Length & 0x03) != 0)
-        {
-            return null;
-        }
-        float[] res = new float[bytes.Length >> 2];
-        Buffer.BlockCopy(bytes, 0, res, 0, bytes.Length);
-        return res;
-    }
- 
-    public static string FloatArrayToString(float[] floats)
-    {
-        if (floats == null)
-        {
-            return null;
-        }
-        return string.Join(" ", floats);
-    }
-}
-
-public static int CheckFeatureLen(string doc_feature)
-{
-    return doc_feature.Split(',').Length;
-}
-
-#ENDCS
