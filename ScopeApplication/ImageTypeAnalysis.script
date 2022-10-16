@@ -11,7 +11,7 @@ Clustering =
     );
 
 Clustering_Categories_Mapping =
-    EXTRACT ClusterIndex : string,
+    EXTRACT ClusterIndex : int,
             Categories : string
     FROM @Clustering_Categories_Mapping
     USING Extractors.Tsv()
