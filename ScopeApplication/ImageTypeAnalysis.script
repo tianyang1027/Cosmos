@@ -2,7 +2,7 @@
 #DECLARE Clustering_Categories_Mapping string = "/local/users/v-yangtian/Clustering_Categories_Mapping/Clustering_Categories_Like.tsv";
 #DECLARE Out_image_type_results_stream string = "/local/users/v-yangtian/Image_type_results/Sample5000_Categories_result_Like.ss";
 #DECLARE Out_image_type_results_tsv string = "/local/users/v-yangtian/Image_type_results/Sample5000_Categories_result_Like.tsv";
-#DECLARE Out_Stats="/local/users/v-yangtian/stats/percentage_stats_Like";
+#DECLARE Out_Stats="/local/users/v-yangtian/stats/percentage_stats_Like.tsv";
 
 Clustering =
     SELECT *
@@ -58,3 +58,5 @@ stats =
              totalCount AS b;
 
 OUTPUT 
+TO @Out_Stats
+USING DefaultTextOutputter(outputHeader: true);
