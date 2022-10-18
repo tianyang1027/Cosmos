@@ -77,7 +77,6 @@ imgClustering3 =
 
 
 
-
 OUTPUT imgClustering3
 TO SSTREAM @Out_Clustering
    HASH CLUSTERED BY Key

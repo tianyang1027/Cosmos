@@ -1,7 +1,8 @@
-﻿#DECLARE inputClustering string = "/local/users/v-yangtian/Clustering/Clustering_5000_Click.ss";
-#DECLARE Clustering_Categories_Mapping string = "/local/users/v-yangtian/Clustering_Categories_Mapping/Clustering_Categories_Click.tsv";
-#DECLARE Out_image_type_results_stream string = "/local/users/v-yangtian/Image_type_results/Sample5000_Categories_result_Click.ss";
-#DECLARE Out_image_type_results_tsv string = "/local/users/v-yangtian/Image_type_results/Sample5000_Categories_result_Click.tsv";
+﻿#DECLARE inputClustering string = "/local/users/v-yangtian/Clustering/Clustering_5000_Like.ss";
+#DECLARE Clustering_Categories_Mapping string = "/local/users/v-yangtian/Clustering_Categories_Mapping/Clustering_Categories_Like.tsv";
+#DECLARE Out_image_type_results_stream string = "/local/users/v-yangtian/Image_type_results/Sample5000_Categories_result_Like.ss";
+#DECLARE Out_image_type_results_tsv string = "/local/users/v-yangtian/Image_type_results/Sample5000_Categories_result_Like.tsv";
+#DECLARE Out_Stats="/local/users/v-yangtian/stats/percentage_stats_Like";
 
 Clustering =
     SELECT *
@@ -27,9 +28,33 @@ Out_image_type_results =
              Clustering_Categories_Mapping AS b
          ON a.ClusterIndex == b.ClusterIndex;
 
+Out_image_type_results =
+    SELECT DISTINCT *
+    FROM Out_image_type_results;
+
 OUTPUT Out_image_type_results
 TO SSTREAM @Out_image_type_results_stream;
 
 OUTPUT Out_image_type_results
 TO @Out_image_type_results_tsv
 USING DefaultTextOutputter(outputHeader: true);
+
+totalCount =
+    SELECT COUNT( * ) AS Count
+    FROM Out_image_type_results;
+
+categories_result =
+    SELECT Categories,
+           COUNT( * ) AS Categories_Count
+    FROM Out_image_type_results
+    GROUP BY Categories;
+
+stats =
+    SELECT a.Categories,
+           a.Categories_Count,
+           (Categories_Count * 1.0 / Count) AS Percentage
+    FROM categories_result AS a
+         CROSS JOIN
+             totalCount AS b;
+
+OUTPUT 
