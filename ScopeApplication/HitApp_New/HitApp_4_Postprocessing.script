@@ -21,7 +21,7 @@ RESOURCE @In_OutstandingJudgment;
 #DECLARE In_Samples                               string = string.Format("{0}{1}/Samples{2}.ss",                                  @AutoMeasurementDir, @LanguageName, @In_Original_1);
 #DECLARE In_Original_Number                       string = string.Format("{0}{1}/NonDetrimentalStatsNumber{2}.ss",                @AutoMeasurementDir, @LanguageName, @In_Original_1);
 #DECLARE In_SamplesDetrimentalLabel               string = string.Format("{0}{1}/SamplesDetrimentalLabel{2}.tsv",                 @AutoMeasurementDir, @LanguageName, @In_Original_1);
-#DECLARE AutoMeasurementDirOut string = "/local/users/v-yangtian/2022-10-28/Prod/Image/Prism/Metrics/AutoMeasurement/";
+#DECLARE AutoMeasurementDirOut string = "/local/users/v-yangtian/2022-10-30/Prod/Image/Prism/Metrics/AutoMeasurement/";
 #DECLARE Out_SampleLabel                          string = string.Format("{0}{1}/SamplesOutstandingLabel{2}.tsv",                 @AutoMeasurementDirOut, @LanguageName, @In_Original_1);
 #DECLARE Out_Stats                                string = string.Format("{0}{1}/OutstandingStats{2}.ss",                         @AutoMeasurementDirOut, @LanguageName, @In_Original_1);
 #DECLARE Out_StatsPerRecallPath                   string = string.Format("{0}{1}/OutstandingStatsPerRecallPath{2}.ss",            @AutoMeasurementDirOut, @LanguageName, @In_Original_1);
@@ -136,17 +136,6 @@ data_group_clean =
     data_original = SSTREAM @In_NonDetrimental;
 #ENDIF
 
-data_group_clean =
-    SELECT a.murl,
-           b.page_url,
-           a.avg_score,
-           a.avg_label,
-           a.raw_scores
-    FROM data_group_clean AS a
-         LEFT JOIN
-             data_original AS b
-         ON a.murl == b.image_url;
-
 data_original = PROCESS data_original
       PRODUCE image_url, page_url, title, RecallPath
       USING DefaultColumnProcessor;
@@ -186,7 +175,7 @@ data_original_occurrence =
         USING DefaultTextExtractor()
         HAVING image_url != "image_url" AND page_url != "page_url";
 
-    data_group_clean = SELECT a.occurrence,
+  data_group_clean = SELECT a.occurrence,
                         a.image_url AS murl,
                         a.page_url AS purl,
                         a.title,
@@ -197,12 +186,13 @@ data_original_occurrence =
                         c.detrimental_Class_Agg,
                         c.detrimental_rating
         FROM data_original_occurrence AS a
-        LEFT JOIN data_group_clean ON
-        a.image_url == data_group_clean.murl 
-        AND a.page_url == data_group_clean.page_url
         LEFT JOIN SamplesDetrimentalLabel AS c ON
         a.image_url == c.image_url AND
-        a.page_url == c.page_url;
+        a.page_url == c.page_url AND
+        a.title == c.title AND
+        a.RecallPath == c.RecallPath
+        LEFT JOIN data_group_clean ON
+        a.image_url == data_group_clean.murl;
 
 #ELSE
     data_group_clean = SELECT a.occurrence,
