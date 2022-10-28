@@ -40,6 +40,7 @@
     <Script Include="HitApp_0_SampleIndex.script" />
     <Script Include="HitApp_0_SampleIndex_SendDetrimental.script" />
     <Script Include="HitApp_1_GeneratePointwiseDefect.script" />
+    <Script Include="HitApp_New\HitApp_4_Postprocessing.script" />
     <Script Include="ImageTypeAnalysis.script" />
     <Script Include="IndexSelection_0_GenerateFeatures.script" />
     <Script Include="IndexSelection_0_GenerateFeatures_PPE.script" />
@@ -64,6 +65,9 @@
     <Script Include="PIVOT.script" />
     <Script Include="ouput_latest_week_dedupe.script" />
     <Script Include="ouput_latest_week.script" />
+    <Script Include="Scope2.script">
+      <RemoveUselessParameters>False</RemoveUselessParameters>
+    </Script>
     <Script Include="SS2TSV.script" />
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
     <Script Include="WrapStarCosmosData.script" />
@@ -113,6 +117,9 @@
     <ScriptCode Include="HitApp_1_GeneratePointwiseDefect.script.cs">
       <DependentUpon>HitApp_1_GeneratePointwiseDefect.script</DependentUpon>
     </ScriptCode>
+    <ScriptCode Include="HitApp_New\HitApp_4_Postprocessing.script.cs">
+      <DependentUpon>HitApp_New\HitApp_4_Postprocessing.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="ImageTypeAnalysis.script.cs">
       <DependentUpon>ImageTypeAnalysis.script</DependentUpon>
     </ScriptCode>
@@ -157,6 +164,9 @@
     </ScriptCode>
     <ScriptCode Include="ouput_latest_week.script.cs">
       <DependentUpon>ouput_latest_week.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Scope2.script.cs">
+      <DependentUpon>Scope2.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="SS2TSV.script.cs">
       <DependentUpon>SS2TSV.script</DependentUpon>

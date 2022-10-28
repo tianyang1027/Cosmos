@@ -1,0 +1,9 @@
+﻿//Script GUID:de3ef035-34c8-4b8c-8d13-de0d126c631d
+//Used for tracking history
+data_group_clean =
+    SELECT a.image_url,
+           b.page_url
+    FROM data_group_clean AS a
+         LEFT JOIN
+             data_original AS b
+         ON a.image_url == b.image_url;

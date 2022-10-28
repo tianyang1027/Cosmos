@@ -1,30 +1,33 @@
-﻿//Script GUID:1b1842e3-92e3-4619-a23e-4938e9dfa2db
+﻿ //Script GUID:1b1842e3-92e3-4619-a23e-4938e9dfa2db
 //Used for tracking history
 //#DECLARE SG_Dir  string = @"C:\Users\jichen4.REDMOND\Documents\work\code\SearchGold\deploy\builds\data\latest\";
 
-#DECLARE Par_Date                   string = "2022_10_09";
+#DECLARE Par_Date string = "2022_10_09";
 
-#DECLARE Dir string="/local/users/v-yangtian/Clustering/";
+#DECLARE Dir string = "/local/users/v-yangtian/Clustering/";
 
 //#DECLARE In_ImageFeat string = "/local/users/jichen4/PrismV2/HitApp/Input/2022_10_09/PrismIndex_Sample.ss";
 
 #DECLARE In_ImageFeat string = "/local/users/v-yangtian/GetImageEmbedding/ImageEmbedding_5000_save.ss";
-#DECLARE Out_Clustering string ="/local/users/v-yangtian/Clustering/Clustering_5000_save.ss"; 
-#DECLARE Out_Vis string = "/local/users/v-yangtian/Clustering/Clustering_5000_save.tsv"; 
+#DECLARE Out_Clustering string = "/local/users/v-yangtian/Clustering/Clustering_5000_save.ss";
+#DECLARE Out_Vis string = "/local/users/v-yangtian/Clustering/Clustering_5000_save.tsv";
 #DECLARE Out_Stats string = "/local/users/v-yangtian/Stats/Clustering_Stats_save";
 
 RESOURCE @"C:\Users\v-yangtian\Downloads\ClusteringReducer.py";
 //RESOURCE @"C:\Users\jichen4\OneDrive - Microsoft\Documents\code\MM_Image_PrismV2\MM_Image_PrismV2\ClusteringReducer.py";
-#DECLARE N_Clusters int = 100;// for 10k , start with 200 ; 
+#DECLARE N_Clusters int = 100; // for 10k , start with 200 ; 
 //#DECLARE Feat_Delim char = ",";
 #DECLARE setupReducerScript string = @"import ClusteringReducer";
-#DECLARE udoReducerExpression string = string.Format(@"ClusteringReducer.WardClusterReducer({0})",@N_Clusters);
+#DECLARE udoReducerExpression string = string.Format(@"ClusteringReducer.WardClusterReducer({0})", @N_Clusters);
 
 // [1/3] Read the image embedding
-imgInfo =
+ImageFeat =
     SSTREAM @In_ImageFeat;
 
-
+imgInfo =
+    SELECT DISTINCT *
+    FROM ImageFeat;
+  
 
 
 //imgBad = 
@@ -41,11 +44,11 @@ imgEmbedding =
            Key,
            // convert feature into string format: a string of float array
            //           ArrayConvertor.FloatArrayToString(ArrayConvertor.Bytes2Floats(LargeFeature__SIEMv3ImageEncoded_Binary)) AS ImgEmbedding,
-           LargeFeature__SIEMv3ImageEncoded_Binary.Replace(" ",",") AS ImgEmbedding,
+           LargeFeature__SIEMv3ImageEncoded_Binary.Replace(" ", ",") AS ImgEmbedding,
            1 AS Weight
     // LargeFeature__SIEMv3ImageEncoded_Binary is byte[] & string format (read from a tsv file)
     //           NormalizeDocEmbedding(LargeFeature__SIEMv3ImageEncoded_Binary) AS ImgEmbedding
-    FROM imgInfo WHERE LargeFeature__SIEMv3ImageEncoded_Binary!=null AND LargeFeature__SIEMv3ImageEncoded_Binary!="";
+    FROM imgInfo WHERE LargeFeature__SIEMv3ImageEncoded_Binary != null AND LargeFeature__SIEMv3ImageEncoded_Binary != "";
 
 //
 
@@ -63,11 +66,12 @@ imgClustering1 =
 
 
 
-imgClustering2 = 
+imgClustering2 =
     SELECT imgInfo.*.Except(LargeFeature__SIEMv3ImageEncoded_Binary),
            ClusterIndex
     FROM imgInfo
-         INNER JOIN imgClustering1
+         INNER JOIN
+             imgClustering1
          ON imgInfo.Key == imgClustering1.Key;
 
 
@@ -91,6 +95,10 @@ USING DefaultTextOutputter(outputHeader: true);
 //
 stat =
     SELECT "#img input" AS Name,
+           COUNT() AS Value
+    FROM ImageFeat
+    UNION 
+     SELECT "#img input distinct" AS Name,
            COUNT() AS Value
     FROM imgInfo
     UNION

@@ -1,0 +1,35 @@
+﻿//Script GUID:a34edffb-2ea1-4dc9-b241-6a5ea67e6297
+//Used for tracking history
+
+#DECLARE inputStream string = "/local/users/v-yangtian/Sample100_Categories/Sample_100_save.tsv";
+#DECLARE Out_Stats="/local/users/v-yangtian/stats/Sample100/percentage_stats_save.tsv";
+
+img =
+    EXTRACT Key : string,
+            MUrl : string,
+            Event : string,
+            Categories : string
+    FROM @inputStream
+    USING DefaultTextExtractor(skipFirstNRows: 1);
+
+totalCount =
+    SELECT COUNT( * ) AS Count
+    FROM img;
+
+categories_result =
+    SELECT Categories,
+           COUNT( * ) AS Categories_Count
+    FROM img
+    GROUP BY Categories;
+
+stats =
+    SELECT a.Categories,
+           a.Categories_Count,
+           (Categories_Count * 1.0 / Count) AS Percentage
+    FROM categories_result AS a
+         CROSS JOIN
+             totalCount AS b;
+
+OUTPUT
+TO @Out_Stats
+USING DefaultTextOutputter(outputHeader: true);

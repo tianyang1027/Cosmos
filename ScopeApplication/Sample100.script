@@ -1,0 +1,50 @@
+﻿//Script GUID:0ad965c2-d99c-4ce9-a62c-1683a2a33e1c
+//Used for tracking history
+RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll"; 
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
+
+#DECLARE inputStream= "/local/users/v-yangtian/input/Impression_Sample_5000_Click.tsv";
+#DECLARE out_stream="/local/users/v-yangtian/Sample8/Sample_100_Click.tsv";
+#DECLARE Seed string =((int)DateTime.Now.Ticks).ToString();
+
+img =
+    EXTRACT Key: string,
+            PKey: string,
+            Date: string,
+            ImpressionID: string,
+            SessionID: string,
+            Flight: string,
+            AnID: string,
+            ClientID: string,
+            StableID: string,
+            UserType: string,
+            Market: string,
+            RecallPath: string,
+            page_url: string,
+            image_url: string,
+            ItemID: string,
+            Event: string,
+            Position: string,
+            Weight: string
+    FROM @inputStream
+    USING DefaultTextExtractor(skipFirstNRows: 1);
+
+img= SELECT DISTINCT *.Except(Weight) FROM  img;
+
+samplePool=SELECT *,(double) 1 AS Weight FROM img;
+
+Sample =
+    REDUCE samplePool ALL
+    USING TopNReducer("100", "-random", @Seed, "-WeightCol", "Weight");
+
+
+Sample =SELECT Key,
+               image_url AS MUrl,
+               Event
+               FROM Sample;
+
+OUTPUT 
+TO @out_stream
+USING DefaultTextOutputter(outputHeader: true);
