@@ -61,6 +61,7 @@
     <Script Include="IndexSelection_2_TopicStamping_PPE.script" />
     <Script Include="LoopSamples.script" />
     <Script Include="LwNoduleText_Combine.script" />
+    <Script Include="Metrics_1110_4.script" />
     <Script Include="page_title.script" />
     <Script Include="PIVOT.script" />
     <Script Include="ouput_latest_week_dedupe.script" />
@@ -69,6 +70,8 @@
       <RemoveUselessParameters>False</RemoveUselessParameters>
     </Script>
     <Script Include="SS2TSV.script" />
+    <Script Include="T2S2.script" />
+    <Script Include="T2S2_Test.script" />
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
     <Script Include="WrapStarCosmosData.script" />
     <Script Include="WrapStarCosmosData_Deviantart .script" />
@@ -153,6 +156,9 @@
     <ScriptCode Include="LwNoduleText_Combine.script.cs">
       <DependentUpon>LwNoduleText_Combine.script</DependentUpon>
     </ScriptCode>
+    <ScriptCode Include="Metrics_1110_4.script.cs">
+      <DependentUpon>Metrics_1110_4.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="page_title.script.cs">
       <DependentUpon>page_title.script</DependentUpon>
     </ScriptCode>
@@ -170,6 +176,12 @@
     </ScriptCode>
     <ScriptCode Include="SS2TSV.script.cs">
       <DependentUpon>SS2TSV.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="T2S2.script.cs">
+      <DependentUpon>T2S2.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="T2S2_Test.script.cs">
+      <DependentUpon>T2S2_Test.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="UpdateLabeledDetrimentalNodules.script.cs">
       <DependentUpon>UpdateLabeledDetrimentalNodules.script</DependentUpon>

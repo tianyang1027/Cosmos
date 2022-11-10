@@ -1,0 +1,18 @@
+﻿data =
+    SELECT Market,
+           Query,
+           PUrl,
+           MUrl
+    FROM
+    (
+        SSTREAM "/local/users/jiafa/Fidelity/scraping_data/Metrics_0918_5000.ss"
+    );
+//WHERE Query = "brabus 900 rocket prix";
+
+data =
+    SELECT *
+    FROM data
+    WHERE Query == "brabus 900 rocket prix";
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/Metrics_1110_4.ss";
