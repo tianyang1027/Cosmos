@@ -3,14 +3,23 @@
     FROM
     (
         SSTREAM "/local/users/huangxingli/T2S2/snapshotSample_T2S2.ss"
-    )
-    WHERE !T2S2.Contains("0");
+    );
+
 
 data =
-    SELECT Key,
+    SELECT *,
+           1 AS Weight
+    FROM data;
+
+data =
+    SELECT Weight,
            String.Join(",", LIST(T2S2).ToArray()) AS T2S2_All
     FROM data
-    GROUP BY Key;
+    GROUP BY Weight;
+
+OUTPUT
+TO "/local/users/v-yangtian/T2S2/hist_T2S2_1.tsv"
+USING DefaultTextOutputter(outputHeader: true);
 
 data =
     SELECT TOP 1 T2S2_All AS T2S2_All
@@ -30,7 +39,7 @@ USING DefaultTextOutputter(outputHeader: true);
 
 rankFile =
     SELECT t2s2_Index AS t2s2_Index,
-        ROW_NUMBER() OVER(ORDER BY Count ASC) AS Rank
+           ROW_NUMBER() OVER(ORDER BY Count ASC) AS Rank
     FROM hist;
 
 OUTPUT rankFile
@@ -53,7 +62,7 @@ public class GenT2S2HistProcessor : Processor
         foreach (Row row in input.Rows)
         {
             var words = row["T2S2_All"].ToString().Split(',');
-            var result = words.ToList().GroupBy(x => x.ToLower()).Select(x => new
+            var result = words.Where(x => x != "0").GroupBy(x => x).Select(x => new
             {
                 Key = x.Key,
                 Count = x.Count(),
