@@ -12,20 +12,23 @@ hist = PROCESS data
 USING GenT2S2HistProcessor();
 
 OUTPUT
-TO SSTREAM "/local/users/jiafa/t2s2_hist_1.ss";
+TO SSTREAM "/local/users/jiafa/hist.ss";
 
 
-OUTPUT TO "/local/users/jiafa/t2s2_hist_1.tsv" USING DefaultTextOutputter(delimiter:'\t', outputHeader:true);
+rankFile =
+    SELECT t2s2_Index AS t2s2_Index,
+           ROW_NUMBER() OVER(ORDER BY Count ASC) AS Rank
+    FROM hist;
 
-OUTPUT hist
-TO  "/local/users/jiafa/t2s2_hist_1.txt"
-USING HistOutput();
+OUTPUT rankFile
+TO "/local/users/v-yangtian/T2S2/rank.txt"
+USING Outputters.Text(outputHeader: true);
 
 #CS
 
+static Dictionary<string, int> histo;
 public class GenT2S2HistProcessor : Processor
 {
-    public Dictionary<string, int> histo;
     public int Add(string ts2s) 
     {
         string[] words = ts2s.Split(',');
