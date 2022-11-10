@@ -1,8 +1,4 @@
-﻿//Script GUID:5fb3245a-9a58-4d4b-a03c-35056141a94c
-//Used for tracking history
-
-
-data =
+﻿data =
     SELECT *
     FROM
     (
@@ -19,6 +15,10 @@ data =
 data =
     SELECT TOP 1 T2S2_All AS T2S2_All
     FROM data;
+
+OUTPUT
+TO "/local/users/v-yangtian/T2S2/hist_T2S2_All.tsv"
+USING DefaultTextOutputter(outputHeader: true);
 
 hist =
     PROCESS data
@@ -39,89 +39,36 @@ USING Outputters.Text(outputHeader: true);
 
 #CS
 
+using System.Linq;
+
 public class GenT2S2HistProcessor : Processor
 {
-    public Dictionary<string, int> histo;
-    public int Add(string ts2s) 
-    {
-        string[] words = ts2s.Split(',');
-        int count = 0;
-        foreach (var word in words)
-        {
-            if (word == "0")
-                continue;
-            if (!histo.ContainsKey(word))
-                {
-                    histo.Add(word,0);
-                }
-            histo[word] = histo[word] + 1;
-            count = count + 1;
-        }
-        return count;
-    }
-    public GenT2S2HistProcessor()
-    {
-        histo = new Dictionary<string, int>();
-    }
     public override Schema Produces(string[] columns, string[] args, Schema input)
     {
-        Schema schema = new Schema();
-        ColumnInfo colinfo = new ColumnInfo("t2s2_Index", ColumnDataType.Integer);
-        schema.Add(colinfo);
-        ColumnInfo colinfo2 = new ColumnInfo("Count", ColumnDataType.Integer);
-        schema.Add(colinfo2);
-        ColumnInfo colinfo3 = new ColumnInfo("Ratio", ColumnDataType.String);
-        schema.Add(colinfo3);
-
-        return schema;
+        return new Schema("t2s2_Index,Count,Ratio");
     }
 
     public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
     {
-        // Load feature files and build inverted index
-        int m_t2s2String = input.Schema.IndexOf("T2S2_All");
-        int m_index = output.Schema.IndexOf("t2s2_Index");
-        int m_count = output.Schema.IndexOf("Count");
-        int m_ratio = output.Schema.IndexOf("Ratio");
-        
-        int total = 0;
-        
         foreach (Row row in input.Rows)
         {
-            string t2s2String = row[m_t2s2String].String;
-            total = total + Add(t2s2String);            
-        }
+            var words = row["T2S2_All"].ToString().Split(',');
+            var result = words.ToList().GroupBy(x => x.ToLower()).Select(x => new
+            {
+                Key = x.Key,
+                Count = x.Count(),
+                Percentage = x.Count() * 1.0 / words.Length
+            }).ToList();
 
-        var sortedDict = from entry in histo orderby entry.Value descending select entry;
-
-        foreach (var item in sortedDict)
-        {
-            output[m_index].Set(Convert.ToInt32(item.Key));
-            output[m_count].Set(item.Value);
-            output[m_ratio].Set(Convert.ToString((float)item.Value/total));
-            yield return output;            
+            foreach (var item in result)
+            {
+                output[0].Set(item.Key);
+                output[1].Set(item.Count);
+                output[2].Set(item.Percentage);
+                yield return output;
+            }
         }
     }
 }
-
-//public class HistOutput: Outputter
-//{
-//    public override void Output(RowSet input, StreamWriter writer, string[] args)
-//    {
-//        int m_index = input.Schema.IndexOf("t2s2_Index");
-//        int m_count = input.Schema.IndexOf("Count");
-//        int m_ratio = input.Schema.IndexOf("Ratio");
-//        
-//        int rank = 1;
-//        
-//        foreach (Row row in input.Rows)
-//        {
-//            string t2s2String = row[m_index].String;
-//            writer.WriteLine(t2s2String + "\t" + rank.ToString());
-//            rank = rank + 1;
-//        }
-//        writer.Close(); 
-//    }
-//}
 
 #ENDCS
