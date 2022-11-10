@@ -12,8 +12,8 @@ hist = PROCESS data
 USING GenT2S2HistProcessor();
 
 OUTPUT
-TO SSTREAM "/local/users/jiafa/hist.ss";
-
+TO "/local/users/v-yangtian/T2S2/hist.tsv"
+USING DefaultTextOutputter(outputHeader: true);
 
 rankFile =
     SELECT t2s2_Index AS t2s2_Index,
