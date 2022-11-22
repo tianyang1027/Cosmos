@@ -1,0 +1,32 @@
+﻿REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\tld.txt";
+RESOURCE @@In_NoduleRankCutOff@@;
+
+NoduleRank =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/2022-11-11/PrismProdRank_2_EnOnly_PPE.ss"
+    );
+
+md5 =
+    SELECT  DISTINCT TOP 1000
+           Signature
+    FROM NoduleRank
+    WHERE PrismRank >= s_CutoffRank AND PrismRank > 0;
+
+
+OUTPUT md5
+TO "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/MD5_TOP1.tsv"
+USING DefaultTextOutputter();
+
+#CS
+
+public static int s_CutoffRank = MMRV2.IndexSelection.SelectionUtils.GetCutoffRank(Path.GetFileName(@@In_NoduleRankCutOff@@), long.Parse("1000000000"));
+
+#ENDCS

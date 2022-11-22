@@ -1,116 +1,114 @@
-﻿//Script GUID:ed7547a9-1144-4163-bd05-0886627337e3
+﻿//Script GUID:77d73596-3b6c-41d7-b70b-e7c7b2828dca
 //Used for tracking history
 
-data =
-    SELECT T2S2
-    FROM
-    (
-        SSTREAM "/local/users/huangxingli/T2S2/snapshotSample_T2S2.ss"
-    );
+// Suppose all the image on blob storage and url is public accessable
+ 
+///////////////////////////////////////////////
+// Cache imagebyte from blob storage container
+//////////////////////////////////////////////
+#DECLARE InputDataPath string = @@InputDataFile@@;
+#DECLARE OutputSuccessDataPath string = @@OutputSuccessDataFileSS@@;
+#DECLARE OutputFailedDataPath string = @@OutputFailedDataFileSS@@;
+#DECLARE OutputStatsPath string = @@StatsFile@@;
 
-hist = PROCESS data
-USING GenT2S2HistProcessor();
+#IF ("@@InputDataFile@@".EndsWith(".ss"))
+    InputData = SSTREAM @InputDataPath;
+#ELSE
+    InputData =
+        EXTRACT @@InputSchema@@
+        FROM @InputDataPath
+        USING DefaultTextExtractor;
+#ENDIF
 
-OUTPUT
-TO "/local/users/v-yangtian/T2S2/hist.tsv"
-USING DefaultTextOutputter(outputHeader: true);
+#IF ("@@ImageFormat@@" == "Binary")
+    [PARTITION(@@UniqueKeyColName@@)=(PARTITIONFUNCTION=HASH, PARTITIONCOUNT=@@PartitionCount@@)]
+    OutputData =
+        SELECT *,
+               Utils.get_image_from_url(@@CacheUrlCol@@) AS @@ImageColName@@
+        FROM InputData;
+#ELSE 
+    [PARTITION(@@UniqueKeyColName@@)=(PARTITIONFUNCTION=HASH, PARTITIONCOUNT=@@PartitionCount@@)]
+    OutputData =
+        SELECT *,
+               Utils.convert_byte_array_to_base64_string(Utils.get_image_from_url(@@CacheUrlCol@@)) AS @@ImageColName@@
+        FROM InputData;
+#ENDIF
 
-rankFile =
-    SELECT t2s2_Index AS t2s2_Index,
-           ROW_NUMBER() OVER(ORDER BY Count ASC) AS Rank
-    FROM hist;
+OutputSuccessData =
+    SELECT @@OutputSchema@@
+    FROM OutputData
+    WHERE @@ImageColName@@ != null AND @@ImageColName@@.Length != 0;
 
-OUTPUT rankFile
-TO "/local/users/v-yangtian/T2S2/rank.txt"
-USING Outputters.Text(outputHeader: true);
+OutputFailedData = 
+    SELECT @@OutputSchema@@
+    FROM OutputData
+    WHERE @@ImageColName@@ == null OR @@ImageColName@@.Length == 0;
+
+OUTPUT OutputSuccessData
+TO SSTREAM @OutputSuccessDataPath
+HASH CLUSTERED BY @@UniqueKeyColName@@
+SORTED BY @@UniqueKeyColName@@;
+ 
+OUTPUT OutputFailedData
+TO SSTREAM @OutputFailedDataPath
+HASH CLUSTERED BY @@UniqueKeyColName@@
+SORTED BY @@UniqueKeyColName@@;
+
+// Generation of stat file
+Stats =
+    SELECT "Success" AS Status,
+           COUNT( * ) AS Count
+    FROM OutputData
+    WHERE @@ImageColName@@ != null AND @@ImageColName@@.Length != 0
+    UNION
+    SELECT "Failed" AS Status,
+           COUNT( * ) AS Count
+    FROM OutputData
+    WHERE @@ImageColName@@ == null OR @@ImageColName@@.Length == 0;
+ 
+OUTPUT Stats TO @OutputStatsPath;
 
 #CS
-
-static Dictionary<string, int> histo;
-public class GenT2S2HistProcessor : Processor
+using Microsoft.SCOPE.Types;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using ScopeRuntime;
+using System.Net;
+ 
+public static class Utils
 {
-    public int Add(string ts2s) 
+    public static byte[] get_image_from_url(string url)
     {
-        string[] words = ts2s.Split(',');
-        int count = 0;
-        foreach (var word in words)
+        byte[] imageBytes;
+        ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+        using (var webClient = new WebClient())
         {
-            if (word == "0")
-                continue;
-            if (!histo.ContainsKey(word))
-                {
-                    histo.Add(word,0);
-                }
-            histo[word] = histo[word] + 1;
-            count = count + 1;
+            try
+            {
+                imageBytes = webClient.DownloadData(url);
+            }
+            catch (Exception e) {
+                return null;
+            }
+            
         }
-        return count;
-    }
-    public GenT2S2HistProcessor()
-    {
-        histo = new Dictionary<string, int>();
-    }
-    public override Schema Produces(string[] columns, string[] args, Schema input)
-    {
-        Schema schema = new Schema();
-        ColumnInfo colinfo = new ColumnInfo("t2s2_Index", ColumnDataType.Integer);
-        schema.Add(colinfo);
-        ColumnInfo colinfo2 = new ColumnInfo("Count", ColumnDataType.Integer);
-        schema.Add(colinfo2);
-        ColumnInfo colinfo3 = new ColumnInfo("Ratio", ColumnDataType.String);
-        schema.Add(colinfo3);
-
-        return schema;
+        return imageBytes;
     }
 
-    public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
-    {
-        // Load feature files and build inverted index
-        int m_t2s2String = input.Schema.IndexOf("T2S2");
-        int m_index = output.Schema.IndexOf("t2s2_Index");
-        int m_count = output.Schema.IndexOf("Count");
-        int m_ratio = output.Schema.IndexOf("Ratio");
-        
-        int total = 0;
-        
-        foreach (Row row in input.Rows)
+	public static string convert_byte_array_to_base64_string(byte[] byte_array)
+	{
+        string base64_string;
+        try
         {
-            string t2s2String = row[m_t2s2String].String;
-            total = total + Add(t2s2String);            
+            base64_string = Convert.ToBase64String(byte_array);
         }
-
-        var sortedDict = from entry in histo orderby entry.Value descending select entry;
-
-        foreach (var item in sortedDict)
-        {
-            output[m_index].Set(Convert.ToInt32(item.Key));
-            output[m_count].Set(item.Value);
-            output[m_ratio].Set(Convert.ToString((float)item.Value/total));
-            yield return output;            
+        catch (Exception e){
+            return null;
         }
-    }
+		return base64_string;
+	}
 }
-
-public class HistOutput: Outputter
-{
-    public override void Output(RowSet input, StreamWriter writer, string[] args)
-    {
-        int m_index = input.Schema.IndexOf("t2s2_Index");
-        int m_count = input.Schema.IndexOf("Count");
-        int m_ratio = input.Schema.IndexOf("Ratio");
-        
-        int rank = 1;
-        
-        foreach (Row row in input.Rows)
-        {
-            string t2s2String = row[m_index].String;
-            writer.WriteLine(t2s2String + "\t" + rank.ToString());
-            rank = rank + 1;
-        }
-        writer.Close(); 
-    }
-}
-
 #ENDCS
-
-// Generated by ScopeStudio, version 3.1.2000.2
+ 

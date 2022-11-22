@@ -1,0 +1,208 @@
+﻿// Given a cosmos rowset with images, calculate Visual Intent Annotations using Visual Intent V3 model.
+// This script needs VC: cosmos11/MMRepository.prod, because of IU scope processor dependencies. 
+// Inputs:
+//     InputDataPath: the cosmos path of input data, can be either tsv or structured stream.
+// Outputs:
+//     OutputDataPathSS: the cosmos path of structured stream output data, VI3 annotation json column will be appended to output file.
+// Params:
+//     (optional)InputSchema: the input schema, if input file is tsv.
+//     ImageColName: the column name of image content.
+//     UniqueKeyColName: the unique key for rows in input data rowset.
+//     PartitionCount: the partition count for execution.
+//     AnnoJsonColName: the VI3 annotation json column name. this column will be appended onto input rowset.
+//     OutputSchema: the output schema.
+
+REFERENCE @"DataCollectionUtils.dll";
+REFERENCE @"Newtonsoft.Json.dll";
+REFERENCE @"System.Core.dll";
+REFERENCE @"Relevance.ScopeLib.dll";
+
+//Script GUID:177315e1-454e-49b9-ae70-2cb1a50e19cb
+
+MODULE "/local/users/tianwang/IPS.Scope/modules/dynamicprocessor.20190124.module";
+MODULE "/local/users/tianwang/IPS.Scope/modules/metadatareader.20190124.module";
+
+REFERENCE "/local/users/tianwang/IPS.Scope/resources/iuscopeprocessor/20190403/IUScopeProcessor.dll";
+REFERENCE "/local/users/tianwang/IPS.Scope/resources/iuscopeprocessor/20190403/IUManagedExecutor.dll";
+RESOURCE "/local/users/tianwang/IPS.Scope/resources/iuscopeprocessor/20190403/IUNativeExecutor.dll";
+
+RESOURCE "/local/users/tianwang/IPS.Scope/resources/iuscopeprocessor/20190403/libgfortran-3.dll";
+RESOURCE "/local/users/tianwang/IPS.Scope/resources/iuscopeprocessor/20190403/libopenblas.dll";
+
+RESOURCE "/local/users/tianwang/IPS.Scope/resources/iuscopeprocessor/20190403/MLTKNeuralNetWrapper.dll";
+RESOURCE "/local/users/tianwang/IPS.Scope/resources/iuscopeprocessor/20190403/MLTKNeuralNetWrapper.pdb";
+RESOURCE "/local/users/tianwang/IPS.Scope/resources/iuscopeprocessor/20190403/SvgDecoder.dll";
+
+//New for Lotus runtime
+RESOURCE "/local/users/anstewart/IPS.Scope/resources/IUONNXProcessor/LotusWrapper_20220506.dll";
+RESOURCE "/local/users/anstewart/IPS.Scope/resources/IUONNXProcessor/cudart64_110.dll";
+RESOURCE "/local/users/tianwang/IPS.Scope/resources/onnx/20190522/libiomp5md.dll";
+RESOURCE "/local/users/tianwang/IPS.Scope/resources/onnx/20190522/mkldnn.dll";
+RESOURCE "/local/users/tianwang/IPS.Scope/resources/onnx/20190522/mklml.dll";
+
+USING IUPipelineScopeProcessor; 
+USING Microsoft.SegmentRelevance.ScopeLib;
+
+//Pipeline file and model file, change these with new model
+RESOURCE @@Pipeline@@;
+//"/local/users/anstewart/IPS.Scope/scratch/anstewart/pipeline_cosmos_BGR.txt";
+RESOURCE @@ONNX_model@@;
+//"/local/users/anstewart/IPS.Scope/scratch/anstewart/20220802_SWINv1_hierarchy_simple_BGR.onnx";
+//IDs to Category names file (From VI owner)
+#DECLARE names string = @"/local/users/anstewart/IPS.Scope/scratch/anstewart/20220802_SWINv1_hierarchy_lookup_cosmos.txt";
+
+USING DataCollectionUtils;
+
+#DECLARE InputDataPath string =  @@InputDataPath@@;
+#DECLARE OutputDataPath string = @@OutputDataPathSS@@;
+
+
+InputData = EXTRACT 
+                UniqueKey:string,
+                Status :string,
+                Binary:string
+			FROM @InputDataPath
+			USING DefaultTextExtractor;
+
+Images =
+    SELECT DISTINCT UniqueKey,
+                    Convert.FromBase64String(Binary) AS ImageStream
+    FROM InputData WHERE Status == "OK";
+
+
+[PARTITION=(PARTITIONCOUNT=@@PartitionCount@@)]
+VisualIntent =
+    PROCESS Images
+    PRODUCE UniqueKey,
+            ImageStream,
+            proball
+    //USING IUPipelineScopeProcessor("--input=ImageStream:Binary", "--output=proball:Binary", "--pipeline-description=pipeline_cosmos_BGR.txt");
+	USING IUPipelineScopeProcessor("--input=ImageStream:Binary", "--output=proball:Binary", "--pipeline-description=pipeline_cosmos_IPS.txt");
+
+Mapping = 
+    EXTRACT mapping_file: string
+    FROM @names USING DefaultTextExtractor();
+
+VisualIntent = SELECT InputData.*,
+                      VisualIntent.proball
+               FROM InputData
+               LEFT OUTER JOIN VisualIntent
+               ON InputData.UniqueKey == VisualIntent.UniqueKey;
+
+VisualIntent = SELECT
+        VisualIntent.*,
+        Mapping.mapping_file AS mapping_file
+        FROM VisualIntent
+        CROSS JOIN Mapping;
+
+VisualIntent =
+    SELECT *,
+           ScratchUtils.PostProcess(proball, mapping_file) AS VI3AnnoJson
+    FROM VisualIntent
+    HAVING !String.IsNullOrEmpty(VI3AnnoJson);
+
+VisualIntent = PROCESS VisualIntent USING ColumnProcessor("-prune","proball,mapping_file");
+
+VisualIntent = 
+    SELECT DISTINCT *
+    FROM VisualIntent;
+
+OUTPUT
+TO SSTREAM @OutputDataPath
+HASH CLUSTERED BY UniqueKey
+SORTED BY UniqueKey;
+
+#CS
+using Microsoft.SCOPE.Types;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using ScopeRuntime;
+using DataCollectionUtils;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+public class ScratchUtils
+{
+    // Change these constants when there is a new taxonomy
+    //public const int leafCategoryLimit = 510;
+	public const int leafCategoryLimit = 658;
+    //public const int Aggregated_Categories = 576;
+	public const int Aggregated_Categories = 760;
+
+    public static byte[] String2Binary(string data)
+    {
+        // Used to process simulated results for dubugging
+        // Convert table to binary, select each row, process each row in C# to convert to binary
+        float[] float_data = Array.ConvertAll(data.Split(','), new Converter<string, float>(float.Parse));
+
+        // create a byte array and copy the floats into it
+        var byteArray = new byte[float_data.Length * 4];
+        Buffer.BlockCopy(float_data, 0, byteArray, 0, byteArray.Length);
+        return byteArray;
+    }
+
+    public static float[] Bytes2FloatArray(byte[] data)
+    {
+        float[] values = new float[data.Length / sizeof(float)];
+        Buffer.BlockCopy(data, 0, values, 0, data.Length);
+        return values;
+    }
+
+    public static Dictionary<int, string> CreateDict(string mapping_file)
+    {
+        //Create Dictionary, key->(0 to 514), value->(category names in english)
+        if (mapping_file.EndsWith(","))
+            mapping_file = mapping_file.Substring(0, mapping_file.Length - 1);
+
+        Dictionary<int, string> id_map = new Dictionary<int, string>();
+        string[] pairs = mapping_file.Split(',');
+        foreach (string pair in pairs)
+        {
+            List<string> list = new List<string>(pair.Split(':'));
+            int id = Int32.Parse(list[0].Trim());
+            string name = list[1];
+            id_map.Add(id, name);
+        }
+        return id_map;
+    }
+
+    public static string PostProcess(byte[] prob, string mapping_file)
+    {
+        if (prob == null)
+            return null;
+
+        Dictionary<int, string> id_map = CreateDict(mapping_file);
+
+        if (prob == null)
+            return null;
+        var conf = Bytes2FloatArray(prob);
+
+        int numCategories = conf.Length;
+        if (numCategories != Aggregated_Categories)
+            throw new Exception(String.Format("Expected {0} outputs. Got {1}", Aggregated_Categories, numCategories));
+
+        List<Annotation> annoList = new List<Annotation>();
+        List<CategoryAnnotation> categoryList = new List<CategoryAnnotation>();
+        Annotation imageanno = new Annotation();
+
+        for (int i = 0; i < Aggregated_Categories; i++)
+        {
+            CategoryAnnotation a = new CategoryAnnotation();
+            a.category_id = id_map[i];
+            a.confidence = conf[i];
+            categoryList.Add(a);
+        }
+        imageanno.categories = categoryList;
+        annoList.Add(imageanno);
+
+        string annoJson = JsonConvert.SerializeObject(annoList);
+        return annoJson;
+    }
+}
+#ENDCS
+
+// Generated by ScopeStudio, version 2.3.5001.8
+
+// Generated by ScopeStudio, version 2.3.8000.1
