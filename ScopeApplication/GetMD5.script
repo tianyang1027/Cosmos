@@ -5,28 +5,46 @@ REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll"
 REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
 RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
 RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\tld.txt";
-RESOURCE @@In_NoduleRankCutOff@@;
+RESOURCE "/local/Prod/Image/Prism/2022-11-29/PrismProdRank_2_EnOnly_CutOffTable_PPE.tsv";
 
 NoduleRank =
     SELECT *
     FROM
     (
-        SSTREAM "/local/Prod/Image/Prism/2022-11-11/PrismProdRank_2_EnOnly_PPE.ss"
+        SSTREAM "/local/Prod/Image/Prism/2022-11-29/PrismProdRank_2_EnOnly_PPE.ss"
     );
 
 md5 =
-    SELECT  DISTINCT TOP 1000
-           Signature
+    SELECT DISTINCT Signature
     FROM NoduleRank
     WHERE PrismRank >= s_CutoffRank AND PrismRank > 0;
 
-
 OUTPUT md5
-TO "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/MD5_TOP1.tsv"
+TO "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/one_billion_md5_enonly.tsv"
 USING DefaultTextOutputter();
+
+LOOP(I, 100)
+{
+
+top =
+    SELECT TOP 10000000 Signature
+    FROM md5;
+
+md5 =
+    SELECT *
+    FROM md5
+    EXCEPT ALL
+    SELECT *
+    FROM top;
+
+OUTPUT top
+TO  $"/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/md5/split_md5_{@@I@@}.tsv"
+USING DefaultTextOutputter();
+
+}
 
 #CS
 
-public static int s_CutoffRank = MMRV2.IndexSelection.SelectionUtils.GetCutoffRank(Path.GetFileName(@@In_NoduleRankCutOff@@), long.Parse("1000000000"));
+public static int s_CutoffRank = MMRV2.IndexSelection.SelectionUtils.GetCutoffRank(Path.GetFileName("/local/Prod/Image/Prism/2022-11-29/PrismProdRank_2_EnOnly_CutOffTable_PPE.tsv"), long.Parse("1000000000"));
 
 #ENDCS

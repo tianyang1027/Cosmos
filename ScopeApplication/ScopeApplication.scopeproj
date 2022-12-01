@@ -36,6 +36,7 @@
     <Script Include="Generate_LatestDetrimental.script" />
     <Script Include="Generate_PageTitle.script" />
     <Script Include="GetImageEmbedding.script" />
+    <Script Include="GetMD5.script" />
     <Script Include="HitApp_0_SampleImpression.script" />
     <Script Include="HitApp_0_SampleIndex.script" />
     <Script Include="HitApp_0_SampleIndex_SendDetrimental.script" />
@@ -107,6 +108,9 @@
     </ScriptCode>
     <ScriptCode Include="GetImageEmbedding.script.cs">
       <DependentUpon>GetImageEmbedding.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="GetMD5.script.cs">
+      <DependentUpon>GetMD5.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="HitApp_0_SampleImpression.script.cs">
       <DependentUpon>HitApp_0_SampleImpression.script</DependentUpon>
