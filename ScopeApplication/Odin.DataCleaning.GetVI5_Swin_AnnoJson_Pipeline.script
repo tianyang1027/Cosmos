@@ -44,17 +44,17 @@ USING IUPipelineScopeProcessor;
 USING Microsoft.SegmentRelevance.ScopeLib;
 
 //Pipeline file and model file, change these with new model
-RESOURCE @@Pipeline@@;
+RESOURCE "/local/users/anstewart/IPS.Scope/scratch/anstewart/pipeline_cosmos_IPS.txt";
 //"/local/users/anstewart/IPS.Scope/scratch/anstewart/pipeline_cosmos_BGR.txt";
-RESOURCE @@ONNX_model@@;
-//"/local/users/anstewart/IPS.Scope/scratch/anstewart/20220802_SWINv1_hierarchy_simple_BGR.onnx";
+RESOURCE "/local/users/anstewart/IPS.Scope/scratch/anstewart/Visual_Intent_V5_SWINv1_20220802.onnx";
+
 //IDs to Category names file (From VI owner)
 #DECLARE names string = @"/local/users/anstewart/IPS.Scope/scratch/anstewart/20220802_SWINv1_hierarchy_lookup_cosmos.txt";
 
 USING DataCollectionUtils;
 
-#DECLARE InputDataPath string =  @@InputDataPath@@;
-#DECLARE OutputDataPath string = @@OutputDataPathSS@@;
+#DECLARE InputDataPath string =  "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/md5_million_Split_10_thumbnail/thumbnail_0.tsv";
+#DECLARE OutputDataPath string = "local/users/v-yangtian/Visual_Intent_Annotations_V5.ss";
 
 
 InputData = EXTRACT 
@@ -70,7 +70,7 @@ Images =
     FROM InputData WHERE Status == "OK";
 
 
-[PARTITION=(PARTITIONCOUNT=@@PartitionCount@@)]
+[PARTITION=(PARTITIONCOUNT=1000)]
 VisualIntent =
     PROCESS Images
     PRODUCE UniqueKey,

@@ -20,14 +20,14 @@ md5 =
     WHERE PrismRank >= s_CutoffRank AND PrismRank > 0;
 
 OUTPUT md5
-TO "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/one_billion_md5_enonly.tsv"
+TO "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/one_million_md5_enonly.tsv"
 USING DefaultTextOutputter();
 
-LOOP(I, 100)
+LOOP(I, 10)
 {
 
 top =
-    SELECT TOP 10000000 Signature
+    SELECT TOP 100000 Signature
     FROM md5;
 
 md5 =
@@ -38,13 +38,13 @@ md5 =
     FROM top;
 
 OUTPUT top
-TO  $"/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/md5/split_md5_{@@I@@}.tsv"
+TO  $"/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/md5_million_Split_10/split_md5_{@@I@@}.tsv"
 USING DefaultTextOutputter();
 
 }
 
 #CS
 
-public static int s_CutoffRank = MMRV2.IndexSelection.SelectionUtils.GetCutoffRank(Path.GetFileName("/local/Prod/Image/Prism/2022-11-29/PrismProdRank_2_EnOnly_CutOffTable_PPE.tsv"), long.Parse("1000000000"));
+public static int s_CutoffRank = MMRV2.IndexSelection.SelectionUtils.GetCutoffRank(Path.GetFileName("/local/Prod/Image/Prism/2022-11-29/PrismProdRank_2_EnOnly_CutOffTable_PPE.tsv"), long.Parse("1000000"));
 
 #ENDCS
