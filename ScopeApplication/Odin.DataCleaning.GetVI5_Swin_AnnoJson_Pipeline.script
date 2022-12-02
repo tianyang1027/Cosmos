@@ -53,7 +53,7 @@ RESOURCE "/local/users/anstewart/IPS.Scope/scratch/anstewart/Visual_Intent_V5_SW
 
 USING DataCollectionUtils;
 
-#DECLARE InputDataPath string =  "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/md5_million_Split_10_thumbnail/thumbnail_0.tsv";
+#DECLARE InputDataPath string =  "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/md5_million_Split_10_thumbnail/thumbnail_{*}.tsv";
 #DECLARE OutputDataPath string = "local/users/v-yangtian/Visual_Intent_Annotations_V5.ss";
 
 
