@@ -1,0 +1,165 @@
+﻿//Script GUID:e7e55978-4049-436e-8784-fecc2174e54f
+//Used for tracking history
+
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\tld.txt";
+RESOURCE "/local/Prod/Image/Selection/WDP/AfterCrawlSelectionV4.3/2022_12_04/NoduleRankFile_Unified_CutOffTable.tsv";
+USING MMRV2.Utility;
+USING MMRV2.Core;
+
+NoduleRank  = SSTREAM "/local/Prod/Image/Selection/WDP/AfterCrawlSelectionV4.3/2022_12_04/NoduleRankFile_Unified.ss";
+NoduleRank  = SELECT *, GetDomain(MUrl) AS MDomain;
+NoduleRank_Cutoff  =
+    SELECT Key, PKey, MUrl, PUrl,MDomain, GetDomain(PUrl) AS PDomain, Score, AdjustedRank, OrgRank, Signature, DupSignature, Language, Country
+    FROM NoduleRank
+    WHERE AdjustedRank >= s_CutoffRank AND AdjustedRank > 0;
+
+ActiveIndex =
+    VIEW @"/local/Prod/Image/Repository/ActiveDocsCombined/LatestActiveNodulesList.view"
+    PARAMS
+    (
+        SegmentsList = "GenericLatest"
+    );
+
+ActiveIndex = SELECT MUrlKey AS Key, PUrlKey AS PKey, MUrl, PUrl, GetDomain(MUrl) AS MDomain, GetDomain(PUrl) AS PDomain, Signature, Language, Country;
+
+ActiveIndex_1 = SELECT a.Key,
+                     a.PKey,
+                     a.MUrl,
+                     a.PUrl,
+                     a.MDomain,
+                     a.PDomain,
+                     a.Signature,
+                     IF(a.Language != null, a.Language, b.Language) AS Language,
+                     IF(a.Country != null, a.Country, b.Country) AS Country,
+                     b.Score,
+                     b.AdjustedRank,
+                     b.OrgRank,
+                     b.Key AS Key_In_NoduleRank
+              FROM ActiveIndex AS a
+                   LEFT JOIN NoduleRank_Cutoff AS b ON a.Key == b.Key AND a.PKey == b.PKey;
+
+stats =
+    SELECT "Total nodules ActiveIndex" AS Name,
+           COUNT(1) AS Count
+    FROM ActiveIndex
+    UNION ALL
+    SELECT "Total nodules ActiveIndex en" AS Name,
+           COUNT(1) AS Count
+    FROM ActiveIndex
+    WHERE Language == "en"
+        UNION ALL
+        SELECT "Total nodules NoduleRankFile" AS Name,
+               COUNT(1) AS Count
+        FROM NoduleRank_Cutoff
+        UNION ALL
+        SELECT "Total nodules NoduleRankFile en" AS Name,
+               COUNT(1) AS Count
+        FROM NoduleRank_Cutoff             
+        WHERE Language == "en"
+        UNION ALL
+        SELECT "Total nodules ActiveIndex join" AS Name,
+               COUNT(1) AS Count
+        FROM ActiveIndex_1    
+        UNION ALL
+        SELECT "Total nodules ActiveIndex join en" AS Name,
+               COUNT(1) AS Count
+        FROM ActiveIndex_1
+        WHERE Language == "en"
+        UNION ALL
+        SELECT "Total nodules ActiveIndex Language == null" AS Name,
+               COUNT(1) AS Count
+        FROM ActiveIndex
+        WHERE Language == null
+        UNION ALL
+        SELECT "Total nodules ActiveIndex join OrgRank == null" AS Name,
+               COUNT(1) AS Count
+        FROM ActiveIndex_1
+        WHERE OrgRank == null
+        UNION ALL
+        SELECT "Total nodules ActiveIndex join en OrgRank == null" AS Name,
+               COUNT(1) AS Count
+        FROM ActiveIndex_1
+        WHERE Language == "en" AND OrgRank == null
+        UNION ALL
+        SELECT "Total nodules ActiveIndex join not in NoduleRank" AS Name,
+               COUNT(1) AS Count
+        FROM ActiveIndex_1
+        WHERE Key_In_NoduleRank == null
+        UNION ALL
+        SELECT "Total nodules ActiveIndex join en not in NoduleRank" AS Name,
+               COUNT(1) AS Count
+        FROM ActiveIndex_1
+        WHERE  Language == "en" AND Key_In_NoduleRank == null
+        UNION ALL
+        SELECT "Total nodules ActiveIndex join OrgRank == null AND Key_In_NoduleRank != null" AS Name,
+               COUNT(1) AS Count
+        FROM ActiveIndex_1
+        WHERE  OrgRank == null AND Key_In_NoduleRank != null
+        UNION ALL
+        SELECT "Total nodules ActiveIndex join OrgRank == null AND Key_In_NoduleRank != null" AS Name,
+               COUNT(1) AS Count
+        FROM ActiveIndex_1
+        WHERE  Language == "en" AND OrgRank == null AND Key_In_NoduleRank != null;
+         
+
+OUTPUT TO SSTREAM "/local/users/v-yangtian/PrismProdRank_0_PPE_2022_12_04_stats.ss";
+
+#CS
+
+public static string ConvertHttpsToHttpInMUrl(string murl)
+{
+    if (string.IsNullOrEmpty(murl) || murl.Length < 6)
+    {
+        return murl;
+    }
+    if (murl.Substring(0, 6).ToLowerInvariant() == "https:")
+    {
+        return "http" + murl.Substring(5);
+    }
+    return murl;
+}
+
+public static string ConvertHttpToHttpsInMUrl(string murl)
+{
+    if (string.IsNullOrEmpty(murl) || murl.Length < 5)
+    {
+        return murl;
+    }
+    if (murl.Substring(0, 5).ToLowerInvariant() == "http:")
+    {
+        return "https" + murl.Substring(4);
+    }
+    return murl;
+}
+
+public static string GetDomain(string url)
+{
+   string domain, host, l1path;
+    
+    if (MMRV2.ScheduleSelection.Tool.ParseUrl(out domain, out host, out l1path, url)) 
+    {
+        return domain;
+    }
+    
+    return null;
+}
+
+public static int s_CutoffRank = MMRV2.IndexSelection.SelectionUtils.GetCutoffRank(Path.GetFileName("/local/Prod/Image/Selection/WDP/AfterCrawlSelectionV4.3/2022_12_04/NoduleRankFile_Unified_CutOffTable.tsv"), long.Parse("60000000000"));
+
+public static long ToUnixTime(DateTime date)
+{
+    var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    return Convert.ToInt64((date - epoch).TotalSeconds);
+}
+
+public static long s_Last6Month = ToUnixTime(DateTime.Today.AddMonths(-6));
+
+#ENDCS
+
+// Generated by ScopeStudio, version 3.1.2000.2

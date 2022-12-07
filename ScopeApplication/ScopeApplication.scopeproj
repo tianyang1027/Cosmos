@@ -60,6 +60,7 @@
     <Script Include="IndexSelection_1_GenerateRankFile_PPE2.script" />
     <Script Include="IndexSelection_2_TopicStamping.script" />
     <Script Include="IndexSelection_2_TopicStamping_PPE.script" />
+    <Script Include="Largediscrepancybetwee ActiveIndex .script" />
     <Script Include="LoopSamples.script" />
     <Script Include="LwNoduleText_Combine.script" />
     <Script Include="Metrics_1110_4.script" />
@@ -153,6 +154,9 @@
     </ScriptCode>
     <ScriptCode Include="IndexSelection_2_TopicStamping_PPE.script.cs">
       <DependentUpon>IndexSelection_2_TopicStamping_PPE.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Largediscrepancybetwee ActiveIndex .script.cs">
+      <DependentUpon>Largediscrepancybetwee ActiveIndex .script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="LoopSamples.script.cs">
       <DependentUpon>LoopSamples.script</DependentUpon>
