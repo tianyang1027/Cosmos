@@ -1,0 +1,38 @@
+﻿#DECLARE StreamExpiry string = @"120";
+#DECLARE Out_SampleForMeasurement string = "/local/Prod/Image/Prism/UHRS_Uploads/Outstanding/Crowd_en/Impression_Slider_GoodSeed_SiemEmb_2023_01_16_en.tsv";
+
+
+//good_seed =
+//    SSTREAM "/local/Prod/Image/Prism/IndexGen/IndexCleanUp/Embedding/GoodSeed/RankPartition/TuringMMResults_joined_Sample22.ss";
+
+
+good_seed =
+    EXTRACT C1 : string,
+            C2 : string,
+            C3 : string,
+            C4 : string,
+            C5 : string,
+            C6 : string,
+            C7 : string,
+            C8 : string,
+            C9 : string
+    FROM "/local/Prod/Image/Prism/IndexGen/IndexCleanUp/Embedding/GoodSeed/Slider_GoodSeed_SiemEmb.tsv"
+    USING Extractors.Tsv();
+
+Sample =
+    SELECT DISTINCT C2 AS image_url
+    FROM good_seed;
+
+OUTPUT Sample
+TO @Out_SampleForMeasurement
+WITH STREAMEXPIRY @StreamExpiry
+USING DefaultTextOutputter(delimiter: '\t', outputHeader: true);
+
+
+good_seed_stream =
+    SELECT C2 AS image_url
+    FROM good_seed;
+
+OUTPUT good_seed_stream
+TO SSTREAM "/local/users/v-yangtian/Slider_GoodSeed_SiemEmb.ss";
+

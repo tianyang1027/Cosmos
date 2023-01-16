@@ -1,0 +1,549 @@
+﻿REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+USING MMRV2.Utility;
+
+#DECLARE In_OutstandingJudgment    string = @@In_OutstandingJudgment@@;
+
+RESOURCE @In_OutstandingJudgment;
+#DECLARE JudgmentFileName string = System.IO.Path.GetFileName(@In_OutstandingJudgment); 
+#DECLARE In_Original     string = @In_OutstandingJudgment.Substring(@In_OutstandingJudgment.LastIndexOf("AutoUpload-"));
+// "AutoUpload-{Name}{Suffix}" -> "{Name}"
+#DECLARE In_Original_1 string = @In_Original.Substring("AutoUpload-".Length, @In_Original.Length-56);
+#DECLARE LanguageName string = @In_Original_1.Substring(@In_Original_1.LastIndexOf('_') + 1);
+#IF (@LanguageName.Equals("chs"))
+    #SET LanguageName = "zh_chs";
+#ENDIF
+#DECLARE AutoMeasurementDir string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/";
+#DECLARE In_NonDetrimental                        string = string.Format("{0}{1}/NonDetrimental{2}.ss",                           @AutoMeasurementDir, @LanguageName, @In_Original_1);
+#DECLARE In_NonPlaceholder                        string = string.Format("{0}{1}/NonPlaceholder{2}.ss",                           @AutoMeasurementDir, @LanguageName, @In_Original_1);
+#DECLARE In_Original_NonDetrimentalStat           string = string.Format("{0}{1}/NonDetrimentalStats{2}.ss",                      @AutoMeasurementDir, @LanguageName, @In_Original_1);
+#DECLARE In_Samples                               string = "/local/users/v-yangtian/TuringMMResults_joined_Sample22.ss";
+#DECLARE In_Original_Number                       string = string.Format("{0}{1}/NonDetrimentalStatsNumber{2}.ss",               @AutoMeasurementDir, @LanguageName, @In_Original_1);
+#DECLARE In_SamplesDetrimentalLabel               string = string.Format("{0}{1}/SamplesDetrimentalLabel{2}.tsv",                 @AutoMeasurementDir, @LanguageName, @In_Original_1);
+#DECLARE Out_SampleLabel                          string = string.Format("{0}{1}/SamplesOutstandingLabel{2}.tsv",                 @AutoMeasurementDir, @LanguageName, @In_Original_1);
+#DECLARE Out_Stats                                string = string.Format("{0}{1}/OutstandingStats{2}.ss",                         @AutoMeasurementDir, @LanguageName, @In_Original_1);
+#DECLARE Out_StatsPerRecallPath                   string = string.Format("{0}{1}/OutstandingStatsPerRecallPath{2}.ss",            @AutoMeasurementDir, @LanguageName, @In_Original_1);
+#DECLARE Out_StatsOutstandingAndGoodPerRecallPath string = string.Format("{0}{1}/Out_StatsOutstandingAndGoodPerRecallPath{2}.ss", @AutoMeasurementDir, @LanguageName, @In_Original_1);
+#DECLARE Out_SamplesOutstanding                   string = string.Format("{0}{1}/Out_SamplesOutstanding{2}.ss",                   @AutoMeasurementDir, @LanguageName, @In_Original_1);
+#DECLARE LanguageSuffix string = "_" + @LanguageName;
+// There are 7 judges for outstanding v2 hitapp since 10/26/2022.
+#DECLARE NumJudges int = 7;
+#DECLARE SingleTh int = @NumJudges / 2;
+#DECLARE OkTh int = @NumJudges / 2 + 1;
+#DECLARE StreamExpiry string = @"120";
+#DECLARE UtcNow DateTime = DateTime.UtcNow;
+#DECLARE Now DateTime = @UtcNow.AddHours(-8);
+#DECLARE FileDateFormatLength int = "yyyy_MM_dd".Length;
+#DECLARE SampleDataTime DateTime = Convert.ToDateTime((@In_Original_1.Substring(@In_Original_1.Length - @FileDateFormatLength - @LanguageSuffix.Length, @FileDateFormatLength).Replace('_', '-') + " 23:59:59"));
+#DECLARE prefix string = "";
+#DECLARE NeedSaveDashboard bool = false;
+#IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
+    #SET prefix = "Index_PPE";
+    #SET NeedSaveDashboard = true;
+#ELSEIF (@In_Original_1.StartsWith("Index_Regular"))
+    #SET prefix = "Index";
+    #SET NeedSaveDashboard = true;
+#ELSEIF (@In_Original_1.StartsWith("Impression_Regular"))
+    #SET prefix = "Impression";
+    #SET NeedSaveDashboard = true;
+#ELSEIF (@In_Original_1.StartsWith("Click_Regular"))
+    #SET prefix = "Click";
+    #SET NeedSaveDashboard = true;
+#ENDIF
+
+#DECLARE Out_Stats_DashBoard string = "";
+#DECLARE Out_StatsOutstandingAndGoodPerRecallPath_DashBoard string = "";
+#DECLARE DashboardStatsSuffix = "";
+#IF(@NeedSaveDashboard)
+  #IF (@LanguageName != "en")
+    #SET DashboardStatsSuffix = @LanguageSuffix;
+  #ENDIF
+  #SET Out_Stats_DashBoard = string.Format(@"/local/Prod/Image/Prism/Metrics/Dashboard/{0}/{1}_{2}_{3}/StatsAll{4}.ss",
+    @prefix, @Now.Year.ToString(), @Now.Month.ToString("00"), @Now.Day.ToString("00"), @DashboardStatsSuffix);
+  #SET Out_StatsOutstandingAndGoodPerRecallPath_DashBoard = string.Format(@"/local/Prod/Image/Prism/Metrics/Dashboard/{0}/{1}_{2}_{3}/StatsOutstandingAndGoodPerRecallPath{4}.ss",
+    @prefix, @Now.Year.ToString(), @Now.Month.ToString("00"), @Now.Day.ToString("00"), @DashboardStatsSuffix);
+#ENDIF
+#IF(!EXISTS(@Out_Stats))
+
+data_orig =
+    EXTRACT *
+    FROM @In_OutstandingJudgment
+    USING CustomerReadColumnsExtractor(@JudgmentFileName)
+    HAVING JudgeID != "JudgeID";
+
+// Process
+// 1 - remove invalid hits (image not load or not in English)
+data_orig =
+    SELECT str2int(JudgmentDataInt) AS JudgmentDataInt,
+           str2int(slider) AS score,
+           image_url AS murl
+    FROM data_orig;
+
+data_group_orig =
+    SELECT murl,
+           COUNTIF(JudgmentDataInt == 0) AS C_CannotJudge
+    FROM data_orig
+    GROUP BY murl;
+
+// only keep images that have @OkTh+ valid score
+data_group =
+    SELECT *
+    FROM data_group_orig
+    WHERE C_CannotJudge < @OkTh;
+
+// only keep hits with valid score
+data =
+    SELECT *
+    FROM data_orig
+    WHERE JudgmentDataInt > 0;
+
+data =
+    SELECT *.Except(JudgmentDataInt)
+    FROM data
+         LEFT SEMIJOIN
+             data_group
+         ON data.murl == data_group.murl;
+
+// 2- calculate avg with outlier removed
+data =
+    SELECT *,
+           ROW_NUMBER() OVER(PARTITION BY murl ORDER BY score DESC) AS Rank
+    FROM data;
+
+data =
+    SELECT murl,
+           COUNT() AS NumScore,
+           string.Join(";", ARRAY_AGG(score).OrderByDescending(x => x)) AS raw_scores
+    FROM data
+    GROUP BY murl
+    HAVING NumScore > @SingleTh;
+
+data_group_clean =
+    SELECT *,
+            (int) remove_k_avg(raw_scores, 1) AS avg_score
+    FROM data;
+
+data_group_clean =
+    SELECT *,
+           avg_score > 66 ? "Wow" : (avg_score > 54? "Outstanding" : (avg_score > 44? "Mediocre" : "NotRecommended")) AS avg_label
+    FROM data_group_clean;
+
+#IF(EXISTS(@In_NonPlaceholder))
+    data_original = SSTREAM @In_NonPlaceholder;
+#ELSEIF(EXISTS(@In_NonDetrimental))
+    data_original = SSTREAM @In_NonDetrimental;
+#ELSE
+    data_original = SSTREAM @In_Samples; 
+#ENDIF
+
+data_original = PROCESS data_original
+      PRODUCE image_url, page_url,RecallPath
+      USING DefaultColumnProcessor;
+
+data_original_occurrence =
+    SELECT image_url,
+           page_url,
+           RecallPath,
+           SUM(1) AS occurrence
+    FROM data_original
+    GROUP BY image_url,
+             page_url,
+             RecallPath;
+
+#IF(EXISTS(@In_SamplesDetrimentalLabel))
+    SamplesDetrimentalLabel =
+        EXTRACT occurrence,
+                image_url,
+                page_url,
+                title,
+                RecallPath,
+                C_CP,
+                C_Abuse,
+                C_Adult,
+                C_Hate,
+                C_Violence,
+                C_Dangerous,
+                C_Ok,
+                C_NotLoad,
+                C_Detrimental_Max,
+                Adj_C_Ok,
+                detrimental_Class_Agg,
+                detrimental_rating
+        FROM @In_SamplesDetrimentalLabel
+        USING DefaultTextExtractor()
+        HAVING image_url != "image_url" AND page_url != "page_url";
+
+    data_group_clean = SELECT a.occurrence,
+                        a.image_url AS murl,
+                        a.page_url AS purl,
+                        a.title,
+                        a.RecallPath,
+                        data_group_clean.avg_score,
+                        data_group_clean.avg_label,
+                        data_group_clean.raw_scores,
+                        c.detrimental_Class_Agg,
+                        c.detrimental_rating
+        FROM data_original_occurrence AS a
+        LEFT JOIN SamplesDetrimentalLabel AS c ON
+        a.image_url == c.image_url AND
+        a.page_url == c.page_url AND
+        a.title == c.title AND
+        a.RecallPath == c.RecallPath
+        LEFT JOIN data_group_clean ON
+        a.image_url == data_group_clean.murl;
+
+#ELSE
+    data_group_clean = SELECT a.occurrence,
+                        a.image_url AS murl,
+                        a.page_url AS purl,
+                        a.RecallPath,
+                        data_group_clean.avg_score,
+                        data_group_clean.avg_label,
+                        data_group_clean.raw_scores
+        FROM data_original_occurrence AS a
+        LEFT JOIN data_group_clean ON
+        a.image_url == data_group_clean.murl;
+#ENDIF
+
+OUTPUT data_group_clean TO @Out_SampleLabel WITH STREAMEXPIRY @StreamExpiry USING DefaultTextOutputter(delimiter:'\t', outputHeader:true);
+
+data_group_clean_1 = SELECT TOP 1 occurrence FROM data_group_clean;
+
+Stats_default =
+    SELECT "outstanding hitapp #nodule Cannot Judge" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #nodule valid" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #nodule valid raw crowd hits total" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #nodule total" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #distinct image total" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Wow" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Outstanding" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Good" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Wow + Outstanding" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Mediocre" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Acceptable" AS Status
+    FROM data_group_clean_1
+    UNION ALL
+    SELECT "outstanding hitapp #nodule NotRecommended" AS Status
+    FROM data_group_clean_1;
+
+Stats =
+    SELECT "outstanding hitapp #nodule Cannot Judge" AS Status,
+           COUNTIF(C_CannotJudge > @SingleTh) AS Count
+    FROM data_group_orig
+    UNION ALL
+    SELECT "outstanding hitapp #nodule valid" AS Status,
+           COUNT(*) AS Count
+    FROM data_group
+    UNION ALL
+    SELECT "outstanding hitapp #nodule valid raw crowd hits total" AS Status,
+           COUNT( * ) AS Count
+    FROM data
+    UNION ALL
+    SELECT "outstanding hitapp #nodule total" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group_clean
+    UNION ALL
+    SELECT "outstanding hitapp #distinct image total" AS Status,
+           COUNT(DISTINCT murl) AS Count
+    FROM data_group_clean
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Wow" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group_clean
+    WHERE avg_label == "Wow"
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Outstanding" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group_clean
+    WHERE avg_label == "Outstanding"
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Good" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group_clean
+    WHERE avg_label == "Good"     
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Wow + Outstanding" AS Status,
+          SUM(occurrence) AS Count
+    FROM data_group_clean
+    WHERE avg_label == "Wow" OR avg_label == "Outstanding"
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Mediocre" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group_clean
+    WHERE avg_label == "Mediocre"
+    UNION ALL
+    SELECT "outstanding hitapp #nodule Acceptable" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group_clean
+    WHERE avg_label == "Acceptable"
+    UNION ALL
+    SELECT "outstanding hitapp #nodule NotRecommended" AS Status,
+           SUM(occurrence) AS Count    
+    FROM data_group_clean
+    WHERE avg_label == "NotRecommended";
+
+Stats = SELECT Stats_default.Status,
+               IF(Stats.Count != null, Stats.Count, 0) AS Count
+        FROM Stats_default LEFT JOIN Stats ON Stats_default.Status == Stats.Status;
+
+// Divided by valid images that have enough judgement.
+TotalCnt =
+    SELECT COUNT(1) AS Total FROM data_group;
+
+#IF(EXISTS(@In_Original_NonDetrimentalStat))
+NumberOriginalSample = SELECT Count AS NumberOriginal FROM (SSTREAM @In_Original_Number) WHERE Name == "original samples";
+
+NumberOK = SELECT Count AS NumberOK FROM (SSTREAM @In_Original_Number) WHERE Name == "detrimental ok to show";
+#ELSE
+NumberOriginalSample = SELECT COUNT(1) AS NumberOriginal FROM data_group;
+
+NumberOK = SELECT COUNT(1) AS NumberOK FROM data_original;
+#ENDIF
+
+Stats = SELECT Status,
+               Count,
+               Total
+    FROM Stats CROSS JOIN TotalCnt;
+
+Stats = SELECT *
+    FROM Stats CROSS JOIN NumberOriginalSample;
+
+Stats = SELECT *
+    FROM Stats CROSS JOIN NumberOK;
+
+Stats = SELECT Status,
+               Count,
+               Total AS TotalNoduleCnt,
+               1.0*Count/Total AS Coverage,
+               1.0*Count/Total AS AdjCoverage, // Now AdjCoverage = Coverage, we separate the detrimental issue.
+               @SampleDataTime AS Date;
+
+#IF(EXISTS(@In_Original_NonDetrimentalStat))
+Stats = SELECT * FROM (SSTREAM @In_Original_NonDetrimentalStat)
+        UNION ALL
+        SELECT * FROM Stats;
+#ENDIF
+
+OUTPUT Stats
+TO SSTREAM @Out_Stats WITH STREAMEXPIRY @StreamExpiry;
+
+#IF(@NeedSaveDashboard)
+  OUTPUT Stats
+  TO SSTREAM @Out_Stats_DashBoard;
+#ENDIF
+
+StatsRecallPath = SELECT RecallPath,
+                  SUM(avg_label == "Outstanding" ? occurrence : 0) AS CountOutstanding,
+                  SUM(occurrence) AS Count
+                  FROM data_group_clean
+                  GROUP BY RecallPath;
+
+StatsRecallPath = SELECT *
+    FROM StatsRecallPath CROSS JOIN NumberOriginalSample;
+
+StatsRecallPath = SELECT *
+    FROM StatsRecallPath CROSS JOIN NumberOK;
+
+StatsRecallPath = SELECT RecallPath,
+                         CountOutstanding,
+                         Count,
+                         IF(Count != null AND Count > 0, (float)CountOutstanding/Count, 1.0) AS Coverage,
+                         IF(Count != null AND Count > 0, (float)CountOutstanding/Count, 1.0)*NumberOK/NumberOriginal AS AdjCoverage,
+                         @SampleDataTime AS Date;
+
+OUTPUT StatsRecallPath
+TO SSTREAM @Out_StatsPerRecallPath WITH STREAMEXPIRY @StreamExpiry;
+
+StatsOutstandingAndGoodPerRecallPath = SELECT RecallPath,
+                                       SUM((avg_label == "Outstanding" OR avg_label == "Good")? occurrence : 0) AS CountOutstandingAndGood,
+                                       SUM(occurrence) AS Count
+                                       FROM data_group_clean
+                                       GROUP BY RecallPath;
+
+StatsOutstandingAndGoodPerRecallPath = SELECT *
+    FROM StatsOutstandingAndGoodPerRecallPath CROSS JOIN NumberOriginalSample;
+
+StatsOutstandingAndGoodPerRecallPath = SELECT *
+    FROM StatsOutstandingAndGoodPerRecallPath CROSS JOIN NumberOK;
+
+StatsOutstandingAndGoodPerRecallPath = SELECT RecallPath,
+                                       CountOutstandingAndGood,
+                                       Count,
+                                       IF(Count != null AND Count > 0, (float)CountOutstandingAndGood/Count, 1.0) AS Coverage,
+                                       IF(Count != null AND Count > 0, (float)CountOutstandingAndGood/Count, 1.0)*NumberOK/NumberOriginal AS AdjCoverage,
+                                       @SampleDataTime AS Date;
+
+OUTPUT StatsOutstandingAndGoodPerRecallPath
+TO SSTREAM @Out_StatsOutstandingAndGoodPerRecallPath WITH STREAMEXPIRY @StreamExpiry;
+
+#IF(@NeedSaveDashboard)
+  OUTPUT StatsOutstandingAndGoodPerRecallPath
+  TO SSTREAM @Out_StatsOutstandingAndGoodPerRecallPath_DashBoard;
+#ENDIF
+
+// For Impression Regular
+
+#IF(@In_Original_1.Contains("Impression_Regular"))
+
+data_group_clean_outstanding = SELECT * FROM data_group_clean WHERE avg_label == "Outstanding" OR avg_label == "Good";
+
+data_samples = SELECT MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(purl) AS PageKey,
+                      purl AS PageUrl,
+                      MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(murl) AS Key,
+                      murl AS ImageUrl,
+                      purl AS SourcePageUrl,
+                      title AS PageTitle,
+                      // TODO: GetDomain gives null in "/local/Prod/Image/Prism/UHRS_Archival/Outstanding/Crowd_en/AutoUpload-Impression_Regular_2022_08_10_en-2022-08-22-23-30-3535729_2022-08-28_09-17-22"
+                      GetDomain(purl) AS PageDomain
+                FROM data_group_clean;
+
+OUTPUT data_samples TO SSTREAM @Out_SamplesOutstanding;
+
+#ENDIF
+
+#ENDIF
+
+#CS
+using System.Linq;
+
+public static int str2int(string input)
+{
+    int outVal;
+    if (!int.TryParse(input,out outVal))
+        outVal = 0;
+    return outVal;
+}
+
+public static Boolean str2bool(string input)
+{
+    Boolean outVal;
+    if (!Boolean.TryParse(input,out outVal))
+        outVal = false;
+    return outVal;
+}
+
+public static int remove_k_avg(string raw_scores, int k)
+{
+    int ave_score_removeK = -1;
+    string[] raw_score_string = raw_scores.Split(';');
+    int[] raw_score_int = raw_score_string.Select(int.Parse).ToArray();
+    Array.Sort(raw_score_int);
+    if (raw_score_int.Length > 2 * k)
+    {
+      ave_score_removeK = (int) raw_score_int.Skip(k).Take(raw_score_int.Length - 2 * k).Average();
+    } else {
+      ave_score_removeK = (int) raw_score_int.Average();
+    }
+
+    return ave_score_removeK;
+}
+
+public class DefaultColumnProcessor  : Processor
+{
+    public override Schema Produces(string[] columns, string[] args, Schema inputSchema)
+    {
+        var outputSchema = inputSchema.CloneWithSource();
+
+        if (!inputSchema.Contains("RecallPath"))
+        {
+            outputSchema.Add(new ColumnInfo("RecallPath", typeof(string)));
+        }
+
+        return outputSchema;
+    }
+
+    public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
+    {
+        bool needToAddDefaultColumn = input.Schema.Contains("RecallPath");
+
+        foreach (Row row in input.Rows)
+        {
+            row.CopyTo(output);
+
+            if (!needToAddDefaultColumn)
+            {
+                output["RecallPath"].Set((string) null);
+            }
+
+            yield return output;
+        }
+    }
+}
+
+public static string ReadFileHeaderColumns(string filePath)
+{
+    char delimiter = '\t';
+    using (StreamReader sr = new StreamReader(filePath))
+    {
+        string line;
+        line = sr.ReadLine();
+        string[] tokens = line.Split(delimiter);  
+        string customerColumn = "";
+        for (int i = 0; i < tokens.Length; i++)
+        {
+            customerColumn = customerColumn + "," + tokens[i];
+        }
+        return customerColumn.Trim(',');
+    }
+}
+ 
+public class CustomerReadColumnsExtractor : Extractor
+{
+    public override Schema Produces(string[] requestedColumns, string[] args)
+    {
+        return new Schema(ReadFileHeaderColumns(args[0]));
+    }
+ 
+    public override IEnumerable<Row> Extract(StreamReader reader, Row outputRow, string[] args)
+    {
+        char delimiter = '\t';
+        string line;
+        while ((line = reader.ReadLine()) != null)
+        {
+            string[] tokens = line.Split(delimiter); 
+            for (int i = 0; i < tokens.Length; ++i)
+            {
+                outputRow[i].UnsafeSet(tokens[i]);
+            }
+            yield return outputRow;
+        }
+    }
+}
+
+public static string GetDomain(string url)
+{
+   string domain, host, l1path;
+
+   try
+   {
+      bool parser = MMRV2.ScheduleSelection.Tool.ParseUrl(out domain, out host, out l1path, url);
+      return domain;
+   }
+   catch {
+   }
+
+    return null;
+}
+
+#ENDCS

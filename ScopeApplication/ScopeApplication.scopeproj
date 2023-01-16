@@ -25,6 +25,7 @@
     <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Script Include="CleanupBadSeed.script" />
     <Script Include="Clustering.script" />
     <Script Include="ContentCoverage_6_IndexCoverage.script" />
     <Script Include="DebugToolToTestGivenSetOfImages.script" />
@@ -70,6 +71,8 @@
     <Script Include="ouput_latest_week.script" />
     <Script Include="Scope2.script">
       <RemoveUselessParameters>False</RemoveUselessParameters>
+      <ScopeOldParameters>In_Nodule=(\"/local/users/v-yingchen/Fidelity/Production.Nodule.Report.NormalizeInIndex.2022_12_05.tsv\")</ScopeOldParameters>
+      <ScopeClusterParameters>In_Nodule=(\"/local/users/v-yingchen/Fidelity/Production.Nodule.Report.NormalizeInIndex.2022_12_05.tsv\")</ScopeClusterParameters>
     </Script>
     <Script Include="SS2TSV.script" />
     <Script Include="T2S2.script" />
@@ -77,6 +80,9 @@
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
     <Script Include="WrapStarCosmosData.script" />
     <Script Include="WrapStarCosmosData_Deviantart .script" />
+    <ScriptCode Include="CleanupBadSeed.script.cs">
+      <DependentUpon>CleanupBadSeed.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="Clustering.script.cs">
       <DependentUpon>Clustering.script</DependentUpon>
     </ScriptCode>

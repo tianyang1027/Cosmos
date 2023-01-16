@@ -1,0 +1,58 @@
+﻿index =
+    SSTREAM "/local/Prod/Image/Prism/OneTime/2022-12-29/PrismProdRank_2_PPE_v3_800M.ss";
+
+
+total_count =
+    SELECT COUNT( * ) AS Total
+    FROM index;
+
+good_seed =
+    EXTRACT originalMUrl,
+            SiemMurl,
+            TuringMurl,
+            TuringPurl,
+            SiemRank,
+            SiemDistance,
+            TuringRank,
+            TuringDistance,
+            TuringImageKey,
+            TuringPageKey
+    FROM "/local/Prod/Image/Prism/IndexGen/IndexCleanUp/Embedding/GoodSeed/TuringMMResults_joined.tsv"
+    USING Extractors.Tsv();
+
+good_seed_index =
+    SELECT *
+    FROM index AS a
+         INNER JOIN
+             good_seed AS b
+         ON a.MUrl == b.TuringMurl AND a.PUrl == b.TuringPurl;
+
+good_seed_index_Count =
+    SELECT COUNT( * ) AS Count
+    FROM good_seed_index;
+
+stats2 =
+    SELECT Count,
+           Total
+    FROM good_seed_index_Count
+         CROSS JOIN
+             total_count;
+
+stats_result =
+    SELECT "TuringMMResults_joined" AS good_seeds_file_name,
+           Count AS Good_Feed_InIndex_Count,
+           Total AS Index_Count,
+           (1.0 * Count / Total) AS outstanding_rate
+    FROM stats2;
+
+OUTPUT
+TO "/local/users/v-yangtian/stats_good_seed_outstanding_rate_2023_01_04.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+     
+     
+     
+
+
+
+
