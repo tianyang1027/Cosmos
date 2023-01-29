@@ -1,0 +1,40 @@
+﻿
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
+
+#DECLARE Seed string =((int)DateTime.Now.Ticks).ToString();
+
+
+index =
+    SELECT Key,
+           PKey,
+           MUrl,
+           PUrl,
+           Language,
+           (double) 1 AS Weight
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/2023-01-28/PrismProdRank_0_PPE_v3.ss"
+    );
+
+index =
+    SELECT *
+    FROM index
+    WHERE Language == "en";
+    
+
+Sample =
+    REDUCE index ALL
+    USING TopNReducer("50000", "-random", @Seed, "-WeightCol", "Weight");
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/2023-01-29/Sample_50000_NoTitle.ss";
+
+
+PageKey =
+    SELECT DISTINCT PKey
+    FROM Sample
+    WHERE PKey != "" AND PKey != null;
+
+OUTPUT
+TO "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/2023-01-29/PageKey.tsv"
+USING DefaultTextOutputter(outputHeader: true);

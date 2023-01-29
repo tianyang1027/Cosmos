@@ -32,6 +32,7 @@
     <Script Include="DebugTool_PPE.script" />
     <Script Include="DebugTool_PROD.script" />
     <Script Include="FileSetsSample.script" />
+    <Script Include="Generate50kSamples.script" />
     <Script Include="Generate_Detrimental.script" />
     <Script Include="Generate_DomainantColorBackgroundRankFile.script" />
     <Script Include="Generate_LatestDetrimental.script" />
@@ -100,6 +101,9 @@
     </ScriptCode>
     <ScriptCode Include="FileSetsSample.script.cs">
       <DependentUpon>FileSetsSample.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Generate50kSamples.script.cs">
+      <DependentUpon>Generate50kSamples.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="Generate_Detrimental.script.cs">
       <DependentUpon>Generate_Detrimental.script</DependentUpon>
