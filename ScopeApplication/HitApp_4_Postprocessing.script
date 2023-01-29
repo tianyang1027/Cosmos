@@ -18,7 +18,7 @@ RESOURCE @In_OutstandingJudgment;
 #DECLARE In_NonDetrimental                        string = string.Format("{0}{1}/NonDetrimental{2}.ss",                           @AutoMeasurementDir, @LanguageName, @In_Original_1);
 #DECLARE In_NonPlaceholder                        string = string.Format("{0}{1}/NonPlaceholder{2}.ss",                           @AutoMeasurementDir, @LanguageName, @In_Original_1);
 #DECLARE In_Original_NonDetrimentalStat           string = string.Format("{0}{1}/NonDetrimentalStats{2}.ss",                      @AutoMeasurementDir, @LanguageName, @In_Original_1);
-#DECLARE In_Samples                               string = "/local/users/v-yangtian/TuringMMResults_joined_Sample22.ss";
+#DECLARE In_Samples                               string = "/local/users/v-yangtian/Slider_GoodSeed_SiemEmb.ss";
 #DECLARE In_Original_Number                       string = string.Format("{0}{1}/NonDetrimentalStatsNumber{2}.ss",               @AutoMeasurementDir, @LanguageName, @In_Original_1);
 #DECLARE In_SamplesDetrimentalLabel               string = string.Format("{0}{1}/SamplesDetrimentalLabel{2}.tsv",                 @AutoMeasurementDir, @LanguageName, @In_Original_1);
 #DECLARE Out_SampleLabel                          string = string.Format("{0}{1}/SamplesOutstandingLabel{2}.tsv",                 @AutoMeasurementDir, @LanguageName, @In_Original_1);
@@ -138,17 +138,15 @@ data_group_clean =
 #ENDIF
 
 data_original = PROCESS data_original
-      PRODUCE image_url, page_url,RecallPath
+      PRODUCE image_url,RecallPath
       USING DefaultColumnProcessor;
 
 data_original_occurrence =
     SELECT image_url,
-           page_url,
            RecallPath,
            SUM(1) AS occurrence
     FROM data_original
     GROUP BY image_url,
-             page_url,
              RecallPath;
 
 #IF(EXISTS(@In_SamplesDetrimentalLabel))
@@ -196,7 +194,7 @@ data_original_occurrence =
 #ELSE
     data_group_clean = SELECT a.occurrence,
                         a.image_url AS murl,
-                        a.page_url AS purl,
+                        "" AS purl,
                         a.RecallPath,
                         data_group_clean.avg_score,
                         data_group_clean.avg_label,

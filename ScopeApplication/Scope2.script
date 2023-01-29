@@ -1,170 +1,214 @@
-﻿index =
-    SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/RankFile/RankFileHQ/2022_12_05/Rankfile_face_removal.ss";
+﻿//Script GUID:91ae02be-0c87-40ab-815a-3ce3a4cc9c1d
+//Used for tracking history
+
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+RESOURCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\tld.txt";
+
+#DECLARE In_Nodule                  string = "/local/Prod/Image/Prism/Data/PInterest_GoldenSet/PInterest_Wow_GoldenSet_2022_12_13.ss";
+#DECLARE In_Mapping                 string = "/local/Prod/Image/Prism/Data/PInterest_GoldenSet/AvatarScrape_Pinterest_Wow_DupMapping_2022_12_13.ss";
+#DECLARE In_506M                    string = "/local/Prod/Image/Prism/2022-12-12/PrismProdRank_1_NoDefect_PPE_v3_600M.ss";
+#DECLARE In_674M                    string = "/local/Prod/Image/Prism/2022-12-12/PrismProdRank_1_NoDefect_PPE_v3_800M.ss";
+#DECLARE In_1050M                   string = "/local/Prod/Image/Prism/2022-12-12/PrismProdRank_1_NoDefect_PPE_v3_1200M.ss";
+#DECLARE In_1600M                   string = "/local/Prod/Image/Prism/2022-12-12/PrismProdRank_1_NoDefect_PPE_v3_1800M.ss";
+#DECLARE In_2230M                   string = "/local/Prod/Image/Prism/2022-12-12/PrismProdRank_1_NoDefect_PPE_v3_2500M.ss";
+#DECLARE In_Publish                   string = "/local/Prod/Image/Prism/IndexGen/V3/CurrentIndex/2022_12_11/CurrentIndexV1.ss";
+
+#DECLARE Out_Stats       string = "/local/Prod/Image/Prism/Metrics/Coverage/2022/12/12/PrismProdRankContentCoverage_Outstanding_v3_wow.ss";
+#DECLARE Out_StatsTsv    string = "/local/Prod/Image/Prism/Metrics/Coverage/2022/12/12/PrismProdRankContentCoverage_Outstanding_v3_wow.tsv";
+#DECLARE Out_StatsNodule      string = "/local/Prod/Image/Prism/Metrics/Coverage/2022/12/12/PrismProdRankNoduleCoverage_Outstanding_v3_wow.ss";
+#DECLARE Out_StatsNoduleTsv   string = "/local/Prod/Image/Prism/Metrics/Coverage/2022/12/12/PrismProdRankNoduleCoverage_Outstanding_v3_wow.tsv";
+//#DECLARE Out_DiffSs      string = "/local/Prod/Image/Prism/Metrics/Coverage/2022/12/12/PinterestImage_NonDetrimental_Defect_Outstanding_wow.ss";
+//#DECLARE Out_DiffTsv     string = "/local/Prod/Image/Prism/Metrics/Coverage/2022/12/12/PinterestImage_NonDetrimental_Defect_Outstanding_wow.tsv";
+//#DECLARE Out_DiffSs_PPE  string = "/local/Prod/Image/Prism/Metrics/Coverage/2022/12/12/PinterestImage_NonDetrimental_Defect_PPE_Outstanding_wow.ss";
+//#DECLARE Out_DiffTsv_PPE string = "/local/Prod/Image/Prism/Metrics/Coverage/2022/12/12/PinterestImage_NonDetrimental_Defect_PPE_Outstanding_wow.tsv";
+
+#DECLARE NeedSubstringLen int = "yyyy-MM-dd.ss".Length;
+#DECLARE FileDateFormatLength int = "yyyy-MM-dd".Length;
+#DECLARE StartIdx int = @In_Nodule.Length - @NeedSubstringLen;
+#IF(@In_Nodule.Contains("Out_SamplesOutstandingPInterest_Click_"))
+    #SET StartIdx = @In_Nodule.LastIndexOf("Out_SamplesOutstandingPInterest_Click_") + "Out_SamplesOutstandingPInterest_Click_".Length;
+#ENDIF
+
+SELECT Key, ImageUrl FROM (SSTREAM @In_Nodule)
+UNION ALL
+SELECT QueryKey, MatchUrl  AS ImageUrl FROM ( SSTREAM @In_Mapping);
+
+PinterestImage =
+    SELECT DISTINCT Key, ImageUrl;
+
+Rank1 = SSTREAM @In_506M;
+Rank1 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank1  ON PinterestImage.Key ==  Rank1.Key;
+Rank1MatchedCnt = SELECT 
+        "In_506M" AS RankFile,
+        COUNT( * ) AS Matched;
+
+Rank2 = SSTREAM @In_674M;
+Rank2 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank2  ON PinterestImage.Key ==  Rank2.Key;
+Rank2MatchedCnt = SELECT 
+        "In_674M" AS RankFile,
+        COUNT( * ) AS Matched;
+
+Rank3 = SSTREAM @In_1050M;
+Rank3 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank3  ON PinterestImage.Key ==  Rank3.Key;
+Rank3MatchedCnt = SELECT 
+        "In_1050M" AS RankFile,
+        COUNT( * ) AS Matched;
+
+Rank4 = SSTREAM @In_1600M;
+Rank4 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank4  ON PinterestImage.Key ==  Rank4.Key;
+Rank4MatchedCnt = SELECT 
+        "In_1600M" AS RankFile,
+        COUNT( * ) AS Matched;
+
+Rank5 = SSTREAM @In_2230M;
+Rank5 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank5  ON PinterestImage.Key ==  Rank5.Key;
+Rank5MatchedCnt = SELECT
+    "In_2230M" AS RankFile,
+    COUNT( * ) AS Matched;
+
+ActiveIndex =
+    VIEW @"/local/Prod/Image/Prism/IndexGen/Views/PrismIndexView.view"
+    PARAMS
+    (
+        IndexVersion  = "v4"
+    );
+Rank12 = SELECT ImageKey FROM ActiveIndex;
+
+Rank12 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank12  ON PinterestImage.Key ==  Rank12.ImageKey;
+Rank12MatchedCnt = SELECT 
+        "PublishIndex" AS RankFile,
+        COUNT( * ) AS Matched;
 
 
-total_count =
-    SELECT COUNT( * ) AS Total
-    FROM index;
+Stats =
+    SELECT * FROM Rank1MatchedCnt UNION ALL 
+    SELECT * FROM Rank2MatchedCnt UNION ALL
+    SELECT * FROM Rank3MatchedCnt UNION ALL 
+    SELECT * FROM Rank4MatchedCnt UNION ALL
+   SELECT * FROM Rank5MatchedCnt UNION ALL
+    SELECT * FROM Rank12MatchedCnt;
 
-good_seed_1 =
-    EXTRACT C1,
-            C2,
-            C3,
-            C4,
-            C5,
-            C6,
-            C7,
-            C8,
-            C9
-    FROM "/local/Prod/Image/Prism/IndexGen/IndexCleanUp/Embedding/GoodSeed/Slider_GoodSeed_SiemEmb.tsv"
-    USING Extractors.Tsv();
+TotalNodules = SELECT DISTINCT Key FROM (SSTREAM @In_Nodule);
 
-left1 =
-    SELECT *
-    FROM index AS a
-         LEFT ANTISEMIJOIN
-             good_seed_1 AS b
-         ON a.MUrl == b.C2;
+TotalCnt =
+    SELECT COUNT() AS Total;
 
-left1_count =
-    SELECT COUNT( * ) AS Count
-    FROM left1;
+Stats = SELECT RankFile,
+               Matched,
+               Total
+    FROM Stats CROSS JOIN TotalCnt;
 
-stats1 =
-    SELECT Count,
-           Total
-    FROM left1_count
-         CROSS JOIN
-             total_count;
+Stats = SELECT RankFile,
+               Matched,
+               Total AS TotalNoduleCnt,
+               1.0*Matched/Total AS Coverage,
+               "2022-12-12" AS Date;
 
-good_seed_2 =
-    SSTREAM "/local/Prod/Image/Prism/IndexGen/IndexCleanUp/Embedding/GoodSeed/TuringMMResults_joined_Sample11.ss";
+OUTPUT TO SSTREAM @Out_Stats;
+OUTPUT TO @Out_StatsTsv USING DefaultTextOutputter( outputHeader: true );
 
-left2 =
-    SELECT *
-    FROM index AS a
-         LEFT ANTISEMIJOIN
-             good_seed_2 AS b
-         ON a.MUrl == b.TuringMurl;
+// Content + PageDomain
 
+SELECT Key, ImageUrl AS ImageUrl, PageDomain FROM (SSTREAM @In_Nodule)
+UNION ALL
+SELECT QueryKey, MatchUrl  AS ImageUrl, PageDomain FROM ( SSTREAM @In_Mapping);
 
-left2_count =
-    SELECT COUNT( * ) AS Count
-    FROM left2;
+PinterestImage =
+    SELECT DISTINCT Key, ImageUrl, PageDomain;
 
-stats2 =
-    SELECT Count,
-           Total
-    FROM left2_count
-         CROSS JOIN
-             total_count;
+Rank1 = SSTREAM @In_506M;
+Rank1 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank1  ON PinterestImage.Key ==  Rank1.Key AND PinterestImage.PageDomain == Rank1.PDomain;
+Rank1MatchedCnt = SELECT 
+        "In_506M" AS RankFile,
+        COUNT( * ) AS Matched;
 
+Rank2 = SSTREAM @In_674M;
+Rank2 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank2  ON PinterestImage.Key ==  Rank2.Key AND PinterestImage.PageDomain == Rank2.PDomain;
+Rank2MatchedCnt = SELECT 
+        "In_674M" AS RankFile,
+        COUNT( * ) AS Matched;
 
-good_seed_3 =
-    SSTREAM "/local/Prod/Image/Prism/IndexGen/IndexCleanUp/Embedding/GoodSeed/TuringMMResults_joined_Sample12.ss";
+Rank3 = SSTREAM @In_1050M;
+Rank3 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank3  ON PinterestImage.Key ==  Rank3.Key AND PinterestImage.PageDomain == Rank3.PDomain;
+Rank3MatchedCnt = SELECT 
+        "In_1050M" AS RankFile,
+        COUNT( * ) AS Matched;
 
-left3 =
-    SELECT *
-    FROM index AS a
-         LEFT ANTISEMIJOIN
-             good_seed_3 AS b
-         ON a.MUrl == b.TuringMurl;
+Rank4 = SSTREAM @In_1600M;
+Rank4 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank4  ON PinterestImage.Key ==  Rank4.Key AND PinterestImage.PageDomain == Rank4.PDomain;
+Rank4MatchedCnt = SELECT 
+        "In_1600M" AS RankFile,
+        COUNT( * ) AS Matched;
 
-left3_count =
-    SELECT COUNT( * ) AS Count
-    FROM left3;
+Rank5 = SSTREAM @In_2230M;
+Rank5 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank5  ON PinterestImage.Key ==  Rank5.Key AND PinterestImage.PageDomain == Rank5.PDomain;
+Rank5MatchedCnt = SELECT 
+        "In_2230M" AS RankFile,
+        COUNT( * ) AS Matched;
 
-stats3 =
-    SELECT Count,
-           Total
-    FROM left3_count
-         CROSS JOIN
-             total_count;
-
-good_seed_4 =
-    SSTREAM "/local/Prod/Image/Prism/IndexGen/IndexCleanUp/Embedding/GoodSeed/TuringMMResults_joined_Sample21.ss";
-
-left4 =
-    SELECT *
-    FROM index AS a
-         LEFT ANTISEMIJOIN
-             good_seed_4 AS b
-         ON a.MUrl == b.TuringMurl;
+Rank12 = SELECT *,
+                GetDomain(PUrl) AS PDomain
+FROM ActiveIndex;
+Rank12 =
+    SELECT DISTINCT ImageUrl FROM PinterestImage LEFT SEMIJOIN  Rank12  ON PinterestImage.Key ==  Rank12.ImageKey AND PinterestImage.PageDomain == Rank12.PDomain;
+Rank12MatchedCnt = SELECT 
+        "PublishIndex" AS RankFile,
+        COUNT( * ) AS Matched;
 
 
-left4_count =
-    SELECT COUNT( * ) AS Count
-    FROM left4;
+Stats =
+    SELECT * FROM Rank1MatchedCnt UNION ALL 
+    SELECT * FROM Rank2MatchedCnt UNION ALL
+    SELECT * FROM Rank3MatchedCnt UNION ALL 
+    SELECT * FROM Rank4MatchedCnt UNION ALL
+    SELECT * FROM Rank5MatchedCnt UNION ALL 
+    SELECT * FROM Rank12MatchedCnt;
 
-stats4 =
-    SELECT Count,
-           Total
-    FROM left4_count
-         CROSS JOIN
-             total_count;
+TotalNodules = SELECT DISTINCT Key, PageDomain FROM (SSTREAM @In_Nodule);
 
-good_seed_5 =
-    SSTREAM "/local/Prod/Image/Prism/IndexGen/IndexCleanUp/Embedding/GoodSeed/TuringMMResults_joined_Sample22.ss";
+TotalCnt =
+    SELECT COUNT() AS Total;
 
-left5 =
-    SELECT *
-    FROM index AS a
-         LEFT ANTISEMIJOIN
-             good_seed_5 AS b
-         ON a.MUrl == b.TuringMurl;
+Stats = SELECT RankFile,
+               Matched,
+               Total
+    FROM Stats CROSS JOIN TotalCnt;
 
-left5_count =
-    SELECT COUNT( * ) AS Count
-    FROM left5;
+Stats = SELECT RankFile,
+               Matched,
+               Total AS TotalNoduleCnt,
+               1.0*Matched/Total AS Coverage,
+               "2022-12-22" AS Date;
 
-stats5 =
-    SELECT Count,
-           Total
-    FROM left5_count
-         CROSS JOIN
-             total_count;
+OUTPUT TO SSTREAM @Out_StatsNodule;
+OUTPUT TO @Out_StatsNoduleTsv USING DefaultTextOutputter( outputHeader: true );
 
-stats_result =
-    SELECT "Slider_GoodSeed_SiemEmb" AS good_seeds_file_name,
-             Count AS Count,
-            Total AS Total,
-           1.0 - (1.0 * Count / Total) AS outstanding_rate
-    FROM stats1
-    UNION ALL
-    SELECT "TuringMMResults_joined_Sample11" AS good_seeds_file_name,
-             Count AS Count,
-            Total AS Total,
-           1.0 - (1.0 * Count / Total) AS outstanding_rate
-    FROM stats2
-    UNION ALL
-    SELECT "TuringMMResults_joined_Sample12" AS good_seeds_file_name,
-             Count AS Count,
-            Total AS Total,
-           1.0 - (1.0 * Count / Total) AS outstanding_rate
-    FROM stats3
-    UNION ALL
-    SELECT "TuringMMResults_joined_Sample21" AS good_seeds_file_name,
-             Count AS Count,
-            Total AS Total,
-          1.0 - (1.0 * Count / Total) AS outstanding_rate
-    FROM stats4
-    UNION ALL
-    SELECT "TuringMMResults_joined_Sample22" AS good_seeds_file_name,
-             Count AS Count,
-            Total AS Total,
-           1.0 - (1.0 * Count / Total) AS outstanding_rate
-    FROM stats5;
-
-OUTPUT
-TO "/local/users/v-yangtian/stats_outstanding_rate_1.tsv"
-USING DefaultTextOutputter(outputHeader: true);
-
-     
-     
-     
-
-
-
-
-
-// Generated by ScopeStudio, version 3.1.2000.2
+#CS
+public static string GetDomain(string url)
+{
+   string domain, host, l1path;
+    
+    if (MMRV2.ScheduleSelection.Tool.ParseUrl(out domain, out host, out l1path, url)) 
+    {
+        return domain;
+    }
+    
+    return null;
+}
+#ENDCS
