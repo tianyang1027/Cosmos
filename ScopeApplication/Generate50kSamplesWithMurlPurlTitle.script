@@ -1,0 +1,69 @@
+﻿SampleWithNoTitle =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/users/v-yangtian/2023-01-29/Sample_50000_NoTitle.ss"
+    );
+
+Title =
+    EXTRACT PKey,
+            PageTitle
+    FROM "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/2023-01-29/PageTitle.tsv"
+    USING DefaultTextExtractor();
+
+
+SampleWithTitle =
+    SELECT a.MUrl,
+           a.PUrl,
+           b.PageTitle
+    FROM SampleWithNoTitle AS a
+         LEFT JOIN
+             Title AS b
+         ON a.PKey == b.PKey;
+
+OUTPUT
+TO SSTREAM "/local//users/v-yangtian/2023-01-29/SampleWithTitle.ss";
+
+OUTPUT
+TO "/local//users/v-yangtian/2023-01-29/SampleWithTitle.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+
+Distinct_PUrl_Title =
+    SELECT PUrl,
+           PageTitle
+    FROM SampleWithTitle
+    GROUP BY PUrl,
+             PageTitle;
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/2023-01-29/Distinct_PUrl_Title.ss";
+
+OUTPUT
+TO "/local/users/v-yangtian/2023-01-29/Distinct_PUrl_Title.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+SampleWithTitle_NoEmptyTitle =
+    SELECT *
+    FROM SampleWithTitle
+    WHERE PageTitle != "";
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/2023-01-29/SampleWithTitle_NoEmptyTitle.ss";
+
+OUTPUT
+TO "/local/users/v-yangtian/2023-01-29/SampleWithTitle_NoEmptyTitle.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+
+Distinct_PUrl_Title_NoEmptyTitle =
+    SELECT *
+    FROM Distinct_PUrl_Title
+    WHERE PageTitle != "";
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/2023-01-29/Distinct_PUrl_Title_NoEmptyTitle.ss";
+
+OUTPUT
+TO "/local/users/v-yangtian/2023-01-29/Distinct_PUrl_Title_NoEmptyTitle.tsv"
+USING DefaultTextOutputter(outputHeader: true);

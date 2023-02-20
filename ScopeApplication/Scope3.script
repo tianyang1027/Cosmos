@@ -1,0 +1,29 @@
+﻿sample =
+    EXTRACT occurrence,
+            murl,
+            purl,
+            title,
+            RecallPath,
+            Key,
+            PKey,
+            Language,
+            Market,
+            avg_score,
+            avg_label,
+            raw_scores
+    FROM "/local/Prod/Image/Prism/Metrics/AutoMeasurement/en/SamplesOutstandingLabelImpression_imgfeedprodindex_2023_01_21_global_1000.tsv"
+    USING DefaultTextExtractor(silent:true);
+
+filter =
+    SELECT *
+    FROM sample
+    WHERE Language IN("ko", "ja", "ru");
+
+OUTPUT
+TO "/local/users/v-yangtian/2023/02-06/SamplesOutstandingLabelImpression_imgfeedprodindex_2023_01_21_global_1000_ko_ja_ru.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/2023/02-06/SamplesOutstandingLabelImpression_imgfeedprodindex_2023_01_21_global_1000_ko_ja_ru.ss";
+

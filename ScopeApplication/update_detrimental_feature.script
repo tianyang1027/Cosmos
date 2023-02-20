@@ -1,0 +1,157 @@
+﻿//Script GUID:16c18e75-4ae3-482a-b200-08a02d7192c9
+//Used for tracking history
+RESOURCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bing.HashUtil.dll";
+USING MMRV2.Utility;
+USING MMRV2.Core;
+
+#DECLARE SampleDataTime DateTime = Convert.ToDateTime("2/10/2023 11:59:59 PM");
+
+CurrentIndexV1 =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/CurrentIndex/2023_02_14/CurrentIndexV1.ss"
+    );
+
+
+image =
+    SELECT *
+    FROM CurrentIndexV1
+    WHERE MUrl == "https://i.dailymail.co.uk/i/pix/2016/10/10/14/394823F600000578-0-image-a-115_1476107422817.jpg";
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/0216/image.ss";
+
+detrimental_feature =
+    EXTRACT murl : string,
+            purl : string,
+            label : string,
+            DocKey : string,
+            Vector : string,
+            TenantId : string,
+            Date : DateTime
+    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_12/detrimental_feature.tsv"
+    USING DefaultTextExtractor();
+
+RacyCandidate =
+    SELECT "https://i.dailymail.co.uk/i/pix/2016/10/10/14/394823F600000578-0-image-a-115_1476107422817.jpg" AS murl,
+           "https://www.dailymail.co.uk/health/article-3830822/Family-baby-head-swelled-twice-normal-size-sold-desperate-bid-treatment.html" AS purl,
+           "child_sexualization" AS label;
+
+RacyFeature =
+    SELECT a.murl,
+           a.purl,
+           a.label,
+           b.LargeFeature__SIEMv3ImageEncoded_Binary,
+           b.TextFeatures__SIEMv3TextVector
+    FROM RacyCandidate AS a
+         INNER JOIN
+             CurrentIndexV1 AS b
+         ON a.murl == b.MUrl AND a.purl == b.PUrl;
+
+NoduleListWithNormalizedImagevector =
+    SELECT murl,
+           purl,
+           label,
+           Utils.NormalizeVector(n.LargeFeature__SIEMv3ImageEncoded_Binary) AS SIEMv3ImageVectorNormalized,
+           n.TextFeatures__SIEMv3TextVector AS SIEMv3TextVector
+    FROM RacyFeature AS n
+    WHERE !String.IsNullOrEmpty(n.LargeFeature__SIEMv3ImageEncoded_Binary);
+
+delta_detrimental_doc =
+    SELECT murl,
+           purl,
+           label,
+           Utils.GetDocKeyBase64(murl, purl) AS DocKey,
+           Utils.GetFullVector(SIEMv3ImageVectorNormalized, SIEMv3TextVector) AS Vector,
+           "PrismImage" AS TenantId,
+           @SampleDataTime AS Date
+    FROM NoduleListWithNormalizedImagevector
+    WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/0216/delta_detrimental_doc.ss";
+
+
+result =
+    SELECT *
+    FROM detrimental_feature
+    UNION
+    SELECT *
+    FROM delta_detrimental_doc;
+
+OUTPUT
+TO "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_12/detrimental_feature.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+#CS
+
+using Microsoft.Bing.HashUtil;
+
+public static class Utils
+{
+    public static string GetDocKeyBase64(string mediaUrl, string pageUrl)
+    {
+        return ConvertDocKeyToBase64(GetDocKeyBinary(mediaUrl, pageUrl));
+    }
+
+    public static byte[] GetDocKeyBinary(string mediaUrl, string pageUrl)
+    {
+        var hashIndex = pageUrl.IndexOf("#");
+
+        var pageUrlForDocKey = hashIndex != -1 ? pageUrl.Substring(0, hashIndex) : pageUrl;
+
+        return Microsoft.Bing.HashUtil.HutHash.GetHashAsBinary(
+            Microsoft.Bing.HashUtil.HutHash.GetUrlHashAsBase64String(mediaUrl)
+            + Microsoft.Bing.HashUtil.HutHash.GetUrlHashAsBase64String(pageUrlForDocKey));
+    }
+
+    public static string ConvertDocKeyToBase64(byte[] docKey)
+    {
+        return Convert.ToBase64String(docKey).Substring(0, 22);
+    }
+
+    public static string GetFullVector(string vector1, string vector2)
+    {
+        var concat = string.Format("{0} {1}", vector1, vector2);
+        var split = concat.Split(' ');
+        return string.Join("|", split);
+    }
+
+    public static string NormalizeVector(string vectorString)
+    {
+        List<float> vector = new List<float>();
+        var imageStrings = vectorString.Split(',');
+
+        for (int i = 0; i < imageStrings.Length; i++)
+        {
+            // values are quantized to 8 bits (numbers are between 0 - 255), it means that to get the original values, we need to run this operation on each vector x: (x/127.5) - 1
+            vector.Add((float)((float.Parse(imageStrings[i]) / 127.5) - 1));
+        }
+
+        return string.Join(" ", vector);
+    }
+    
+    public static Boolean isValidVector(string SIEMv3ImageEncoded_Binary)
+    {   
+        if(String.IsNullOrEmpty(SIEMv3ImageEncoded_Binary))
+        {
+            return false;
+        }
+        string[] imageStrings = SIEMv3ImageEncoded_Binary.Split(',');
+        var total = 0.0;
+        for(int i = 0; i < 32; i++)
+        {
+            total += Convert.ToDouble(imageStrings[i]);
+        }
+        return (total != 0);
+     }
+
+}
+#ENDCS
+
+

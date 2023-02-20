@@ -1,32 +1,36 @@
-﻿REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
-REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
-REFERENCE @"D:\sd\SearchGold\deploy\builds\data\latest\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+﻿REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
 USING MMRV2.Utility;
- 
-#DECLARE In_OutstandingJudgment    string = "/local/Prod/Image/Prism/UHRS_Archival/Outstanding_SliderV2/Crowd/AutoUpload-Impression_v2_Test_2022_10_23_en-2022-10-26-01-40-5437642_2022-10-26_02-34-00";
+
+#DECLARE In_OutstandingJudgment    string = @@In_OutstandingJudgment@@;
 
 RESOURCE @In_OutstandingJudgment;
 #DECLARE JudgmentFileName string = System.IO.Path.GetFileName(@In_OutstandingJudgment); 
 #DECLARE In_Original     string = @In_OutstandingJudgment.Substring(@In_OutstandingJudgment.LastIndexOf("AutoUpload-"));
 // "AutoUpload-{Name}{Suffix}" -> "{Name}"
 #DECLARE In_Original_1 string = @In_Original.Substring("AutoUpload-".Length, @In_Original.Length-56);
-#DECLARE LanguageName string = @In_Original_1.Substring(@In_Original_1.LastIndexOf('_') + 1);
+#DECLARE LanguageName string ="global";
 #IF (@LanguageName.Equals("chs"))
     #SET LanguageName = "zh_chs";
 #ENDIF
-#DECLARE AutoMeasurementDir string = "/local/users/siyuchen/2022-10-27-12/Prod/Image/Prism/Metrics/AutoMeasurement/";
-#DECLARE In_NonDetrimental                        string = string.Format("{0}{1}/NonDetrimental{2}.ss",                           @AutoMeasurementDir, @LanguageName, @In_Original_1);
-#DECLARE In_NonPlaceholder                        string = string.Format("{0}{1}/NonPlaceholder{2}.ss",                           @AutoMeasurementDir, @LanguageName, @In_Original_1);
-#DECLARE In_Original_NonDetrimentalStat           string = string.Format("{0}{1}/NonDetrimentalStats{2}.ss",                      @AutoMeasurementDir, @LanguageName, @In_Original_1);
-#DECLARE In_Samples                               string = string.Format("{0}{1}/Samples{2}.ss",                                  @AutoMeasurementDir, @LanguageName, @In_Original_1);
-#DECLARE In_Original_Number                       string = string.Format("{0}{1}/NonDetrimentalStatsNumber{2}.ss",                @AutoMeasurementDir, @LanguageName, @In_Original_1);
-#DECLARE In_SamplesDetrimentalLabel               string = string.Format("{0}{1}/SamplesDetrimentalLabel{2}.tsv",                 @AutoMeasurementDir, @LanguageName, @In_Original_1);
-#DECLARE AutoMeasurementDirOut string = "/local/users/v-yangtian/2022-10-30/Prod/Image/Prism/Metrics/AutoMeasurement/";
-#DECLARE Out_SampleLabel                          string = string.Format("{0}{1}/SamplesOutstandingLabel{2}.tsv",                 @AutoMeasurementDirOut, @LanguageName, @In_Original_1);
-#DECLARE Out_Stats                                string = string.Format("{0}{1}/OutstandingStats{2}.ss",                         @AutoMeasurementDirOut, @LanguageName, @In_Original_1);
-#DECLARE Out_StatsPerRecallPath                   string = string.Format("{0}{1}/OutstandingStatsPerRecallPath{2}.ss",            @AutoMeasurementDirOut, @LanguageName, @In_Original_1);
-#DECLARE Out_StatsOutstandingAndGoodPerRecallPath string = string.Format("{0}{1}/Out_StatsOutstandingAndGoodPerRecallPath{2}.ss", @AutoMeasurementDirOut, @LanguageName, @In_Original_1);
-#DECLARE Out_SamplesOutstanding                   string = string.Format("{0}{1}/Out_SamplesOutstanding{2}.ss",                   @AutoMeasurementDirOut, @LanguageName, @In_Original_1);
+#DECLARE LanguageFolderName string = @LanguageName;
+#IF (@LanguageName.Equals("global"))
+    #SET LanguageFolderName = "en";
+#ENDIF
+
+#DECLARE AutoMeasurementDir string = "/local/Prod/Image/Prism/Metrics/AutoMeasurement/";
+#DECLARE In_NonDetrimental                        string = string.Format("{0}{1}/NonDetrimental{2}.ss",                           @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
+#DECLARE In_NonPlaceholder                        string = string.Format("{0}{1}/NonPlaceholder{2}.ss",                           @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
+#DECLARE In_Original_NonDetrimentalStat           string = string.Format("{0}{1}/NonDetrimentalStats{2}.ss",                      @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
+#DECLARE In_Samples                               string = string.Format("{0}{1}/Samples{2}.ss",                                  @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
+#DECLARE In_Original_Number                       string = string.Format("{0}{1}/NonDetrimentalStatsNumber{2}.ss",                @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
+#DECLARE In_SamplesDetrimentalLabel               string = string.Format("{0}{1}/SamplesDetrimentalLabel{2}.tsv",                 @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
+#DECLARE Out_SampleLabel                          string = string.Format("{0}{1}/SamplesOutstandingLabel{2}.tsv",                 @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
+#DECLARE Out_Stats                                string = string.Format("{0}{1}/OutstandingStats{2}.ss",                         @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
+#DECLARE Out_StatsPerRecallPath                   string = string.Format("{0}{1}/OutstandingStatsPerRecallPath{2}.ss",            @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
+#DECLARE Out_StatsOutstandingAndGoodPerRecallPath string = string.Format("{0}{1}/Out_StatsOutstandingAndGoodPerRecallPath{2}.ss", @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
+#DECLARE Out_SamplesOutstanding                   string = string.Format("{0}{1}/Out_SamplesOutstanding{2}.ss",                   @AutoMeasurementDir, @LanguageFolderName, @In_Original_1);
 #DECLARE LanguageSuffix string = "_" + @LanguageName;
 // There are 7 judges for outstanding v2 hitapp since 10/26/2022.
 #DECLARE NumJudges int = 7;
@@ -36,7 +40,7 @@ RESOURCE @In_OutstandingJudgment;
 #DECLARE UtcNow DateTime = DateTime.UtcNow;
 #DECLARE Now DateTime = @UtcNow.AddHours(-8);
 #DECLARE FileDateFormatLength int = "yyyy_MM_dd".Length;
-#DECLARE SampleDataTime DateTime = Convert.ToDateTime((@In_Original_1.Substring(@In_Original_1.Length - @FileDateFormatLength - @LanguageSuffix.Length, @FileDateFormatLength).Replace('_', '-') + " 23:59:59"));
+#DECLARE SampleDataTime DateTime = Convert.ToDateTime("2023-01-21" + " 23:59:59");
 #DECLARE prefix string = "";
 #DECLARE NeedSaveDashboard bool = false;
 #IF (@In_Original_1.StartsWith("Index_PPE_Regular"))
@@ -65,7 +69,7 @@ RESOURCE @In_OutstandingJudgment;
   #SET Out_StatsOutstandingAndGoodPerRecallPath_DashBoard = string.Format(@"/local/Prod/Image/Prism/Metrics/Dashboard/{0}/{1}_{2}_{3}/StatsOutstandingAndGoodPerRecallPath{4}.ss",
     @prefix, @Now.Year.ToString(), @Now.Month.ToString("00"), @Now.Day.ToString("00"), @DashboardStatsSuffix);
 #ENDIF
-#IF(true)
+#IF(!EXISTS(@Out_Stats))
 
 data_orig =
     EXTRACT *
@@ -127,17 +131,19 @@ data_group_clean =
 
 data_group_clean =
     SELECT *,
-           avg_score > 80 ? "Outstanding" : (avg_score > 66? "Good" : (avg_score > 50? "Mediocre" : (avg_score > 33? "Acceptable" : "NotRecommended"))) AS avg_label
+           avg_score > 66 ? "Wow" : (avg_score > 54? "Outstanding" : (avg_score > 44? "Mediocre" : "NotRecommended")) AS avg_label
     FROM data_group_clean;
 
 #IF(EXISTS(@In_NonPlaceholder))
     data_original = SSTREAM @In_NonPlaceholder;
-#ELSE
+#ELSEIF(EXISTS(@In_NonDetrimental))
     data_original = SSTREAM @In_NonDetrimental;
+#ELSE
+    data_original = SSTREAM @In_Samples; 
 #ENDIF
 
 data_original = PROCESS data_original
-      PRODUCE image_url, page_url, title, RecallPath
+      PRODUCE image_url, page_url, title, RecallPath, Key, PKey, Language ,Market
       USING DefaultColumnProcessor;
 
 data_original_occurrence =
@@ -145,12 +151,20 @@ data_original_occurrence =
            page_url,
            title,
            RecallPath,
+           Key, 
+           PKey,
+           Language,
+           Market,
            SUM(1) AS occurrence
     FROM data_original
     GROUP BY image_url,
              page_url,
              title,
-             RecallPath;
+             RecallPath,
+             Key, 
+             PKey,
+             Language,
+             Market;
 
 #IF(EXISTS(@In_SamplesDetrimentalLabel))
     SamplesDetrimentalLabel =
@@ -175,7 +189,7 @@ data_original_occurrence =
         USING DefaultTextExtractor()
         HAVING image_url != "image_url" AND page_url != "page_url";
 
-  data_group_clean = SELECT a.occurrence,
+    data_group_clean = SELECT a.occurrence,
                         a.image_url AS murl,
                         a.page_url AS purl,
                         a.title,
@@ -200,6 +214,10 @@ data_original_occurrence =
                         a.page_url AS purl,
                         a.title,
                         a.RecallPath,
+                        a.Key,
+                        a.PKey, 
+                        a.Language,
+                        a.Market,
                         data_group_clean.avg_score,
                         data_group_clean.avg_label,
                         data_group_clean.raw_scores
@@ -228,13 +246,16 @@ Stats_default =
     SELECT "outstanding hitapp #distinct image total" AS Status
     FROM data_group_clean_1
     UNION ALL
+    SELECT "outstanding hitapp #nodule Wow" AS Status
+    FROM data_group_clean_1
+    UNION ALL
     SELECT "outstanding hitapp #nodule Outstanding" AS Status
     FROM data_group_clean_1
     UNION ALL
     SELECT "outstanding hitapp #nodule Good" AS Status
     FROM data_group_clean_1
     UNION ALL
-    SELECT "outstanding hitapp #nodule Outstanding + Good" AS Status
+    SELECT "outstanding hitapp #nodule Wow + Outstanding" AS Status
     FROM data_group_clean_1
     UNION ALL
     SELECT "outstanding hitapp #nodule Mediocre" AS Status
@@ -267,6 +288,11 @@ Stats =
            COUNT(DISTINCT murl) AS Count
     FROM data_group_clean
     UNION ALL
+    SELECT "outstanding hitapp #nodule Wow" AS Status,
+           SUM(occurrence) AS Count
+    FROM data_group_clean
+    WHERE avg_label == "Wow"
+    UNION ALL
     SELECT "outstanding hitapp #nodule Outstanding" AS Status,
            SUM(occurrence) AS Count
     FROM data_group_clean
@@ -277,10 +303,10 @@ Stats =
     FROM data_group_clean
     WHERE avg_label == "Good"     
     UNION ALL
-    SELECT "outstanding hitapp #nodule Outstanding + Good" AS Status,
+    SELECT "outstanding hitapp #nodule Wow + Outstanding" AS Status,
           SUM(occurrence) AS Count
     FROM data_group_clean
-    WHERE avg_label == "Outstanding" OR avg_label == "Good"
+    WHERE avg_label == "Wow" OR avg_label == "Outstanding"
     UNION ALL
     SELECT "outstanding hitapp #nodule Mediocre" AS Status,
            SUM(occurrence) AS Count
@@ -301,18 +327,16 @@ Stats = SELECT Stats_default.Status,
                IF(Stats.Count != null, Stats.Count, 0) AS Count
         FROM Stats_default LEFT JOIN Stats ON Stats_default.Status == Stats.Status;
 
-#IF(EXISTS(@In_Original_NonDetrimentalStat))
+// Divided by valid images that have enough judgement.
 TotalCnt =
-    SELECT Count AS Total FROM (SSTREAM @In_Original_Number) WHERE Name == "samples for defect";
+    SELECT SUM(occurrence) AS Total FROM data_group_clean WHERE avg_label != null;
 
+#IF(EXISTS(@In_Original_NonDetrimentalStat))
 NumberOriginalSample = SELECT Count AS NumberOriginal FROM (SSTREAM @In_Original_Number) WHERE Name == "original samples";
 
 NumberOK = SELECT Count AS NumberOK FROM (SSTREAM @In_Original_Number) WHERE Name == "detrimental ok to show";
 #ELSE
-TotalCnt =
-    SELECT COUNT(1) AS Total FROM data_original;
-
-NumberOriginalSample = SELECT COUNT(1) AS NumberOriginal FROM data_original;
+NumberOriginalSample = SELECT COUNT(1) AS NumberOriginal FROM data_group;
 
 NumberOK = SELECT COUNT(1) AS NumberOK FROM data_original;
 #ENDIF
@@ -332,7 +356,7 @@ Stats = SELECT Status,
                Count,
                Total AS TotalNoduleCnt,
                1.0*Count/Total AS Coverage,
-               1.0*Count/Total*NumberOK/NumberOriginal AS AdjCoverage,
+               1.0*Count/Total AS AdjCoverage, // Now AdjCoverage = Coverage, we separate the detrimental issue.
                @SampleDataTime AS Date;
 
 #IF(EXISTS(@In_Original_NonDetrimentalStat))

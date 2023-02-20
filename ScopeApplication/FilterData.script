@@ -1,0 +1,17 @@
+﻿//Script GUID:b297d542-2345-4e4e-a221-34ee9b0e660a
+//Used for tracking history
+
+
+stream =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/2023-01-31/PrismProdRank_1_PPE_v3.ss"
+    );
+   
+   
+count= SELECT COUNT(*) AS Count FROM stream  WHERE MUrl == "https://i.pinimg.com/originals/55/d9/86/55d986061faf0b6b612bd9a3d1161468.jpg";   
+
+
+OUTPUT
+TO SSTREAM "/local/users/v-yangtian/2023-02-02/count.ss";

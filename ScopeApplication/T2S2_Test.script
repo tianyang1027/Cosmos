@@ -1,83 +1,290 @@
-﻿data =
+﻿REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+RESOURCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.dll";
+USING Microsoft.SegmentRelevance.ScopeLib;
+
+#DECLARE Par_MaxPagesPerImage        long = Convert.ToInt64("0");
+#DECLARE Par_Bias                  double = Convert.ToDouble("0");
+#DECLARE Par_Slope                 double = Convert.ToDouble("0.2");
+#DECLARE Par_FeatureName           string = "PageFeature__RelevantImageScoresV2";
+#DECLARE Par_ExposeV2Signal          bool = Convert.ToBoolean("false");
+#DECLARE Par_TotalParts          int      = Convert.ToInt32("4");
+#DECLARE Par_Part                int      = Convert.ToInt32("0");
+#DECLARE Par_IsWDP                   bool = Convert.ToBoolean("true");
+#DECLARE Par_KeepUniqueNodule        bool = Convert.ToBoolean("true");
+
+
+#DECLARE In_PageSnapshot          string = "/local/Prod/Image/Repository/Snapshot/Page/2023_01_31/Image_Page_Metadata.ss";
+#DECLARE In_TargetPages           string = "/local/Prod/Image/Discovery/VNext/Nodule/2023_01_31/PageTableNoduleDiscoveryCandidate.ss";
+#DECLARE In_PageSchema            string = "/local/Prod/Image/Repository/Snapshot/Page/2023_01_31/Image_Page_Schema.xml";
+#DECLARE In_PageRank              string = "/local/Prod/Image/Repository/Sensor/Page/2023_01_31/WebPageSelectionSensor.ss";
+#DECLARE In_ReferenceStream       string = "/local/Prod/Image/Selection/AfterCrawlSelectionV4.3/2023_01_29/NoduleRankFile_Unified.ss";
+#IF(@Par_IsWDP)
+    #DECLARE In_IndexProbe        string = "/local/Prod/Image/Selection/GeoRep/FromCosmos08/WDP/Sensor/2023_01_29/IndexProbePageSensor.ss";
+#ENDIF
+
+#DECLARE Out_DiscoveredNodules    string = "/local/Prod/Image/Discovery/VNext/Nodule/2023_01_31/WDP_PageTableNoduleDiscovery_0.ss";
+
+RESOURCE @In_PageSchema;
+
+PageRank     = SSTREAM @In_PageRank;
+PageSnapshot = SSTREAM @In_PageSnapshot;
+#IF(@Par_IsWDP)
+    IndexProbe = SSTREAM @In_IndexProbe;
+#ENDIF
+
+TargetPages  = 
+    SELECT * 
+    FROM (SSTREAM @In_TargetPages) 
+    WHERE 1 == 1
+#IF(@Par_TotalParts > 1 )
+      AND ( PageKeyHashValue % @Par_TotalParts ) == @Par_Part
+#ENDIF
+;
+
+PageSnapshot =
     SELECT *
-    FROM
-    (
-        SSTREAM "/local/users/huangxingli/T2S2/snapshotSample_T2S2.ss"
-    );
+    FROM PageSnapshot
+    LEFT SEMIJOIN TargetPages ON PageSnapshot.Url == TargetPages.Url;
 
 
-data =
-    SELECT *,
-           1 AS Weight
-    FROM data;
+#IF(@Par_IsWDP)
 
-data =
-    SELECT Weight,
-           String.Join(",", LIST(T2S2).ToArray()) AS T2S2_All
-    FROM data
-    GROUP BY Weight;
+// All Discovery
+PageSnapshot = 
+    PROCESS PageSnapshot
+    PRODUCE *
+    USING MMRV2.Core.MmrScopeTypeProcessor(
+    "-schemaPath", "Metadata:Image_Page_Schema.xml",
+    "-outputFeatures",
+        "PageBasic__Url",
+        "WDPPageFeature__LastDiscoveredImageKeys",
+        "WDPPageFeature__RelevantImageScoresV2",
+        "WDPPageFeature__OpenGraphImage",
+        "WDPPageFeature__Language",
+        "WDPPageFeature__SpamScoreV2",
+        "WDPPageFeature__DiscoveredImageCount"
+    )
+    HAVING NOT string.IsNullOrEmpty(WDPPageFeature__LastDiscoveredImageKeys); 
 
-OUTPUT
-TO "/local/users/v-yangtian/T2S2/hist_T2S2_1.tsv"
-USING DefaultTextOutputter(outputHeader: true);
+    PageSnapshot = PROCESS PageSnapshot USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-rename",@"WDPPageFeature__(.+):PageFeature__$1");
 
-data =
-    SELECT TOP 1 T2S2_All AS T2S2_All
-    FROM data;
+#ELSE
+// All Discovery
+PageSnapshot = 
+    PROCESS PageSnapshot
+    PRODUCE *
+    USING MMRV2.Core.MmrScopeTypeProcessor(
+    "-schemaPath", "Metadata:Image_Page_Schema.xml",
+    "-outputFeatures",
+        "PageBasic__Url",
+        "PageFeature__LastDiscoveredImageKeys",
+#IF(@Par_ExposeV2Signal)
+        "PageFeature__V2DiscoveredImageKeys",
+#ENDIF
+#IF(@Par_FeatureName == "PageFeature__RelevantImageScoresV2")
+        "PageFeature__RelevantImageScoresV2",
+#ELSE
+        "PageFeature__RelevantImageScores",
+#ENDIF
+        "PageFeature__OpenGraphImage",
+        "PageFeature__Language",
+        "PageFeature__SpamScoreV2",
+        "PageFeature__DiscoveredImageCount",
+        "PageSelection__Discovery",
+        "Plasma__HasPageContent",
+        "CrawlHistory__ContentSource"
+    )
+    HAVING PageSelection__Discovery != null  
+       AND NOT string.IsNullOrEmpty(PageFeature__LastDiscoveredImageKeys); 
+#ENDIF
 
-OUTPUT
-TO "/local/users/v-yangtian/T2S2/hist_T2S2_All.tsv"
-USING DefaultTextOutputter(outputHeader: true);
 
-hist =
-    PROCESS data
-    USING GenT2S2HistProcessor();
+#IF(@Par_FeatureName == "PageFeature__RelevantImageScoresV2")
+PageSnapshot = 
+     SELECT *, PageFeature__RelevantImageScoresV2 AS PageFeature__RelevantImageScores;
+#ENDIF
 
-OUTPUT
-TO "/local/users/v-yangtian/T2S2/hist.tsv"
-USING DefaultTextOutputter(outputHeader: true);
+PageSnapshot =
+    SELECT PageSnapshot.Url, PageBasic__Url, PageSnapshot.PageKey, PageFeature__LastDiscoveredImageKeys, 
+#IF(@Par_ExposeV2Signal)
+    PageFeature__V2DiscoveredImageKeys,
+#ELSE
+    (string) null AS PageFeature__V2DiscoveredImageKeys,
+#ENDIF
+    PageFeature__RelevantImageScores, PageFeature__OpenGraphImage, PageFeature__Language, PageFeature__SpamScoreV2, PageFeature__DiscoveredImageCount, 
+    GetRelevantImageCount(PageFeature__RelevantImageScoresV2) AS PageFeature__RelevantImageCount, 
+#IF(@Par_IsWDP)
+    1 AS Plasma__HasPageContent, '1' AS CrawlHistory__ContentSource,
+    0 AS  PageSelection__UnNormalized,
+    IF(Segment__WebPageSelectionRank != null , 1, 0) AS PageSelection__Discovery,
+    IF(Segment__WebPageSelectionRank != null , 1, 0) AS PageSelection__Index,
+    Segment__WebPageSelectionRank AS AdjustedRank,
+    Segment__WebPageSelectionRank AS NormalizedAdjustedRank,
+    Segment__WebPageSelectionRank AS WebPageSelectionRank,
+    Segment__PageSource           AS PageSource,
+    IndexProbe__MMPageRank,
+    IndexProbe__IndexStatus,
+    IndexProbe__MMStatus
+#ELSE
+    Plasma__HasPageContent, CrawlHistory__ContentSource,
+    PageRank.PageSelection__UnNormalized ?? 0 AS PageSelection__UnNormalized,
+    PageRank.PageSelection__Discovery    ?? 0 AS PageSelection__Discovery,
+    PageRank.PageSelection__Index        ?? 0 AS PageSelection__Index,
+    PageRank.AdjustedRank AS AdjustedRank,
+    PageRank.NormalizedAdjustedRank AS NormalizedAdjustedRank,
+    PageRank.WebSelectionRank AS WebPageSelectionRank
+#ENDIF
+    FROM PageSnapshot
+    LEFT OUTER JOIN PageRank ON PageSnapshot.Url == PageRank.Url
+#IF(@Par_IsWDP)
+    LEFT OUTER JOIN IndexProbe ON PageSnapshot.Url == IndexProbe.Url
+#ENDIF
+     ;
+ 
+[PARTITION=(PARTITIONCOUNT=8000)]
+Discovery =
+    SELECT T.Key AS Key, PageKey ?? MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(PageBasic__Url) AS PageKey, 
+           PageBasic__Url, PageSelection__UnNormalized, PageSelection__Discovery, PageSelection__Index, ( Plasma__HasPageContent == 1 ) AS HasPageContent, 
+           T.IsRelevant AS RelevantNodule, 
+#IF(@Par_ExposeV2Signal)
+           T.IsV2DiscoveredImage AS V2DiscoveredImage, 
+#ENDIF
+           T.IsRelevantBeforeOgBoost AS RelevantNoduleBeforeOgBoost, T.IsOgImage,
+           IF(T.IsOgImage ?? false, 65535, IF(T.RelevantScore != null, (int ?)MMRV2.IndexSelection.SelectionUtils.Calibrate(T.RelevantScore ?? 0, 65535,0, @Par_Bias, @Par_Slope), null)) AS ImageRank, T.RelevantOrder,
+#IF(@Par_IsWDP)
+           IndexProbe__MMPageRank,  IndexProbe__IndexStatus, IndexProbe__MMStatus, PageSource,
+#ENDIF
+           AdjustedRank, NormalizedAdjustedRank, WebPageSelectionRank, PageFeature__Language, PageFeature__SpamScoreV2, PageFeature__DiscoveredImageCount, PageFeature__RelevantImageCount
+    FROM PageSnapshot
+    CROSS APPLY GetDiscoveredImages(PageFeature__LastDiscoveredImageKeys,PageFeature__RelevantImageScores,PageFeature__OpenGraphImage,CrawlHistory__ContentSource=='3', PageFeature__V2DiscoveredImageKeys) AS T;
 
-rankFile =
-    SELECT t2s2_Index AS t2s2_Index,
-           ROW_NUMBER() OVER(ORDER BY Count ASC) AS Rank
-    FROM hist;
+#IF(@Par_MaxPagesPerImage > 0 )
 
-OUTPUT rankFile
-TO "/local/users/v-yangtian/T2S2/rank.txt"
-USING Outputters.Text(outputHeader: true);
+Discovery =
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY Key ORDER BY RelevantNodule DESC, AdjustedRank DESC, ImageRank DESC) AS RN 
+    HAVING RN <= @Par_MaxPagesPerImage;
+  
+#ENDIF
+
+#IF(@Par_KeepUniqueNodule)
+
+Discovery =
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY Key, PageKey ORDER BY RelevantNodule DESC, AdjustedRank DESC, ImageRank DESC) AS RN 
+    HAVING RN == 1;
+
+Discovery  = PROCESS Discovery USING Microsoft.SegmentRelevance.ScopeLib.ColumnProcessor("-prune","RN");
+
+#ENDIF
+
+OUTPUT TO SSTREAM @Out_DiscoveredNodules
+HASH CLUSTERED BY Key 
+REFERENCES SSTREAM @In_ReferenceStream
+SORTED BY Key, PageKey;
 
 #CS
-
-using System.Linq;
-
-public class GenT2S2HistProcessor : Processor
+private static double ToDouble(string value,double default_value=0.0)
 {
-    public override Schema Produces(string[] columns, string[] args, Schema input)
-    {
-        return new Schema("t2s2_Index,Count,Ratio");
-    }
+    double number;
 
-    public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
+    if (Double.TryParse(value, out number))
+        return number;
+    return default_value;
+
+}
+int? GetRelevantImageCount(string relevantImages)
+{
+    if(relevantImages == null ) return null;
+    else if (string.IsNullOrWhiteSpace(relevantImages) ) return 0;
+
+    return relevantImages.Count(f => f == ' ') + 1;
+}
+
+public class DiscoveryResult
+{
+    public DiscoveryResult(string key, Dictionary<string, Tuple<double, int>> relevantImages, HashSet<string> V2DiscoveredImages, string ogImage)
     {
-        foreach (Row row in input.Rows)
+        this.Key = key;
+        
+        if( relevantImages != null )
         {
-            var words = row["T2S2_All"].ToString().Split(',');
-            var result = words.Where(x => x != "0").GroupBy(x => x).Select(x => new
+            Tuple<double, int> item;
+            if (relevantImages.TryGetValue(key, out item))
             {
-                Key = x.Key,
-                Count = x.Count(),
-                Percentage = x.Count() * 1.0 / words.Length
-            }).ToList();
+                this.IsRelevantBeforeOgBoost = (bool?)true;
+                this.RelevantScore = item.Item1;
+                this.RelevantOrder = item.Item2;
+            }
+            else
+            {
+                this.IsRelevantBeforeOgBoost = (bool?)false;
+            }
+        }
 
-            foreach (var item in result)
+        this.IsOgImage = (ogImage != null) ? (bool?)(ogImage == key) : null;
+
+        this.IsRelevant = (relevantImages == null && ogImage == null) ? null
+                         : (bool?)((this.IsRelevantBeforeOgBoost ?? false) || (this.IsOgImage ?? false));
+
+        if (V2DiscoveredImages != null)
+        {
+            if (V2DiscoveredImages.Contains(key))
             {
-                output[0].Set(item.Key);
-                output[1].Set(item.Count);
-                output[2].Set(item.Percentage);
-                yield return output;
+                this.IsV2DiscoveredImage = true;
             }
         }
     }
+
+    public string Key;
+    public bool? IsRelevantBeforeOgBoost;
+    public bool? IsRelevant;
+    public bool? IsOgImage;
+    public bool? IsV2DiscoveredImage;
+    public double? RelevantScore;
+    public int? RelevantOrder;
+
 }
 
+
+public static IEnumerable<DiscoveryResult> GetDiscoveredImages(string discoveredImages, string relevantImages, string ogImage, bool fromSF, string V2DiscoveredImages = null)
+{
+    if (discoveredImages == null)
+        discoveredImages = string.Empty;
+
+    Dictionary<string, Tuple<double, int>> relevantWithRank = null;
+    HashSet<string> v2ImageDiscovery = null;
+    
+    if (!string.IsNullOrEmpty(V2DiscoveredImages))
+    {
+        v2ImageDiscovery = new HashSet<string>(V2DiscoveredImages.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList());
+    }
+
+    if (relevantImages != null)
+    {
+        relevantWithRank = new Dictionary<string, Tuple<double, int>>();
+
+        int index = 0;
+        foreach (var relevantImage in relevantImages.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var info = relevantImage.Split(':');
+            if (info[0].Length > 0)
+            {
+                index = index + 1;
+                string key = info[0];
+                double score = info.Length > 1 ? ToDouble(info[1]) : -1000;
+                relevantWithRank[key] = new Tuple<double, int>(score, index);
+            }
+        }
+    }
+
+    var imageDiscovery = discoveredImages.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+    if (relevantWithRank != null && fromSF)  // SF can update image discovery wthouout updating Page Content & Passing light DU. so add images on relevant to discovered images
+        imageDiscovery = imageDiscovery.Union(relevantWithRank.Keys.ToList()).ToList();
+
+    return imageDiscovery.Select(k => new DiscoveryResult(k, relevantWithRank, v2ImageDiscovery, ogImage));
+}
 #ENDCS

@@ -1,0 +1,38 @@
+﻿
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\Relevance\Relevance.ScopeLib.dll";
+
+#DECLARE Seed string =((int)DateTime.Now.Ticks).ToString();
+
+
+data1 =
+    SELECT *,
+           (double) 1 AS Weight
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/Metrics/AutoMeasurement/en/SamplesImpression_imgfeedindexv5_2023_01_21_global.ss"
+    );
+
+Sample1 =
+    REDUCE data1 ALL
+    USING TopNReducer("1000", "-random", @Seed, "-WeightCol", "Weight");
+
+OUTPUT
+TO SSTREAM "/local/Prod/Image/Prism/Metrics/AutoMeasurement/en/SamplesImpression_imgfeedindexv5_2023_01_21_global_1000.ss";
+
+
+data2 =
+    SELECT *,
+           (double) 1 AS Weight
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/Metrics/AutoMeasurement/en/SamplesImpression_imgfeedprodindex_2023_01_21_global.ss"
+    );
+
+
+
+Sample2 =
+    REDUCE data2 ALL
+    USING TopNReducer("1000", "-random", @Seed, "-WeightCol", "Weight");
+
+OUTPUT
+TO SSTREAM "/local/Prod/Image/Prism/Metrics/AutoMeasurement/en/SamplesImpression_imgfeedprodindex_2023_01_21_global_1000.ss";
