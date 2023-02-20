@@ -8,23 +8,25 @@ REFERENCE "/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bi
 USING MMRV2.Utility;
 USING MMRV2.Core;
 
-#DECLARE SampleDataTime DateTime = Convert.ToDateTime("2/10/2023 11:59:59 PM");
+#DECLARE SampleDataTime DateTime = Convert.ToDateTime("2/20/2023 11:59:59 PM");
 
 CurrentIndexV1 =
     SELECT *
     FROM
     (
-        SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/CurrentIndex/2023_02_14/CurrentIndexV1.ss"
+        SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/CurrentIndex/2023_02_18/CurrentIndexV1.ss"
     );
 
 
-image =
+imagesList =
     SELECT *
     FROM CurrentIndexV1
-    WHERE MUrl == "https://i.dailymail.co.uk/i/pix/2016/10/10/14/394823F600000578-0-image-a-115_1476107422817.jpg";
+    WHERE MUrl IN("https://i.dailymail.co.uk/i/pix/2016/10/10/14/3943441700000578-0-image-a-98_1476106248711.jpg",
+          "https://i2-prod.mirror.co.uk/incoming/article5467857.ece/ALTERNATES/s1227b/Seventeen-month-old-Colby-Ramos-Francis.jpg");
+
 
 OUTPUT
-TO SSTREAM "/local/users/v-yangtian/0216/image.ss";
+TO SSTREAM "/local/users/v-yangtian/2023_02_16/image.ss";
 
 detrimental_feature =
     EXTRACT murl : string,
@@ -33,14 +35,15 @@ detrimental_feature =
             DocKey : string,
             Vector : string,
             TenantId : string,
-            Date : DateTime
-    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_12/detrimental_feature.tsv"
+            Date : string
+    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_19/detrimental_feature.tsv"
     USING DefaultTextExtractor();
 
 RacyCandidate =
-    SELECT "https://i.dailymail.co.uk/i/pix/2016/10/10/14/394823F600000578-0-image-a-115_1476107422817.jpg" AS murl,
-           "https://www.dailymail.co.uk/health/article-3830822/Family-baby-head-swelled-twice-normal-size-sold-desperate-bid-treatment.html" AS purl,
-           "child_sexualization" AS label;
+    SELECT MUrl AS murl,
+           PUrl AS purl,
+           "child_sexualization" AS label
+    FROM imagesList;
 
 RacyFeature =
     SELECT a.murl,
@@ -74,7 +77,7 @@ delta_detrimental_doc =
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
 OUTPUT
-TO SSTREAM "/local/users/v-yangtian/0216/delta_detrimental_doc.ss";
+TO SSTREAM "/local/users/v-yangtian/2023_02_20/delta_detrimental_doc.ss";
 
 
 result =
@@ -85,7 +88,7 @@ result =
     FROM delta_detrimental_doc;
 
 OUTPUT
-TO "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_12/detrimental_feature.tsv"
+TO "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_19/detrimental_feature.tsv"
 USING DefaultTextOutputter(outputHeader: true);
 
 #CS
