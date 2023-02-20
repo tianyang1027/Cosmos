@@ -79,6 +79,7 @@
     <Script Include="T2S2.script" />
     <Script Include="T2S2_Test.script" />
     <Script Include="UpdateLabeledDetrimentalNodules.script" />
+    <Script Include="update_detrimental_feature.script" />
     <Script Include="WrapStarCosmosData.script" />
     <Script Include="WrapStarCosmosData_Deviantart .script" />
     <ScriptCode Include="CleanupBadSeed.script.cs">
@@ -203,6 +204,9 @@
     </ScriptCode>
     <ScriptCode Include="UpdateLabeledDetrimentalNodules.script.cs">
       <DependentUpon>UpdateLabeledDetrimentalNodules.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="update_detrimental_feature.script.cs">
+      <DependentUpon>update_detrimental_feature.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="WrapStarCosmosData.script.cs">
       <DependentUpon>WrapStarCosmosData.script</DependentUpon>
