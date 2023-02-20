@@ -8,8 +8,6 @@ REFERENCE "/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bi
 USING MMRV2.Utility;
 USING MMRV2.Core;
 
-#DECLARE SampleDataTime DateTime = Convert.ToDateTime("2/20/2023 11:59:59 PM");
-
 CurrentIndexV1 =
     SELECT *
     FROM
@@ -26,7 +24,7 @@ imagesList =
 
 
 OUTPUT
-TO SSTREAM "/local/users/v-yangtian/2023_02_16/image.ss";
+TO SSTREAM "/local/users/v-yangtian/2023_02_19/image.ss";
 
 detrimental_feature =
     EXTRACT murl : string,
@@ -39,10 +37,16 @@ detrimental_feature =
     FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_19/detrimental_feature.tsv"
     USING DefaultTextExtractor();
 
+detrimental_feature =
+    SELECT *
+    FROM detrimental_feature
+    WHERE murl NOT IN("https://i.dailymail.co.uk/i/pix/2016/10/10/14/3943441700000578-0-image-a-98_1476106248711.jpg",
+          "https://i2-prod.mirror.co.uk/incoming/article5467857.ece/ALTERNATES/s1227b/Seventeen-month-old-Colby-Ramos-Francis.jpg");
+
 RacyCandidate =
     SELECT MUrl AS murl,
            PUrl AS purl,
-           "child_sexualization" AS label
+           "promoting_violence" AS label
     FROM imagesList;
 
 RacyFeature =
@@ -72,12 +76,12 @@ delta_detrimental_doc =
            Utils.GetDocKeyBase64(murl, purl) AS DocKey,
            Utils.GetFullVector(SIEMv3ImageVectorNormalized, SIEMv3TextVector) AS Vector,
            "PrismImage" AS TenantId,
-           @SampleDataTime AS Date
+           "2/19/2023 11:59:59 PM" AS Date
     FROM NoduleListWithNormalizedImagevector
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
 
 OUTPUT
-TO SSTREAM "/local/users/v-yangtian/2023_02_20/delta_detrimental_doc.ss";
+TO SSTREAM "/local/users/v-yangtian/2023_02_19/delta_detrimental_doc.ss";
 
 
 result =
