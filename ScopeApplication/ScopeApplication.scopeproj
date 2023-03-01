@@ -39,6 +39,7 @@
     <Script Include="Generate_PageTitle.script" />
     <Script Include="GetImageEmbedding.script" />
     <Script Include="GetMD5.script" />
+    <Script Include="GetTopics.script" />
     <Script Include="HitApp_0_SampleImpression.script" />
     <Script Include="HitApp_0_SampleIndex.script" />
     <Script Include="HitApp_0_SampleIndex_SendDetrimental.script" />
@@ -123,6 +124,9 @@
     </ScriptCode>
     <ScriptCode Include="GetMD5.script.cs">
       <DependentUpon>GetMD5.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="GetTopics.script.cs">
+      <DependentUpon>GetTopics.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="HitApp_0_SampleImpression.script.cs">
       <DependentUpon>HitApp_0_SampleImpression.script</DependentUpon>

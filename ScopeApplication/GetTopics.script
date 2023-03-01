@@ -1,0 +1,48 @@
+﻿REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ReversePipeline.dll";
+REFERENCE @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+REFERENCE @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Injection.dll";
+REFERENCE @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\IndexSelection\MMSiteModeling.dll";
+RESOURCE  @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.dll";
+RESOURCE  @"/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.pdb";
+RESOURCE  @"/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.xml";
+
+// URL pattern features related
+REFERENCE @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\IndexSelection\NoduleRankFile\DiscoverySelection.Shared.dll";
+REFERENCE @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\IndexSelection\NoduleRankFile\DiscoverySelection.Util.dll";
+REFERENCE @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\IndexSelection\NoduleRankFile\Selection.Core.dll";
+RESOURCE  @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\IndexSelection\NoduleRankFile\UrlNormlizerUtil.dll";
+RESOURCE  @"d:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\IndexSelection\NoduleRankFile\tld.txt";
+
+
+#DECLARE In_Key string = "/local/users/v-yingchen/Find_topic/Get_Signature.tsv";
+
+In_Key =
+    EXTRACT Key,
+            PKey ,
+            Signature 
+    FROM @In_Key
+    USING Extractors.Tsv(skipFirstNRows: 1);
+
+Index =
+    SELECT *,
+           MMRV2.ReversePipeline.MediaFeatureCooker.GenerateContentId(Signature) AS ContentId;
+
+RQ =
+    VIEW @"/local/Prod/Image/Prism/UniversalRQStore.view";
+
+Index =
+    SELECT a.*,
+           String.Join(";", LIST(b.Query).Distinct().ToArray()) AS Topics
+    FROM Index AS a
+         LEFT JOIN
+             RQ AS b
+         ON a.ContentId == b.ContentId;
+
+OUTPUT Index
+TO "/local/users/v-yangtian/Find_topic/Get_topic_3.tsv"
+USING Outputters.Tsv(outputHeader: true);
+

@@ -1,32 +1,39 @@
-﻿index =
+﻿detrimental_feature =
+    EXTRACT murl : string,
+            purl : string,
+            label : string,
+            DocKey : string,
+            Vector : string,
+            TenantId : string,
+            Date : string
+    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_19/detrimental_feature.tsv"
+    USING DefaultTextExtractor();
+
+
+detrimental_feature1 =
+    SELECT murl,
+           purl,
+           "promoting_violence" AS label,
+           DocKey,
+           Vector,
+           TenantId,
+           Date
+    FROM detrimental_feature
+    WHERE murl IN("https://i.dailymail.co.uk/i/pix/2016/10/10/14/394823F600000578-0-image-a-115_1476107422817.jpg");
+
+detrimental_feature2 =
     SELECT *
-    FROM
-    (
-        SSTREAM "/local/Prod/Image/Prism/2023-02-03/PrismProdRank_2_PPE.ss"
-    );
-
-totalCount =
-    SELECT COUNT( * ) AS totalCount
-    FROM index;
+    FROM detrimental_feature
+    WHERE murl NOT IN("https://i.dailymail.co.uk/i/pix/2016/10/10/14/394823F600000578-0-image-a-115_1476107422817.jpg");
 
 
-categories_result =
-    SELECT Language,
-           COUNT( * ) AS LanguageCount
-    FROM index
-    GROUP BY Language;
-
-
-stats =
-    SELECT a.Language,
-           a.LanguageCount,
-           b.totalCount,
-           (LanguageCount * 1.0 / totalCount) AS Percentage
-    FROM categories_result AS a
-         CROSS JOIN
-             totalCount AS b;
+result =
+    SELECT *
+    FROM detrimental_feature1
+    UNION
+    SELECT *
+    FROM detrimental_feature2;
 
 OUTPUT
-TO "/local/users/v-yangtian/2023/02-06/stats_prod.tsv"
-ORDER BY LanguageCount DESC
+TO "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_19/detrimental_feature.tsv"
 USING DefaultTextOutputter(outputHeader: true);
