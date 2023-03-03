@@ -1,0 +1,18 @@
+﻿
+
+
+data= EXTRACT Key,
+        PKey,
+        image_url,
+        page_url,
+        title,
+        FastTextLang,
+        stamped_lang,
+        has_025_non_ascii
+
+FROM @"C:\Users\v-yangtian\Downloads\samples_wrong_lang.tsv"
+USING DefaultTextExtractor();
+
+
+OUTPUT
+TO @"C:\Users\v-yangtian\Downloads\samples_wrong_lang.txt";
