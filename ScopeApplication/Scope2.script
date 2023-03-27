@@ -1,39 +1,75 @@
-﻿detrimental_feature =
-    EXTRACT murl : string,
-            purl : string,
-            label : string,
-            DocKey : string,
-            Vector : string,
-            TenantId : string,
-            Date : string
-    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_19/detrimental_feature.tsv"
-    USING DefaultTextExtractor();
+﻿stream =
+    SSTREAM "/local/Prod/Image/Prism/2023-03-26/PrismProdRank_2_PPE_v3.ss";
 
 
-detrimental_feature1 =
-    SELECT murl,
-           purl,
-           "promoting_violence" AS label,
-           DocKey,
-           Vector,
-           TenantId,
-           Date
-    FROM detrimental_feature
-    WHERE murl IN("https://i.dailymail.co.uk/i/pix/2016/10/10/14/394823F600000578-0-image-a-115_1476107422817.jpg");
+LwNodule =
+    SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/2023_03_25/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
 
-detrimental_feature2 =
+streamWithTitle =
+    SELECT a.Key,
+           a.PKey,
+           a.MUrl,
+           a.PUrl,
+           a.MDomain,
+           a.PDomain,
+           a.ProdThumbnailKey,
+           a.PrismyV3Rank,
+           b.TextFeatures__PageTitle AS Title
+    FROM stream AS a
+    LEFT JOIN
+        LwNodule AS b
+        ON a.Key == b.Key
+           AND a.PKey == b.PageKey;
+
+totalCount =
+    SELECT COUNT( * ) AS totalCount
+    FROM streamWithTitle;
+
+
+stats =
+    SELECT "96-100" AS GroupName,
+           COUNT( * ) AS Count
+    FROM streamWithTitle
+    WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
+
+samples =
+    SELECT TOP 30 *,
+                  "96-100" AS GroupName
+    FROM streamWithTitle
+    WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
+
+LOOP (I, 50)
+{
+stats =
     SELECT *
-    FROM detrimental_feature
-    WHERE murl NOT IN("https://i.dailymail.co.uk/i/pix/2016/10/10/14/394823F600000578-0-image-a-115_1476107422817.jpg");
+    FROM stats
+    UNION ALL
+    SELECT (96 - (@@I@@) * 4).ToString() + "-" + (100 - (@@I@@) * 4).ToString() AS GroupName,
+           COUNT( * ) AS Count
+    FROM streamWithTitle
+    WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
 
-
-result =
+samples =
     SELECT *
-    FROM detrimental_feature1
-    UNION
-    SELECT *
-    FROM detrimental_feature2;
+    FROM samples
+    UNION ALL
+    SELECT TOP 30 *,
+           (96 - (@@I@@) * 4).ToString() + "-" + (100 - (@@I@@) * 4).ToString() AS GroupName
+    FROM streamWithTitle
+    WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
+}
 
-OUTPUT
-TO "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_19/detrimental_feature.tsv"
+stats =
+    SELECT *,
+           (a.Count * 1.0 / b.totalCount) AS Percentage
+    FROM stats AS a
+    CROSS JOIN
+        totalCount AS b;
+
+OUTPUT stats
+TO "/local/users/v-yangtian/BucketVisualizationPortal/stats.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+OUTPUT samples
+TO "/local/users/v-yangtian/BucketVisualizationPortal/samples.tsv"
 USING DefaultTextOutputter(outputHeader: true);

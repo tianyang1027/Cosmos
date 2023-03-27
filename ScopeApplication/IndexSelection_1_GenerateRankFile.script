@@ -17,10 +17,10 @@ RESOURCE "/local/Prod/Image/Prism/Data/DomainsToBlockList_2021_11_20.txt";
 #DECLARE UtcNow DateTime = DateTime.UtcNow;
 #DECLARE Par_Now DateTime =  @UtcNow.AddHours(-8);
 #DECLARE Par_FormatNow string =@Par_Now.ToString("yyyy_MM_dd");
-#DECLARE Out_Stats_Part_Waterfall string = string.Format(@"/local/Prod/Image/Prism/Metrics/Dashboard/Waterfall/PPE/{0}/Stats_Part_Waterfall.ss", @Par_FormatNow);
-#DECLARE Out_Stats_Whole_Waterfall string = string.Format(@"/local/Prod/Image/Prism/Metrics/Dashboard/Waterfall/PPE/{0}/Stats_Whole_Waterfall.ss", @Par_FormatNow);
+#DECLARE Out_Stats_Part_Waterfall string = string.Format(@"/local/Prod/Image/Prism/Metrics/Dashboard/Waterfall/PROD/{0}/Stats_Part_Waterfall.ss", @Par_FormatNow);
+#DECLARE Out_Stats_Whole_Waterfall string = string.Format(@"/local/Prod/Image/Prism/Metrics/Dashboard/Waterfall/PROD/{0}/Stats_Whole_Waterfall.ss", @Par_FormatNow);
  
-in_features = SSTREAM "/local/Prod/Image/Prism/2023-03-14/PrismProdRank_0_PPE_v3.ss";
+in_features = SSTREAM "/local/Prod/Image/Prism/2023-03-14/PrismProdRank_0_PPE.ss";
 
 PrismProdRank_0_PPE_Count =
     SELECT 
@@ -45,7 +45,6 @@ NoduleList =
       AND GruesomeScore  != null AND GruesomeScore <= @Gruesome_Th
       AND NOT IsBlockedDomain(PDomain,MDomain);
 
-
 PartWaterfall =
     SELECT  Language,
             "PrismProdRank_0_PPE" AS name,
@@ -53,7 +52,7 @@ PartWaterfall =
             @Par_Now AS date,
             "None" AS parentName
             FROM in_features
-           GROUP BY Language,name,date,parentName
+            GROUP BY Language,name,date,parentName
     UNION ALL
     SELECT  Language,
             "Detrimental_Filter" AS name,
@@ -66,18 +65,17 @@ PartWaterfall =
 // Block
 Block = SELECT MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(MUrl) AS Key,
                MMRV2.Utility.HashValue.GetHttpUrlHashBase64String(PUrl) AS PKey
-        FROM (SSTREAM "/local/Prod/Image/MMToDP/DUI/Blocking/2023_03_14/BlockingList_Debug.ss");
+          FROM (SSTREAM "/local/Prod/Image/MMToDP/DUI/Blocking/2023_03_14/BlockingList_Debug.ss");
 
 // Block By Keyword
 BlockListByKeyword = SSTREAM "/local/Prod/Image/Prism/BlocklistToNodule/blocklist_by_keyword_2023-03-08.ss";
 
 // Block Nodules
-BlockNodules = SELECT ImageKey AS Key, PageKey AS PKey FROM  (SSTREAM "/local/Prod/Image/Prism/Blocklist/BlockedNodules/2023_03_13/MUrlBlockingNodules.ss");
-
+BlockNodules = SELECT ImageKey AS Key, PageKey AS PKey FROM (SSTREAM "/local/Prod/Image/Prism/Blocklist/BlockedNodules/2023_03_13/MUrlBlockingNodules.ss");
 
 BlockListT2S2Mapping =  
-        SELECT QueryKey AS Key FROM (SSTREAM  "/local/Prod/Image/Prism/BlocklistToNodule/T2S2/2023_03_14/DupMapping.ss")
-        WHERE MatchCount >= @Par_T2S2Th;    
+        SELECT QueryKey AS Key FROM (SSTREAM "/local/Prod/Image/Prism/BlocklistToNodule/T2S2/2023_03_15/DupMapping.ss")
+        WHERE MatchCount >= @Par_T2S2Th;      
 
 NoduleList = 
     SELECT * 
@@ -88,7 +86,7 @@ NoduleList =
     LEFT ANTISEMIJOIN BlockListByKeyword   ON NoduleList.Key == BlockListByKeyword.Key AND NoduleList.PKey == BlockListByKeyword.PKey;
 
 OUTPUT
-TO SSTREAM "/local/Prod/Image/Prism/2023-03-14/PrismProdRank_1_NoDetrimental_PPE_v3.ss"
+TO SSTREAM "/local/Prod/Image/Prism/2023-03-14/PrismProdRank_1_NoDetrimental_PPE.ss"
 HASH CLUSTERED BY Key SORTED BY Key, PKey;
 
 PartWaterfall =
@@ -107,18 +105,15 @@ PartWaterfall =
 NoduleList =
     SELECT *
            FROM NoduleList
-    WHERE PrismyV3NonDefect != null AND PrismyV3NonDefect >= 25 AND 
-            (Source == "ClickHistory" OR 
-            (PrismyV3Rank != null AND 
-                (PrismyV3Rank >= -20 OR
-                (FaceSatoriIdConf != null AND FaceSatoriIdConf > 0.5 AND PrismyV3Rank >= -40))))
+    WHERE  PrismyScore != null AND AdjustedPrismyScore >= 140
       AND AspectRatio != null AND AspectRatio >= 0.6 
 //      AND (HasPinterestContent OR (RepinCount != null) OR HasClickedContent )
       AND WatermarkProbability != null AND WatermarkProbability < 0.9;
 
-//OUTPUT
-//TO SSTREAM @@Out_RankFile_NoDefect@@
-//HASH CLUSTERED BY Key SORTED BY Key, PKey;
+OUTPUT
+TO SSTREAM "/local/Prod/Image/Prism/2023-03-14/PrismProdRank_1_NoDefect_PPE.ss"
+HASH CLUSTERED BY Key SORTED BY Key, PKey;
+
 
 PartWaterfall =
     SELECT * FROM PartWaterfall
@@ -318,7 +313,7 @@ RacyANN =
             PUrl,
             MUrl,
             ResultTUrl
-    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_03_14/detrimental_feature_750MIndex_ANNResult_Top1000.tsv"
+       FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_03_19/detrimental_feature_750MIndex_ANNResult_Top1000.tsv"
     USING DefaultTextExtractor();
 
 RacyANNMurl =
@@ -334,9 +329,10 @@ NoduleList =
              RacyANNKey AS b
          ON a.Key == b.Key;
 
-//OUTPUT
-//TO SSTREAM @@Out_RankFile@@
-//HASH CLUSTERED BY Key SORTED BY Key, PKey;
+OUTPUT
+TO SSTREAM "/local/Prod/Image/Prism/2023-03-14/PrismProdRank_1_PPE.ss"
+HASH CLUSTERED BY Key SORTED BY Key, PKey;
+
 
 PartWaterfall =
     SELECT * FROM PartWaterfall
@@ -347,16 +343,7 @@ PartWaterfall =
             @Par_Now AS date,
             "Authority_Page_PDomain_Filter" AS parentName
             FROM NoduleList
-            GROUP BY Language,name,date,parentName
-    UNION ALL
-    SELECT Language,
-           "PrismProdRank_1_PPE Organic SatoriCeleb" AS name,
-           COUNT(*) AS count,
-           @Par_Now AS date,
-           "PrismProdRank_1_PPE" AS parentName
-    FROM NoduleList
-    WHERE Source == "Organic" AND FaceSatoriIdConf != null AND FaceSatoriIdConf > 0.5
-    GROUP BY Language,name,date,parentName;
+            GROUP BY Language,name,date,parentName;
 
  Stats_PartWaterfall =
     SELECT a.name AS Name,
