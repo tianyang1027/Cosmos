@@ -5,7 +5,14 @@
 LwNodule =
     SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/2023_03_25/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
 
-streamWithTitle =
+
+samples =
+    SELECT TOP 30 *,
+                  "96-100" AS GroupName
+    FROM  stream
+    WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
+
+samplesWithTitle =
     SELECT a.Key,
            a.PKey,
            a.MUrl,
@@ -15,7 +22,7 @@ streamWithTitle =
            a.ProdThumbnailKey,
            a.PrismyV3Rank,
            b.TextFeatures__PageTitle AS Title
-    FROM stream AS a
+    FROM samples AS a
     LEFT JOIN
         LwNodule AS b
         ON a.Key == b.Key
@@ -32,11 +39,7 @@ stats =
     FROM streamWithTitle
     WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
 
-samples =
-    SELECT TOP 30 *,
-                  "96-100" AS GroupName
-    FROM streamWithTitle
-    WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
+
 
 LOOP (I, 50)
 {
@@ -57,6 +60,22 @@ samples =
            (96 - (@@I@@) * 4).ToString() + "-" + (100 - (@@I@@) * 4).ToString() AS GroupName
     FROM streamWithTitle
     WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
+
+   samplesWithTitle =
+    SELECT a.Key,
+           a.PKey,
+           a.MUrl,
+           a.PUrl,
+           a.MDomain,
+           a.PDomain,
+           a.ProdThumbnailKey,
+           a.PrismyV3Rank,
+           b.TextFeatures__PageTitle AS Title
+    FROM samples AS a
+    LEFT JOIN
+        LwNodule AS b
+        ON a.Key == b.Key
+           AND a.PKey == b.PageKey;
 }
 
 stats =
