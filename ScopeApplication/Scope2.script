@@ -50,8 +50,7 @@ samples =
 }
 
 samplesWithTitle =
-    SELECT 
-           a.BucketName,
+    SELECT a.BucketName,
            a.Key,
            a.PKey,
            a.MUrl,
