@@ -23,7 +23,7 @@ totalCount =
     FROM stream;
 
 stats =
-    SELECT "96-100" AS BucketName,
+    SELECT "96_100" AS BucketName,
            COUNT( * ) AS Count
     FROM stream
     WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
