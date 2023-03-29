@@ -14,10 +14,6 @@ samples =
     SELECT *
     FROM bucket SAMPLE ANY (30);
 
-OUTPUT
-TO "/local/users/v-yangtian/BucketVisualizationPortal/samples1.tsv"
-USING DefaultTextOutputter(outputHeader: true);
-
 totalCount =
     SELECT COUNT( * ) AS totalCount
     FROM stream;
