@@ -8,7 +8,7 @@ bucket =
     SELECT *,
            "96_100" AS BucketName
     FROM stream
-    WHERE PrismyV3Rank > 0 AND PrismyV3Rank <= 4;
+    WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
 
 samples =
     SELECT *
