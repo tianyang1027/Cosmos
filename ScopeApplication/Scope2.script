@@ -1,16 +1,57 @@
 ﻿stream =
     SSTREAM "/local/Prod/Image/Prism/2023-03-26/PrismProdRank_2_PPE_v3.ss";
 
-
 LwNodule =
     SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/2023_03_25/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
 
+bucket =
+    SELECT *,
+           "96_100" AS BucketName
+    FROM stream
+    WHERE PrismyV3Rank > 0 AND PrismyV3Rank <= 4;
 
 samples =
-    SELECT TOP 30 *,
-                  "96-100" AS GroupName
-    FROM  stream
+    SELECT *
+    FROM bucket SAMPLE ANY (30);
+
+OUTPUT
+TO "/local/users/v-yangtian/BucketVisualizationPortal/samples1.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+totalCount =
+    SELECT COUNT( * ) AS totalCount
+    FROM stream;
+
+stats =
+    SELECT "96-100" AS BucketName,
+           COUNT( * ) AS Count
+    FROM stream
     WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
+
+LOOP (I, 50)
+{
+stats =
+    SELECT *
+    FROM stats
+    UNION ALL
+    SELECT (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName,
+           COUNT( * ) AS Count
+    FROM stream
+    WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
+
+bucket =
+    SELECT *,
+           (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName
+    FROM stream
+    WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
+
+samples =
+    SELECT *
+    FROM samples
+    UNION ALL
+    SELECT *
+    FROM bucket SAMPLE ANY (30);
+}
 
 samplesWithTitle =
     SELECT a.Key,
@@ -28,55 +69,9 @@ samplesWithTitle =
         ON a.Key == b.Key
            AND a.PKey == b.PageKey;
 
-totalCount =
-    SELECT COUNT( * ) AS totalCount
-    FROM streamWithTitle;
-
-
-stats =
-    SELECT "96-100" AS GroupName,
-           COUNT( * ) AS Count
-    FROM streamWithTitle
-    WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
-
-
-
-LOOP (I, 50)
-{
-stats =
-    SELECT *
-    FROM stats
-    UNION ALL
-    SELECT (96 - (@@I@@) * 4).ToString() + "-" + (100 - (@@I@@) * 4).ToString() AS GroupName,
-           COUNT( * ) AS Count
-    FROM streamWithTitle
-    WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
-
-samples =
-    SELECT *
-    FROM samples
-    UNION ALL
-    SELECT TOP 30 *,
-           (96 - (@@I@@) * 4).ToString() + "-" + (100 - (@@I@@) * 4).ToString() AS GroupName
-    FROM streamWithTitle
-    WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
-
-   samplesWithTitle =
-    SELECT a.Key,
-           a.PKey,
-           a.MUrl,
-           a.PUrl,
-           a.MDomain,
-           a.PDomain,
-           a.ProdThumbnailKey,
-           a.PrismyV3Rank,
-           b.TextFeatures__PageTitle AS Title
-    FROM samples AS a
-    LEFT JOIN
-        LwNodule AS b
-        ON a.Key == b.Key
-           AND a.PKey == b.PageKey;
-}
+OUTPUT
+TO "/local/users/v-yangtian/BucketVisualizationPortal/samples.tsv"
+USING DefaultTextOutputter(outputHeader: true);
 
 stats =
     SELECT *,
@@ -85,10 +80,6 @@ stats =
     CROSS JOIN
         totalCount AS b;
 
-OUTPUT stats
+OUTPUT
 TO "/local/users/v-yangtian/BucketVisualizationPortal/stats.tsv"
-USING DefaultTextOutputter(outputHeader: true);
-
-OUTPUT samples
-TO "/local/users/v-yangtian/BucketVisualizationPortal/samples.tsv"
 USING DefaultTextOutputter(outputHeader: true);
