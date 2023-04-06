@@ -3,9 +3,9 @@ REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.B
 
 #DECLARE InputFilePath string = "/azureml/ceca08b6-bf05-4480-9b06-1ab94cf35ad4/OutputPath/2023-03-20/matrix_predictions_for_allusers.tsv";
 
-#DECLARE StatsBaseFolder string = "/local/Prod/Image/Prism/MMvis/Stats";
+#DECLARE StatsBaseFolder string = "/local/Prod/Image/Prism/MMvis/PrismyV3NonDefect/Stats";
 
-#DECLARE SamplesBaseFolder string = "/local/Prod/Image/Prism/MMvis/Samples";
+#DECLARE SamplesBaseFolder string = "/local/Prod/Image/Prism/MMvis/PrismyV3NonDefect/Samples";
 
 #DECLARE OutputStatsFilePath string = @StatsBaseFolder + @InputFilePath.Replace("/", "_");
 
