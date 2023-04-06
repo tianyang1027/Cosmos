@@ -73,6 +73,8 @@
     <Script Include="PIVOT.script" />
     <Script Include="ouput_latest_week_dedupe.script" />
     <Script Include="ouput_latest_week.script" />
+    <Script Include="PrismyV3NonDefect.script" />
+    <Script Include="PrismyV3Rank.script" />
     <Script Include="Scope2.script">
       <RemoveUselessParameters>False</RemoveUselessParameters>
       <ScopeOldParameters>In_Nodule=(\"/local/users/v-yingchen/Fidelity/Production.Nodule.Report.NormalizeInIndex.2022_12_05.tsv\")</ScopeOldParameters>
@@ -196,6 +198,12 @@
     </ScriptCode>
     <ScriptCode Include="ouput_latest_week.script.cs">
       <DependentUpon>ouput_latest_week.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="PrismyV3NonDefect.script.cs">
+      <DependentUpon>PrismyV3NonDefect.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="PrismyV3Rank.script.cs">
+      <DependentUpon>PrismyV3Rank.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="Scope2.script.cs">
       <DependentUpon>Scope2.script</DependentUpon>
