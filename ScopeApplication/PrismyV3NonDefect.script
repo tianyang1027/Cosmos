@@ -1,11 +1,21 @@
 ﻿
 REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bing.HashUtil.dll";
 
+#DECLARE InputFilePath string = "/azureml/ceca08b6-bf05-4480-9b06-1ab94cf35ad4/OutputPath/2023-03-20/matrix_predictions_for_allusers.tsv";
+
+#DECLARE StatsBaseFolder string = "/local/Prod/Image/Prism/MMvis/Stats";
+
+#DECLARE SamplesBaseFolder string = "/local/Prod/Image/Prism/MMvis/Samples";
+
+#DECLARE OutputStatsFilePath string = @StatsBaseFolder + @InputFilePath.Replace("/", "_");
+
+#DECLARE OutputSamplesFilePath string = @SamplesBaseFolder + @InputFilePath.Replace("/", "_");
+
 CFDocs =
     EXTRACT UserId : string,
             RecoItemList : string,
             ScoreList : string
-    FROM @"/azureml/ceca08b6-bf05-4480-9b06-1ab94cf35ad4/OutputPath/2023-03-20/matrix_predictions_for_allusers.tsv"
+    FROM @InputFilePath
     USING DefaultTextExtractor(skipFirstNRows : 1);
 
 CFDocs =
@@ -99,7 +109,7 @@ samplesWithTitle =
            AND a.PKey == b.PageKey;
 
 OUTPUT
-TO "/local/users/v-yangtian/mmvis/matrix_predictions_for_allusers_mmvis_prismyv3nondefect_samples.tsv"
+TO @OutputSamplesFilePath
 USING DefaultTextOutputter(outputHeader: true);
 
 stats =
@@ -110,7 +120,7 @@ stats =
         totalCount AS b;
 
 OUTPUT
-TO "/local/users/v-yangtian/mmvis/matrix_predictions_for_allusers_mmvis_prismyv3nondefect_stats.tsv"
+TO @OutputStatsFilePath
 USING DefaultTextOutputter(outputHeader: true);
 
 #CS
