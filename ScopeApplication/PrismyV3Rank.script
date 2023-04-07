@@ -5,7 +5,7 @@ REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.B
 #DECLARE BaseFolder string = "/local/Prod/Image/Prism/MMvis/PrismyV3Rank/";
 #DECLARE OutMMVis string = @BaseFolder + @InputFilePath.Replace("/", "_");
 #DECLARE OutOriginalStream string = @BaseFolder + "OriginalStream/" + @InputFilePath.Replace("/", "_");
-#DECLARE SampleNum int = 50;
+#DECLARE SamplesNum int = 50;
 
 CFDocs =
     EXTRACT UserId : string,
@@ -46,21 +46,21 @@ USING DefaultTextOutputter(outputHeader: true);
 bucket =
     SELECT *,
            "96_100" AS BucketName
-    FROM stream
+    FROM original_stream
     WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
 
 samples =
     SELECT *
-    FROM bucket SAMPLE ANY (@SampleNum);
+    FROM bucket SAMPLE ANY (@SamplesNum);
 
 totalCount =
     SELECT COUNT( * ) AS totalCount
-    FROM stream;
+    FROM original_stream;
 
 stats =
     SELECT "96_100" AS BucketName,
            COUNT( * ) AS Count
-    FROM stream
+    FROM original_stream
     WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
 
 LOOP (I, 50)
@@ -71,13 +71,13 @@ stats =
     UNION ALL
     SELECT (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName,
            COUNT( * ) AS Count
-    FROM stream
+    FROM original_stream
     WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
 
 bucket =
     SELECT *,
            (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName
-    FROM stream
+    FROM original_stream
     WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
 
 samples =
@@ -85,7 +85,7 @@ samples =
     FROM samples
     UNION ALL
     SELECT *
-    FROM bucket SAMPLE ANY (@SampleNum);
+    FROM bucket SAMPLE ANY (@SamplesNum);
 }
 
 LwNodule =
