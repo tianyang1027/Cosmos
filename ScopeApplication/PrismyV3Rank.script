@@ -3,14 +3,10 @@ REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.B
 
 #DECLARE InputFilePath string = "/azureml/ceca08b6-bf05-4480-9b06-1ab94cf35ad4/OutputPath/2023-03-20/matrix_predictions_for_allusers.tsv";
 
-#DECLARE StatsBaseFolder string = "/local/Prod/Image/Prism/MMvis/PrismyV3Rank/Stats/";
-
-#DECLARE SamplesBaseFolder string = "/local/Prod/Image/Prism/MMvis/PrismyV3Rank/Samples/";
-
-#DECLARE OutputStatsFilePath string = @StatsBaseFolder + @InputFilePath.Replace("/", "_");
-
-#DECLARE OutputSamplesFilePath string = @SamplesBaseFolder + @InputFilePath.Replace("/", "_");
-
+#DECLARE BaseFolder string = "/local/Prod/Image/Prism/MMvis/PrismyV3Rank/";
+#DECLARE OutMMVis string = @BaseFolder + @InputFilePath.Replace("/", "_");
+#DECLARE OutOriginalStream string = @BaseFolder + "OriginalStream/" + @InputFilePath.Replace("/", "_");
+#DECLARE SampleNum int = 50;
 
 CFDocs =
     EXTRACT UserId : string,
@@ -37,12 +33,16 @@ Rank =
     SELECT *,
            GetDocKeyBase64(MUrl, PUrl) AS DocId;
 
-stream =
-    SELECT b.*
+original_stream =
+    SELECT DISTINCT b.*
     FROM CFDocs AS a
     INNER JOIN
         Rank AS b
         ON a.DocId == b.DocId;
+
+OUTPUT
+TO @OutOriginalStream
+USING DefaultTextOutputter(outputHeader: true);
 
 bucket =
     SELECT *,
@@ -52,7 +52,7 @@ bucket =
 
 samples =
     SELECT *
-    FROM bucket SAMPLE ANY (50);
+    FROM bucket SAMPLE ANY (@SampleNum);
 
 totalCount =
     SELECT COUNT( * ) AS totalCount
@@ -86,7 +86,7 @@ samples =
     FROM samples
     UNION ALL
     SELECT *
-    FROM bucket SAMPLE ANY (50);
+    FROM bucket SAMPLE ANY (@SampleNum);
 }
 
 LwNodule =
@@ -102,16 +102,13 @@ samplesWithTitle =
            a.PDomain,
            a.ProdThumbnailKey,
            a.PrismyV3Rank,
+           a.PrismyV3NonDefect
            b.TextFeatures__PageTitle AS Title
     FROM samples AS a
     LEFT JOIN
         LwNodule AS b
         ON a.Key == b.Key
            AND a.PKey == b.PageKey;
-
-OUTPUT
-TO @OutputSamplesFilePath
-USING DefaultTextOutputter(outputHeader: true);
 
 stats =
     SELECT *,
@@ -120,8 +117,27 @@ stats =
     CROSS JOIN
         totalCount AS b;
 
+mmvis =
+    SELECT a.BucketName,
+           a.Key,
+           a.PKey,
+           a.MUrl,
+           a.PUrl,
+           a.MDomain,
+           a.PDomain,
+           a.ProdThumbnailKey,
+           a.PrismyV3Rank,
+           a.PrismyV3NonDefect
+           a.Title,
+           b.Percentage,
+           @SamplesNum AS SampleNum
+    FROM samplesWithTitle AS a
+    LEFT JOIN
+        stats AS b
+        ON a.BucketName == b.BucketName;
+
 OUTPUT
-TO @OutputStatsFilePath
+TO @OutMMVis
 USING DefaultTextOutputter(outputHeader: true);
 
 #CS
