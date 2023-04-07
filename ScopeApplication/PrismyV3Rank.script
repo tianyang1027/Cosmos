@@ -2,7 +2,6 @@
 REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bing.HashUtil.dll";
 
 #DECLARE InputFilePath string = "/azureml/ceca08b6-bf05-4480-9b06-1ab94cf35ad4/OutputPath/2023-03-20/matrix_predictions_for_allusers.tsv";
-
 #DECLARE BaseFolder string = "/local/Prod/Image/Prism/MMvis/PrismyV3Rank/";
 #DECLARE OutMMVis string = @BaseFolder + @InputFilePath.Replace("/", "_");
 #DECLARE OutOriginalStream string = @BaseFolder + "OriginalStream/" + @InputFilePath.Replace("/", "_");
@@ -130,7 +129,7 @@ mmvis =
            a.PrismyV3NonDefect
            a.Title,
            b.Percentage,
-           @SamplesNum AS SampleNum
+           @SamplesNum AS SamplesNum
     FROM samplesWithTitle AS a
     LEFT JOIN
         stats AS b
