@@ -101,7 +101,7 @@ samplesWithTitle =
            a.MDomain,
            a.PDomain,
            a.ProdThumbnailKey,
-           a.PrismyV3Rank
+           a.PrismyV3Rank,
            a.PrismyV3NonDefect,
            b.TextFeatures__PageTitle AS Title
     FROM samples AS a
