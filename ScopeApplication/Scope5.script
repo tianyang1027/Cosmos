@@ -1,0 +1,16 @@
+﻿
+
+index =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/2023-04-07/PrismProdRank_0_PPE.ss"
+    );
+
+targetIndex =
+    SELECT *
+    FROM index
+    WHERE Key == "++/9/vFdOu9EBA";
+
+
+OUTPUT TO SSTREAM "/local/users/v-yangtian/targetIndex1.ss";

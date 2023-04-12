@@ -12,19 +12,14 @@ CurrentIndexV1 =
     SELECT *
     FROM
     (
-        SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/CurrentIndex/2023_02_18/CurrentIndexV1.ss"
+        SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/CurrentIndex/2023_04_10/CurrentIndexV1.ss"
     );
 
 
 imagesList =
     SELECT *
     FROM CurrentIndexV1
-    WHERE MUrl IN("https://i.dailymail.co.uk/i/pix/2016/10/10/14/3943441700000578-0-image-a-98_1476106248711.jpg",
-          "https://i2-prod.mirror.co.uk/incoming/article5467857.ece/ALTERNATES/s1227b/Seventeen-month-old-Colby-Ramos-Francis.jpg");
-
-
-OUTPUT
-TO SSTREAM "/local/users/v-yangtian/2023_02_19/image.ss";
+    WHERE MUrl == "http://www.iran-update.com/media/k2/items/cache/6a501db6788f8bc3147fbec59d7a4924_L.jpg";
 
 detrimental_feature =
     EXTRACT murl : string,
@@ -34,14 +29,8 @@ detrimental_feature =
             Vector : string,
             TenantId : string,
             Date : string
-    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_19/detrimental_feature.tsv"
+    FROM "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_04_09/detrimental_feature.tsv"
     USING DefaultTextExtractor();
-
-detrimental_feature =
-    SELECT *
-    FROM detrimental_feature
-    WHERE murl NOT IN("https://i.dailymail.co.uk/i/pix/2016/10/10/14/3943441700000578-0-image-a-98_1476106248711.jpg",
-          "https://i2-prod.mirror.co.uk/incoming/article5467857.ece/ALTERNATES/s1227b/Seventeen-month-old-Colby-Ramos-Francis.jpg");
 
 RacyCandidate =
     SELECT MUrl AS murl,
@@ -76,12 +65,9 @@ delta_detrimental_doc =
            Utils.GetDocKeyBase64(murl, purl) AS DocKey,
            Utils.GetFullVector(SIEMv3ImageVectorNormalized, SIEMv3TextVector) AS Vector,
            "PrismImage" AS TenantId,
-           "2/19/2023 11:59:59 PM" AS Date
+           "4/11/2023 11:59:59 PM" AS Date
     FROM NoduleListWithNormalizedImagevector
     WHERE !String.IsNullOrEmpty(SIEMv3ImageVectorNormalized) && !String.IsNullOrEmpty(SIEMv3TextVector);
-
-OUTPUT
-TO SSTREAM "/local/users/v-yangtian/2023_02_19/delta_detrimental_doc.ss";
 
 
 result =
@@ -92,7 +78,7 @@ result =
     FROM delta_detrimental_doc;
 
 OUTPUT
-TO "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_02_19/detrimental_feature.tsv"
+TO "/shares/SegmentRelevance/SegmentRelevance/Prod/Image/SparkSchedulingSupport/Prism/HitApp/RacyFeature/2023_04_09/detrimental_feature.tsv"
 USING DefaultTextOutputter(outputHeader: true);
 
 #CS

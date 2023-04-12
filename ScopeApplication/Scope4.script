@@ -1,18 +1,16 @@
 ﻿
 
+index =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Prism/2023-04-07/PrismProdRank_2_PPE.ss"
+    );
 
-data =
-    EXTRACT Key,
-            PKey,
-            image_url,
-            page_url,
-            title,
-            FastTextLang,
-            stamped_lang,
-            has_025_non_ascii
+targetIndex =
+    SELECT *
+    FROM index
+    WHERE PKey LIKE "%UrZ6ZcCvzOGRBhL7M2hRlg%" OR Key LIKE "%UrZ6ZcCvzOGRBhL7M2hRlg%";
 
-    FROM @"C:\Users\v-yangtian\Downloads\samples_wrong_lang.tsv"
-    USING DefaultTextExtractor();
 
-OUTPUT
-TO @"C:\Users\v-yangtian\Downloads\samples_wrong_lang.txt";
+OUTPUT TO SSTREAM "/local/users/v-yangtian/targetIndex.ss";

@@ -27,13 +27,13 @@ CFDocs =
     WHERE !string.IsNullOrEmpty(DocId);
 
 Rank =
-    SSTREAM "/local/Prod/Image/Prism/2023-03-26/PrismProdRank_0_PPE_v3.ss";
+    SSTREAM "/local/Prod/Image/Prism/2023-04-10/PrismProdRank_0_PPE_v3.ss";
 
 Rank =
     SELECT *,
            GetDocKeyBase64(MUrl, PUrl) AS DocId;
 
-stream =
+original_stream =
     SELECT DISTINCT b.*
     FROM CFDocs AS a
     INNER JOIN
@@ -45,9 +45,9 @@ TO @OutOriginalStream
 USING DefaultTextOutputter(outputHeader: true);
 
 bucket =
-    SELECT *,
-           "96_100" AS BucketName
-    FROM stream
+    SELECT DISTINCT *,
+                    "96_100" AS BucketName
+    FROM original_stream
     WHERE PrismyV3NonDefect > 96 AND PrismyV3NonDefect <= 100;
 
 samples =
@@ -56,12 +56,12 @@ samples =
 
 totalCount =
     SELECT COUNT( * ) AS totalCount
-    FROM stream;
+    FROM original_stream;
 
 stats =
     SELECT "96_100" AS BucketName,
            COUNT( * ) AS Count
-    FROM stream
+    FROM original_stream
     WHERE PrismyV3NonDefect > 96 AND PrismyV3NonDefect <= 100;
 
 LOOP (I, 50)
@@ -72,13 +72,13 @@ stats =
     UNION ALL
     SELECT (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName,
            COUNT( * ) AS Count
-    FROM stream
+    FROM original_stream
     WHERE PrismyV3NonDefect > 96 - (@@I@@) * 4 AND PrismyV3NonDefect <= 100 - (@@I@@) * 4;
 
 bucket =
-    SELECT *,
-           (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName
-    FROM stream
+    SELECT DISTINCT *,
+                    (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName
+    FROM original_stream
     WHERE PrismyV3NonDefect > 96 - (@@I@@) * 4 AND PrismyV3NonDefect <= 100 - (@@I@@) * 4;
 
 samples =
@@ -90,7 +90,7 @@ samples =
 }
 
 LwNodule =
-    SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/2023_04_03/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
+   SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/2023_04_09/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
 
 samplesWithTitle =
     SELECT a.BucketName,

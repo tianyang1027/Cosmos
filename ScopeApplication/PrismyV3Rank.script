@@ -26,7 +26,7 @@ CFDocs =
     WHERE !string.IsNullOrEmpty(DocId);
 
 Rank =
-    SSTREAM "/local/Prod/Image/Prism/2023-03-26/PrismProdRank_0_PPE_v3.ss";
+    SSTREAM "/local/Prod/Image/Prism/2023-04-10/PrismProdRank_0_PPE_v3.ss";
 
 Rank =
     SELECT *,
@@ -44,8 +44,8 @@ TO @OutOriginalStream
 USING DefaultTextOutputter(outputHeader: true);
 
 bucket =
-    SELECT *,
-           "96_100" AS BucketName
+    SELECT DISTINCT *,
+                    "96_100" AS BucketName
     FROM original_stream
     WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
 
@@ -75,8 +75,8 @@ stats =
     WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
 
 bucket =
-    SELECT *,
-           (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName
+    SELECT DISTINCT *,
+                    (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName
     FROM original_stream
     WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
 
@@ -89,7 +89,7 @@ samples =
 }
 
 LwNodule =
-    SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/2023_04_03/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
+    SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/2023_04_09/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
 
 samplesWithTitle =
     SELECT a.BucketName,
