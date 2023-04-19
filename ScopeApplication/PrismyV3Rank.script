@@ -126,23 +126,16 @@ samples =
     SELECT *
     FROM bucket SAMPLE ANY (@SamplesNum);
 }
-
 lwText =
     SELECT DISTINCT Key,
                     PageKey,
                     TextFeatures__PageTitle AS PageTitle
-    FROM
-    (
-        SSTREAM @In_LwTextTensorV3
-    )
+    FROM(SSTREAM @In_LwTextTensorV3)
     UNION
     SELECT DISTINCT Key,
                     PageKey,
                     TextFeatures__PageTitle AS PageTitle
-    FROM
-    (
-        SSTREAM @In_LwTextTensorV5
-    )
+    FROM(SSTREAM @In_LwTextTensorV5)
     UNION
     SELECT DISTINCT Key,
                     PageKey,
