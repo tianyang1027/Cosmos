@@ -132,18 +132,12 @@ lwText =
     SELECT DISTINCT Key,
                     PageKey,
                     TextFeatures__PageTitle AS PageTitle
-    FROM
-    (
-        SSTREAM @In_LwTextTensorV3
-    )
+    FROM(SSTREAM @In_LwTextTensorV3)
     UNION
     SELECT DISTINCT Key,
                     PageKey,
                     TextFeatures__PageTitle AS PageTitle
-    FROM
-    (
-        SSTREAM @In_LwTextTensorV5
-    )
+    FROM(SSTREAM @In_LwTextTensorV5)
     UNION
     SELECT DISTINCT Key,
                     PageKey,
@@ -169,7 +163,7 @@ samplesWithTitle =
            a.ProdThumbnailKey,
            a.PrismyV3Rank,
            a.PrismyV3NonDefect,
-           b.TextFeatures__PageTitle AS Title
+           b.PageTitle AS Title
     FROM samples AS a
     LEFT JOIN
         lwText AS b
