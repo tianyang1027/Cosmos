@@ -7,6 +7,9 @@ REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.B
 #DECLARE OutMMVis string = @BaseFolder + @InputFilePath.Replace("/", "_");
 #DECLARE OutOriginalStream string = @BaseFolder + "OriginalStream/" + @InputFilePath.Replace("/", "_");
 #DECLARE SamplesNum int = 50;
+#DECLARE In_LwTextTensorV3 string = @"/local/Prod/Image/Prism/IndexGen/V3/" + @Par_LwTextDate + "/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
+#DECLARE In_LwTextTensorV5 string = @"/local/Prod/Image/Prism/IndexGen/V5/" + @Par_LwTextDate + "/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
+#DECLARE In_LwTextTensorV6 string = @"/local/Prod/Image/Prism/IndexGen/V6/" + @Par_LwTextDate + "/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
 
 CFDocs =
     EXTRACT UserId : string,

@@ -6,12 +6,16 @@ REFERENCE @"/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.B
 #DECLARE OutMMVis string = @BaseFolder + @InputFilePath.Replace("/", "_");
 #DECLARE OutOriginalStream string = @BaseFolder + "OriginalStream/" + @InputFilePath.Replace("/", "_");
 #DECLARE SamplesNum int = 50;
+#DECLARE Par_LwTextDate string = "2023_04_17";
+#DECLARE In_LwTextTensorV3 string = @"/local/Prod/Image/Prism/IndexGen/V3/" + @Par_LwTextDate + "/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
+#DECLARE In_LwTextTensorV5 string = @"/local/Prod/Image/Prism/IndexGen/V5/" + @Par_LwTextDate + "/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
+#DECLARE In_LwTextTensorV6 string = @"/local/Prod/Image/Prism/IndexGen/V6/" + @Par_LwTextDate + "/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
 
 CFDocs =
     EXTRACT UserId : string,
             RecoItemList : string,
             ScoreList : string
-    FROM @"/azureml/ceca08b6-bf05-4480-9b06-1ab94cf35ad4/OutputPath/2023-03-20/matrix_predictions_for_allusers.tsv"
+    FROM @InputFilePath
     USING DefaultTextExtractor(skipFirstNRows : 1);
 
 CFDocs =
@@ -26,26 +30,61 @@ CFDocs =
     WHERE !string.IsNullOrEmpty(DocId);
 
 Rank =
-    SSTREAM "/local/Prod/Image/Prism/2023-04-10/PrismProdRank_0_PPE_v3.ss";
+    SSTREAM "/local/Prod/Image/Prism/2023-04-16/PrismProdRank_0_PPE_v3.ss";
 
 Rank =
     SELECT *,
            GetDocKeyBase64(MUrl, PUrl) AS DocId;
 
 original_stream =
-    SELECT DISTINCT b.*
+    SELECT b.*
     FROM CFDocs AS a
     INNER JOIN
         Rank AS b
-        ON a.DocId == b.DocId;
+        ON a.DocId == b.DocId
+    GROUP BY Key,
+             PKey,
+             MUrl,
+             PUrl,
+             MDomain,
+             PDomain,
+             Signature,
+             Language,
+             Country,
+             Width,
+             Height,
+             AspectRatio,
+             ProdThumbnailKey,
+             Score,
+             AdjustedRank,
+             OrgRank,
+             DupSignature,
+             PinterestImage,
+             HasPinterestContent,
+             Clicked,
+             HasClickedContent,
+             DupCnt,
+             NonPinterestDupCnt,
+             RepinCount,
+             PrismyScore,
+             PrismyV3NonDefect,
+             PrismyV3Rank,
+             AdultScore,
+             RacyScore,
+             GruesomeScore,
+             WatermarkProbability,
+             FaceSatoriIdConf,
+             Source,
+             AdjustedPrismyScore,
+             DocId;
 
 OUTPUT
 TO @OutOriginalStream
 USING DefaultTextOutputter(outputHeader: true);
 
 bucket =
-    SELECT DISTINCT *,
-                    "96_100" AS BucketName
+    SELECT *,
+           "96_100" AS BucketName
     FROM original_stream
     WHERE PrismyV3Rank > 96 AND PrismyV3Rank <= 100;
 
@@ -68,28 +107,55 @@ LOOP (I, 50)
 stats =
     SELECT *
     FROM stats
-    UNION ALL
+    UNION
     SELECT (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName,
            COUNT( * ) AS Count
     FROM original_stream
     WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
 
 bucket =
-    SELECT DISTINCT *,
-                    (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName
+    SELECT *,
+           (96 - (@@I@@) * 4).ToString() + "_" + (100 - (@@I@@) * 4).ToString() AS BucketName
     FROM original_stream
     WHERE PrismyV3Rank > 96 - (@@I@@) * 4 AND PrismyV3Rank <= 100 - (@@I@@) * 4;
 
 samples =
     SELECT *
     FROM samples
-    UNION ALL
+    UNION
     SELECT *
     FROM bucket SAMPLE ANY (@SamplesNum);
 }
 
-LwNodule =
-    SSTREAM "/local/Prod/Image/Prism/IndexGen/V3/2023_04_09/Sensors/ExtractedLwTextNoduleFeaturesSensor.ss";
+lwText =
+    SELECT DISTINCT Key,
+                    PageKey,
+                    TextFeatures__PageTitle AS PageTitle
+    FROM
+    (
+        SSTREAM @In_LwTextTensorV3
+    )
+    UNION
+    SELECT DISTINCT Key,
+                    PageKey,
+                    TextFeatures__PageTitle AS PageTitle
+    FROM
+    (
+        SSTREAM @In_LwTextTensorV5
+    )
+    UNION
+    SELECT DISTINCT Key,
+                    PageKey,
+                    TextFeatures__PageTitle AS PageTitle
+    FROM (SSTREAM @In_LwTextTensorV6);
+
+lwText =
+    SELECT Key,
+           PageKey,
+           ANY_VALUE(PageTitle) AS PageTitle
+    FROM lwText
+    GROUP BY Key,
+             PageKey;
 
 samplesWithTitle =
     SELECT a.BucketName,
@@ -102,10 +168,10 @@ samplesWithTitle =
            a.ProdThumbnailKey,
            a.PrismyV3Rank,
            a.PrismyV3NonDefect,
-           b.TextFeatures__PageTitle AS Title
+           b.PageTitle AS Title
     FROM samples AS a
     LEFT JOIN
-        LwNodule AS b
+        lwText AS b
         ON a.Key == b.Key
            AND a.PKey == b.PageKey;
 
