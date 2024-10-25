@@ -34,6 +34,10 @@
     <Script Include="DebugTool_PPE.script" />
     <Script Include="DebugTool_PROD.script" />
     <Script Include="FileSetsSample.script" />
+    <Script Include="Freshness\ActiveIndex\DiscoveryNodule.script" />
+    <Script Include="Freshness\ActiveIndex\Image.script" />
+    <Script Include="Freshness\ActiveIndex\Nodule.script" />
+    <Script Include="Freshness\ActiveIndex\Page.script" />
     <Script Include="Generate50kSamples.script" />
     <Script Include="Generate_Detrimental.script" />
     <Script Include="Generate_DomainantColorBackgroundRankFile.script" />
@@ -108,6 +112,18 @@
     </ScriptCode>
     <ScriptCode Include="FileSetsSample.script.cs">
       <DependentUpon>FileSetsSample.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Freshness\ActiveIndex\DiscoveryNodule.script.cs">
+      <DependentUpon>Freshness\ActiveIndex\DiscoveryNodule.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Freshness\ActiveIndex\Image.script.cs">
+      <DependentUpon>Freshness\ActiveIndex\Image.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Freshness\ActiveIndex\Nodule.script.cs">
+      <DependentUpon>Freshness\ActiveIndex\Nodule.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Freshness\ActiveIndex\Page.script.cs">
+      <DependentUpon>Freshness\ActiveIndex\Page.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="Generate50kSamples.script.cs">
       <DependentUpon>Generate50kSamples.script</DependentUpon>
@@ -234,8 +250,10 @@
     </ScriptCode>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Freshness\ActiveIndex" />
     <Folder Include="HitApp_New" />
     <Folder Include="HIt App_Old" />
+    <Folder Include="Freshness" />
   </ItemGroup>
   <Import Project="$(AppData)\Microsoft\ScopeStudio\MsBuild\1.0\Scope.targets" />
 </Project>

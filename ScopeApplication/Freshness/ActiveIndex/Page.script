@@ -1,0 +1,49 @@
+﻿REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+RESOURCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchWebLoad\RetroIndex\bin\ManagedUrlNormalizer.dll";
+RESOURCE  @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchWebLoad\RetroIndex\bin\NativeUrlNormalizer.dll";
+RESOURCE  @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchWebLoad\RetroIndex\bin\msvcrt.dll";
+RESOURCE  @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchWebLoad\RetroIndex\bin\msvcp100.dll";
+RESOURCE  @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchWebLoad\RetroIndex\bin\msvcr100.dll";
+
+#DECLARE In_Page       string = @"/local/Prod/Image/Repository/Snapshot/Page/2024_10_23/Image_Page_Metadata.ss";
+#DECLARE In_PageSchema string = @"/local/Prod/Image/Repository/Snapshot/Page/2024_10_23/Image_Page_Schema.xml";
+#DECLARE SchemaPath string = "Metadata:"+Path.GetFileName(@In_PageSchema);
+
+RESOURCE @In_PageSchema;
+
+InputStream = SSTREAM @"/local/Prod/Image/Repository/ActiveDocsCombined/WithDups/Delta60B_2024_10_22.ss";
+InputStream = SELECT TOP 1000 * FROM InputStream;
+
+InputStream =
+        SELECT DISTINCT RetroIndex.UrlNormalizer.GetNormalizedStringNoThrow(Encoding.UTF8.GetBytes(PageUrl)) AS Url
+        FROM InputStream;
+
+PageSnapshot =
+        SSTREAM @In_Page;
+
+PageSnapshot =
+        SELECT *
+        FROM PageSnapshot
+        LEFT SEMIJOIN InputStream ON PageSnapshot.Url == InputStream.Url;  
+       
+PageSnapshot =
+        PROCESS PageSnapshot
+        USING MMRV2.Core.MmrScopeTypeProcessor(
+                                    "-schemaPath", @SchemaPath,
+                                    "-outputFeatures","PageBasic__FirstReceiveDay")
+        HAVING PageBasic__FirstReceiveDay != null;                          ;
+
+Latency =                                    
+        SELECT Url, IF( PageBasic__FirstReceiveDay == null, -1, NowDate.Subtract((new DateTime(1970, 1, 1)).AddDays(PageBasic__FirstReceiveDay ?? 0).Date).Days ) AS PageAge;
+
+OUTPUT
+TO SSTREAM @"/local/users/v-yangtian/Freshness/Active_Index/freshness_page.ss";
+
+#CS
+public static DateTime NowDate = DateTime.Parse("2024-10-22");
+#ENDCS

@@ -1,0 +1,45 @@
+﻿REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+RESOURCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+
+REFERENCE @"D:\DATA\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.IndexSelection.dll";
+
+
+#DECLARE In_Nodule string = @"/local/Prod/Image/Repository/Snapshot/Discovery/Media/2024_10_22/Image_DiscoveryTable_Media_Metadata_%n.ss?serialnum=0...7";
+#DECLARE In_NoduleSchema string = @"/local/Prod/Image/Repository/Snapshot/Discovery/Media/2024_10_22/Image_DiscoveryMedia_Schema.xml";
+#DECLARE SchemaPath string = "Metadata:" + Path.GetFileName(@In_NoduleSchema);
+
+RESOURCE @In_NoduleSchema;
+
+InputStream =
+    SSTREAM @"/local/Prod/Image/Repository/ActiveDocsCombined/WithDups/Delta60B_2024_10_22.ss";
+InputStream =
+    SELECT TOP 100 *
+    FROM InputStream;
+
+Nodule =
+    SSTREAM @In_Nodule;
+
+Nodule =
+    SELECT *
+    FROM Nodule
+         LEFT SEMIJOIN
+             InputStream
+         ON Nodule.Key == InputStream.Key;
+
+rawData =
+    PROCESS Nodule
+    USING MMRV2.Core.MmrScopeTypeProcessor("-schemaPath", @SchemaPath, "-outputFeatures", "Basic__FirstReceiveDay");
+
+Latency =
+    SELECT Key,
+           IF(Basic__FirstReceiveDay == null, -1, NowDate.Subtract((new DateTime(1970, 1, 1)).AddDays(Basic__FirstReceiveDay ?? 0).Date).Days ) AS Latency ,
+           IF(Basic__FirstReceiveDay == null, 180, MMRV2.IndexSelection.SelectionUtils.GetDaysToToday(NowDate, (int)Basic__FirstReceiveDay, 180, 0)) AS MMR_FirstReceiveDay
+    FROM rawData;
+
+OUTPUT
+TO SSTREAM @"/local/users/v-yangtian/Freshness/Active_Index/freshness_image.ss";
+
+#CS
+public static DateTime NowDate = DateTime.Parse("2024-10-22");
+#ENDCS
