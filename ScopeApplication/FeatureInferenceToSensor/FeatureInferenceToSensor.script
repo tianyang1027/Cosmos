@@ -1,0 +1,72 @@
+﻿REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+RESOURCE  @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+USING MMRV2.Utility;
+USING MMRV2.Core;
+
+MODULE @"/local/DataStore/Odin.AetherModuleResources/bin/GenericIPSScopeProcessor/iuscopeprocessor.20191230.module";
+MODULE @"/local/DataStore/Odin.AetherModuleResources/bin/GenericIPSScopeProcessor/onnx.20200312.module";
+
+RESOURCE @@In_OnnxSupport@@;
+RESOURCE @@In_OnnxPipeline@@;
+RESOURCE @@In_OnnxModel@@;
+
+#DECLARE OnnxPipelineFileName string = Path.GetFileName(@@In_OnnxPipeline@@);
+#DECLARE Par_OnnxProcessor string = String.Concat("--pipeline-description=", @OnnxPipelineFileName);
+
+#DECLARE Par_Target      string = @@Par_Target@@;
+
+#DECLARE In_Candidate      string = @@In_Candidate@@;
+#DECLARE In_Features       string = @@In_Features@@;
+
+#DECLARE Out_Sensor       string = @@Out_Sensor@@;
+
+Candidate = 
+    SELECT * 
+    FROM (SSTREAM @In_Candidate)
+#IF(@Par_Target == "Attractiveness" )
+    WHERE  AttractiveScore_Required 
+#ENDIF
+;
+
+Features = SSTREAM @In_Features;
+Features =
+    SELECT * FROM Features
+    LEFT SEMIJOIN Candidate ON Features.Key == Candidate.Key;
+
+Score =
+    PROCESS Features
+    PRODUCE Key,
+            MediaMD5,
+            Score
+    USING IUPipelineScopeProcessor(
+            "--input=AVEV6Vector_Binary:Binary, Height:Binary, Width:Binary", 
+            "--output=Score:Float", 
+            @Par_OnnxProcessor
+    );
+
+ImageDedup = 
+    SELECT Key,
+           MediaMD5,
+           FIRST(Score) AS Score
+    FROM Score
+    WHERE Score != null
+    GROUP BY Key, MediaMD5;
+
+Sensors = 
+    SELECT Key,
+           s_updateTime AS UpdateTime,
+           MediaMD5,
+#IF(@Par_Target == "Attractiveness" )
+           Score AS MediaFeature__AttractivenessScore
+#ENDIF
+    ;
+
+OUTPUT Sensors TO SSTREAM @Out_Sensor
+HASH CLUSTERED BY Key INTO 2000
+SORTED BY Key;
+
+#CS
+public static UInt32 s_updateTime = MmrHelper.DateToMmrTime(DateTime.Parse(@@Par_Date@@));
+#ENDCS
