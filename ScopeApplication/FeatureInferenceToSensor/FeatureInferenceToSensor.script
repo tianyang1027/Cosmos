@@ -63,7 +63,7 @@ Features =
 
 Score =
     PROCESS Features
-    USING AttractivenessProcessor("attv3_tail.onnx", "1024")
+    USING AttractivenessProcessor("attv3_tail.onnx", "2048")
     WHERE AVEV6Vector_Binary != null;
 
 Score =
@@ -110,63 +110,6 @@ using System.Threading.Tasks;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using OnnxWrapper;
-
-public class Utils
-{
-    public static int float2int(float score)
-    {
-        if (float.IsNaN(score) || score < 0 || score > 1)
-        {
-            return (int)-1;
-        }
-        return (int)(score * 255);
-    }
-
-    public static float[] BinaryToFloatArray(byte[] bytes)
-    {
-        if (bytes == null) return null;
-        float[] values = new float[bytes.Length / sizeof(float)];
-        Buffer.BlockCopy(bytes, 0, values, 0, bytes.Length);
-        return values;
-    }
-
-
-    public static byte[] FloatArray2Bytes(float[] values)
-    {
-        byte[] array = new byte[values.Length * 4];
-        Buffer.BlockCopy(values, 0, array, 0, array.Length);
-        return array;
-    }
-    public static long GetTimestamp()
-    {
-        long timeStamp = DateTimeOffset.Now.ToUnixTimeSeconds();
-        return timeStamp;
-    }
-    public static bool IsTimestampExpired(long timestamp)
-    {
-        long curTimeStamp = DateTimeOffset.Now.ToUnixTimeSeconds();
-        long duration = 2592000; //30 * 24 * 60 * 60
-        long diff = curTimeStamp - timestamp;
-        return diff >= duration;
-    }
-    public static string convertToString(float[] values)
-    {
-        if (values == null) return "";
-        string result = "";
-        foreach (var val in values)
-        {
-            result += Convert.ToString(val) + ",";
-        }
-        return result.TrimEnd(',');
-    }
-    public static string convertTimeStampToString(long timeStamp)
-    {
-        System.DateTime startTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1));
-        DateTime dt = startTime.AddSeconds(timeStamp);
-        return dt.ToString("yyyy/MM/dd HH:mm:ss:ffff");
-    }
-
-}
 
 public class AttractivenessRow
 {
