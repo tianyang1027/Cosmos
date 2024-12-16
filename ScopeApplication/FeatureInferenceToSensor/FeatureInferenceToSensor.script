@@ -1,72 +1,241 @@
 ﻿REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
 REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
-RESOURCE  @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+RESOURCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
 REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/VideoRelevance/enUS/VideoTextAdult/binaries/OrcaOnnx/Microsoft.ML.OnnxRuntime.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/VideoRelevance/enUS/VideoTextAdult/binaries/OrcaOnnx/System.Buffers.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/VideoRelevance/enUS/VideoTextAdult/binaries/OrcaOnnx/System.Diagnostics.DiagnosticSource.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/VideoRelevance/enUS/VideoTextAdult/binaries/OrcaOnnx/System.Memory.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/VideoRelevance/enUS/VideoTextAdult/binaries/OrcaOnnx/System.Numerics.Vectors.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/VideoRelevance/enUS/VideoTextAdult/binaries/OrcaOnnx/System.Runtime.CompilerServices.Unsafe.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/ImageAdultBlocking/DUIV4/Models/VisionModel/OnnxRunner.dll";
+RESOURCE "/shares/SegmentRelevance/SegmentRelevance/VideoRelevance/enUS/VideoTextAdult/binaries/OrcaOnnx/onnxruntime.dll";
 USING MMRV2.Utility;
 USING MMRV2.Core;
 
 MODULE @"/local/DataStore/Odin.AetherModuleResources/bin/GenericIPSScopeProcessor/iuscopeprocessor.20191230.module";
 MODULE @"/local/DataStore/Odin.AetherModuleResources/bin/GenericIPSScopeProcessor/onnx.20200312.module";
 
-RESOURCE @@In_OnnxSupport@@;
-RESOURCE @@In_OnnxPipeline@@;
-RESOURCE @@In_OnnxModel@@;
+RESOURCE "/local/Prod/Image/Selection/OnnxModel/LotusWrapper.dll";
+RESOURCE "/local/Prod/Image/Selection/OnnxModel/Attractiveness/pipeline_attv3_tail_feat_to_score.txt";
+RESOURCE "/local/Prod/Image/Selection/OnnxModel/Attractiveness/attv3_tail.onnx";
 
-#DECLARE OnnxPipelineFileName string = Path.GetFileName(@@In_OnnxPipeline@@);
+#DECLARE OnnxPipelineFileName string = Path.GetFileName("/local/Prod/Image/Selection/OnnxModel/Attractiveness/pipeline_attv3_tail_feat_to_score.txt");
 #DECLARE Par_OnnxProcessor string = String.Concat("--pipeline-description=", @OnnxPipelineFileName);
 
-#DECLARE Par_Target      string = @@Par_Target@@;
+#DECLARE Par_Target string = "Attractiveness";
 
-#DECLARE In_Candidate      string = @@In_Candidate@@;
-#DECLARE In_Features       string = @@In_Features@@;
+#DECLARE In_Candidate string = "/local/Prod/Image/Selection/IU.Feature/Candidate_2024_12_15.ss";
+#DECLARE In_Features string = "/local/Prod/Image/Selection/IU.Feature/Candidate_Features_2024_12_15.ss";
 
-#DECLARE Out_Sensor       string = @@Out_Sensor@@;
+#DECLARE Out_Sensor string = "/local/users/v-yangtian/AttractiveV3Sensor.ss";
 
-Candidate = 
-    SELECT * 
-    FROM (SSTREAM @In_Candidate)
-#IF(@Par_Target == "Attractiveness" )
-    WHERE  AttractiveScore_Required 
+Candidate =
+    SELECT *
+    FROM
+    (
+        SSTREAM @In_Candidate
+    )
+#IF(@Par_Target == "Attractiveness")
+        WHERE AttractiveScore_Required
 #ENDIF
 ;
 
-Features = SSTREAM @In_Features;
 Features =
-    SELECT * FROM Features
-    LEFT SEMIJOIN Candidate ON Features.Key == Candidate.Key;
+    SSTREAM @In_Features;
+Features =
+    SELECT *
+    FROM Features
+         LEFT SEMIJOIN
+             Candidate
+         ON Features.Key == Candidate.Key;
+
+//Score =
+//    PROCESS Features
+//    PRODUCE Key,
+//            MediaMD5,
+//            Score
+//    USING IUPipelineScopeProcessor(
+//            "--input=AVEV6Vector_Binary:Binary, Height:Binary, Width:Binary", 
+//            "--output=Score:Float", 
+//            @Par_OnnxProcessor
+//    );
 
 Score =
     PROCESS Features
-    PRODUCE Key,
-            MediaMD5,
-            Score
-    USING IUPipelineScopeProcessor(
-            "--input=AVEV6Vector_Binary:Binary, Height:Binary, Width:Binary", 
-            "--output=Score:Float", 
-            @Par_OnnxProcessor
-    );
+    USING AttractivenessProcessor("attv3_tail.onnx", "1024")
+    WHERE AVEV6Vector_Binary != null;
 
-ImageDedup = 
+Score =
+    SELECT Features.Key,
+           Features.MediaMD5,
+           Score.Score
+    FROM Features
+         INNER JOIN
+             Score
+         ON Features.Key == Score.Key;
+
+ImageDedup =
     SELECT Key,
            MediaMD5,
            FIRST(Score) AS Score
     FROM Score
     WHERE Score != null
-    GROUP BY Key, MediaMD5;
+    GROUP BY Key,
+             MediaMD5;
 
-Sensors = 
+Sensors =
     SELECT Key,
            s_updateTime AS UpdateTime,
            MediaMD5,
-#IF(@Par_Target == "Attractiveness" )
-           Score AS MediaFeature__AttractivenessScore
+#IF(@Par_Target == "Attractiveness")
+               Score AS MediaFeature__AttractivenessScore
 #ENDIF
-    ;
+;
 
-OUTPUT Sensors TO SSTREAM @Out_Sensor
-HASH CLUSTERED BY Key INTO 2000
-SORTED BY Key;
+OUTPUT Sensors
+TO SSTREAM @Out_Sensor
+   HASH CLUSTERED BY Key
+       INTO 2000
+       SORTED BY Key;
 
 #CS
-public static UInt32 s_updateTime = MmrHelper.DateToMmrTime(DateTime.Parse(@@Par_Date@@));
+using ScopeRuntime;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime.Tensors;
+using OnnxWrapper;
+
+public class AttractivenessRow
+{
+    public string Key { get; set; }
+    public float Score { get; set; }
+
+    public AttractivenessRow(string key, float score)
+    {
+        Key = key;
+        Score = score;
+    }
+}
+
+public class AttractivenessProcessor : Processor
+{
+    int batchSize = 64;
+    private OnnxWrapper.OnnxRunner argusRunner = null;
+    private string embeddingPath = string.Empty;
+    private int embedSize = 1024;
+    private float max_val = 1.0f;
+    private float min_val = 0.0f;
+
+    private float TrimScore(float value)
+    {
+        return Math.Max(min_val, Math.Min(max_val, value));
+    }
+
+    public override bool RunSingleThreaded { get { return true; } }
+
+    public override Schema Produces(string[] columns, string[] args, Schema input)
+    {
+        Schema schema = new Schema();
+        schema.Add(new ColumnInfo("Key", ColumnDataType.String));
+        schema.Add(new ColumnInfo("Score", ColumnDataType.Float));
+        return schema;
+    }
+
+    private void Init(string[] args)
+    {
+        if (argusRunner != null) return;
+        var modelName = args[0];
+        embedSize = int.Parse(args[1]);
+        argusRunner = new OnnxWrapper.OnnxRunner(modelName);
+    }
+
+    private byte[] FloatArray2Bytes(float[] values)
+    {
+        var bytes = new byte[values.Length * sizeof(float)];
+        Buffer.BlockCopy(values, 0, bytes, 0, bytes.Length);
+        return bytes;
+    }
+
+    private float[] Bytes2FloatArray(byte[] data)
+    {
+        float[] values = new float[data.Length / sizeof(float)];
+        Buffer.BlockCopy(data, 0, values, 0, data.Length);
+        return values;
+    }
+
+    private List<AttractivenessRow> OutputRows(List<string> keys, float[] argusEmbed, int[] inputShapes, string[] inputNames, string[] outputNames)
+    {
+        var ret = new List<AttractivenessRow>();
+        var res = argusRunner.Run(new List<Array> { argusEmbed }, new List<int[]> { inputShapes }, inputNames.ToList(), outputNames.ToList());
+        var argusLogits = res[0] as float[,];
+        for (var i = 0; i < keys.Count; i++)
+        {
+            ret.Add(new AttractivenessRow(
+                    keys[i],
+                    TrimScore(argusLogits[i, 1])
+                    ));
+        }
+        return ret;
+    }
+
+    public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
+    {
+        Init(args);
+        List<string> keys = new List<string>();
+        List<string> mediaMD5s = new List<string>();
+        float[] argusEmbeddings = new float[batchSize * embedSize];
+
+        var inputName = new string[1] { "input" };
+        var outputName = new string[1] { "output" };
+        var inputShapes = new int[2] { batchSize, embedSize };
+        int idx = 0;
+        foreach (Row row in input.Rows)
+        {
+
+            keys.Add(row["Key"].String);
+            var embed = row["AVEV6Vector_Binary"].Binary;
+            Buffer.BlockCopy(embed, 0, argusEmbeddings, idx * embed.Length, embed.Length);
+            idx += 1;
+            if (idx == batchSize)
+            {
+                var ret = OutputRows(keys, argusEmbeddings, inputShapes, inputName, outputName);
+                foreach (var o in ret)
+                {
+                    output.Reset();
+                    output["Key"].Set(o.Key);
+                    output["Score"].Set(o.Score);
+
+                    yield return output;
+                }
+
+                keys.Clear();
+                idx = 0;
+            }
+        }
+
+        if (idx > 0)
+        {
+            float[] restEmbeddings = new float[idx * embedSize];
+            Array.Copy(argusEmbeddings, 0, restEmbeddings, 0, idx * embedSize);
+            var ret = OutputRows(keys, restEmbeddings, new int[2] { idx, embedSize }, inputName, outputName);
+            foreach (var o in ret)
+            {
+                output.Reset();
+                output["Key"].Set(o.Key);
+                output["Score"].Set(o.Score);
+
+                yield return output;
+            }
+        }
+    }
+}
+
+public static UInt32 s_updateTime = MmrHelper.DateToMmrTime(DateTime.Parse("2024-12-15"));
+
 #ENDCS
