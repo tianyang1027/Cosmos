@@ -427,20 +427,20 @@ public class KidFaceProcessor : Processor
         embedSize = int.Parse(args[1]);
         argusRunner = new OnnxWrapper.OnnxRunner(modelName);
     }
-
-    private byte[] FloatArray2Bytes(float[] values)
-    {
-        var bytes = new byte[values.Length * sizeof(float)];
-        Buffer.BlockCopy(values, 0, bytes, 0, bytes.Length);
-        return bytes;
-    }
-
-    private float[] Bytes2FloatArray(byte[] data)
-    {
-        float[] values = new float[data.Length / sizeof(float)];
-        Buffer.BlockCopy(data, 0, values, 0, data.Length);
-        return values;
-    }
+//
+//    private byte[] FloatArray2Bytes(float[] values)
+//    {
+//        var bytes = new byte[values.Length * sizeof(float)];
+//        Buffer.BlockCopy(values, 0, bytes, 0, bytes.Length);
+//        return bytes;
+//    }
+//
+//    private float[] Bytes2FloatArray(byte[] data)
+//    {
+//        float[] values = new float[data.Length / sizeof(float)];
+//        Buffer.BlockCopy(data, 0, values, 0, data.Length);
+//        return values;
+//    }
 
     private List<KidFaceRow> OutputRows(List<string> keys, float[] argusEmbed, int[] inputShapes, string[] inputNames, string[] outputNames)
     {
