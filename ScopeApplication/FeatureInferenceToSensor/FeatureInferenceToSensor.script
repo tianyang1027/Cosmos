@@ -125,10 +125,10 @@ public class AttractivenessRow
 
 public class AttractivenessProcessor : Processor
 {
-    int batchSize = 64;
+    int batchSize = 16;
     private OnnxWrapper.OnnxRunner argusRunner = null;
     private string embeddingPath = string.Empty;
-    private int embedSize = 1024;
+    private int embedSize = 2048;
     private float max_val = 1.0f;
     private float min_val = 0.0f;
 
@@ -168,43 +168,32 @@ public class AttractivenessProcessor : Processor
         Buffer.BlockCopy(data, 0, values, 0, data.Length);
         return values;
     }
-
-    private List<AttractivenessRow> OutputRows(List<string> keys, float[] argusEmbed, int[] inputShapes, string[] inputNames, string[] outputNames)
-    {
-        var ret = new List<AttractivenessRow>();
-        var res = argusRunner.Run(new List<Array> { argusEmbed }, new List<int[]> { inputShapes }, inputNames.ToList(), outputNames.ToList());
-        var argusLogits = res[0] as float[,];
-        for (var i = 0; i < keys.Count; i++)
-        {
-            ret.Add(new AttractivenessRow(
-                    keys[i],
-                    TrimScore(argusLogits[i, 1])
-                    ));
-        }
-        return ret;
-    }
-
     public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
     {
         Init(args);
         List<string> keys = new List<string>();
-        List<string> mediaMD5s = new List<string>();
         float[] argusEmbeddings = new float[batchSize * embedSize];
+        int[] heights = new int[batchSize];
+        int[] widths = new int[batchSize];
 
-        var inputName = new string[1] { "input" };
-        var outputName = new string[1] { "output" };
+        string[] inputName = { "in_feat", "in_h", "in_w" };
+        string[] outputName = { "out_score" };
         var inputShapes = new int[2] { batchSize, embedSize };
         int idx = 0;
         foreach (Row row in input.Rows)
         {
-
             keys.Add(row["Key"].String);
+
             var embed = row["AVEV6Vector_Binary"].Binary;
             Buffer.BlockCopy(embed, 0, argusEmbeddings, idx * embed.Length, embed.Length);
+
+            heights[idx] = BitConverter.ToInt32(row["Height"].Binary, 0);
+            widths[idx] = BitConverter.ToInt32(row["Width"].Binary, 0);
+
             idx += 1;
             if (idx == batchSize)
             {
-                var ret = OutputRows(keys, argusEmbeddings, inputShapes, inputName, outputName);
+                var ret = OutputRows(keys, argusEmbeddings, heights, widths, inputShapes, inputName, outputName);
                 foreach (var o in ret)
                 {
                     output.Reset();
@@ -223,7 +212,14 @@ public class AttractivenessProcessor : Processor
         {
             float[] restEmbeddings = new float[idx * embedSize];
             Array.Copy(argusEmbeddings, 0, restEmbeddings, 0, idx * embedSize);
-            var ret = OutputRows(keys, restEmbeddings, new int[2] { idx, embedSize }, inputName, outputName);
+
+            int[] restHeights = new int[idx];
+            Array.Copy(heights, 0, restHeights, 0, idx);
+
+            int[] restWidths = new int[idx];
+            Array.Copy(widths, 0, restWidths, 0, idx);
+
+            var ret = OutputRows(keys, restEmbeddings, restHeights, restWidths, new int[2] { idx, embedSize }, inputName, outputName);
             foreach (var o in ret)
             {
                 output.Reset();
@@ -233,6 +229,28 @@ public class AttractivenessProcessor : Processor
                 yield return output;
             }
         }
+    }
+
+    private List<AttractivenessRow> OutputRows(List<string> keys, float[] argusEmbed, int[] heights, int[] widths, int[] inputShapes, string[] inputNames, string[] outputNames)
+    {
+        var ret = new List<AttractivenessRow>();
+        var inputs = new List<Array>
+        {
+            argusEmbed,
+            heights,
+            widths      
+        };
+
+        var res = argusRunner.Run(inputs, new List<int[]> { inputShapes, new int[2] { batchSize, 1 }, new int[2] { batchSize, 1 } }, inputNames.ToList(), outputNames.ToList());
+        var argusLogits = res[0] as float[,]; 
+        for (var i = 0; i < keys.Count; i++)
+        {
+            ret.Add(new AttractivenessRow(
+                    keys[i],
+                    TrimScore(argusLogits[i, 1])
+                    ));
+        }
+        return ret;
     }
 }
 
