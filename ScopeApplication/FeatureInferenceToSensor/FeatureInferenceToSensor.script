@@ -178,7 +178,7 @@ public class AttractivenessProcessor : Processor
 
         string[] inputName = { "in_feat", "in_h", "in_w" };
         string[] outputName = { "out_score" };
-        var inputShapes = new int[2] { batchSize, embedSize };
+        var in_feat_Shapes = new int[2] { batchSize, embedSize };
         int idx = 0;
         foreach (Row row in input.Rows)
         {
@@ -193,7 +193,7 @@ public class AttractivenessProcessor : Processor
             idx += 1;
             if (idx == batchSize)
             {
-                var ret = OutputRows(keys, argusEmbeddings, heights, widths, inputShapes, inputName, outputName);
+                var ret = OutputRows(keys, argusEmbeddings, heights, widths, in_feat_Shapes, inputName, outputName);
                 foreach (var o in ret)
                 {
                     output.Reset();
@@ -231,7 +231,7 @@ public class AttractivenessProcessor : Processor
         }
     }
 
-    private List<AttractivenessRow> OutputRows(List<string> keys, float[] argusEmbed, int[] heights, int[] widths, int[] inputShapes, string[] inputNames, string[] outputNames)
+    private List<AttractivenessRow> OutputRows(List<string> keys, float[] argusEmbed, int[] heights, int[] widths, int[] in_feat_Shapes, string[] inputNames, string[] outputNames)
     {
         var ret = new List<AttractivenessRow>();
         var inputs = new List<Array>
@@ -241,7 +241,14 @@ public class AttractivenessProcessor : Processor
             widths      
         };
 
-        var res = argusRunner.Run(inputs, new List<int[]> { inputShapes, new int[2] { batchSize, 1 }, new int[2] { batchSize, 1 } }, inputNames.ToList(), outputNames.ToList());
+        var inputShapesAll = new List<int[]>
+        {
+            in_feat_Shapes, 
+            new int[2] { batchSize, 1 },
+            new int[2] { batchSize, 1 }
+        };
+
+        var res = argusRunner.Run(inputs, inputShapesAll, inputNames.ToList(), outputNames.ToList());
         var argusLogits = res[0] as float[,]; 
         for (var i = 0; i < keys.Count; i++)
         {
