@@ -25,7 +25,7 @@ RESOURCE "/local/Prod/Image/Selection/OnnxModel/Attractiveness/attv3_tail.onnx";
 
 #DECLARE Par_Target string = "Attractiveness";
 
-#DECLARE In_Candidate string = "/local/Prod/Image/Selection/IU.Feature/Candidate_2024_12_15.ss";
+#DECLARE In_Candidate string = "/local/Prod/Image/Selection/IU.Feature/Candidate_2024_12_17.ss";
 #DECLARE In_Features string = "/local/Prod/Image/Selection/IU.Feature/Candidate_Features_2024_12_15.ss";
 
 #DECLARE Out_Sensor string = "/local/users/v-yangtian/AttractiveV3Sensor.ss";
@@ -49,17 +49,6 @@ Features =
          LEFT SEMIJOIN
              Candidate
          ON Features.Key == Candidate.Key;
-
-//Score =
-//    PROCESS Features
-//    PRODUCE Key,
-//            MediaMD5,
-//            Score
-//    USING IUPipelineScopeProcessor(
-//            "--input=AVEV6Vector_Binary:Binary, Height:Binary, Width:Binary", 
-//            "--output=Score:Float", 
-//            @Par_OnnxProcessor
-//    );
 
 Score =
     PROCESS Features
@@ -111,89 +100,134 @@ using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using OnnxWrapper;
 
-public class AttractivenessRow
-{
-    public string Key { get; set; }
-    public float Score { get; set; }
-
-    public AttractivenessRow(string key, float score)
+    public class AttractivenessRow
     {
-        Key = key;
-        Score = score;
-    }
-}
+        public string Key { get; set; }
+        public float Score { get; set; }
 
-public class AttractivenessProcessor : Processor
-{
-    int batchSize = 16;
-    private OnnxWrapper.OnnxRunner argusRunner = null;
-    private string embeddingPath = string.Empty;
-    private int embedSize = 2048;
-    private float max_val = 1.0f;
-    private float min_val = 0.0f;
-
-    private float TrimScore(float value)
-    {
-        return Math.Max(min_val, Math.Min(max_val, value));
-    }
-
-    public override bool RunSingleThreaded { get { return true; } }
-
-    public override Schema Produces(string[] columns, string[] args, Schema input)
-    {
-        Schema schema = new Schema();
-        schema.Add(new ColumnInfo("Key", ColumnDataType.String));
-        schema.Add(new ColumnInfo("Score", ColumnDataType.Float));
-        return schema;
-    }
-
-    private void Init(string[] args)
-    {
-        if (argusRunner != null) return;
-        var modelName = args[0];
-        embedSize = int.Parse(args[1]);
-        argusRunner = new OnnxWrapper.OnnxRunner(modelName);
-    }
-
-    private byte[] FloatArray2Bytes(float[] values)
-    {
-        var bytes = new byte[values.Length * sizeof(float)];
-        Buffer.BlockCopy(values, 0, bytes, 0, bytes.Length);
-        return bytes;
-    }
-
-    private float[] Bytes2FloatArray(byte[] data)
-    {
-        float[] values = new float[data.Length / sizeof(float)];
-        Buffer.BlockCopy(data, 0, values, 0, data.Length);
-        return values;
-    }
-    public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
-    {
-        Init(args);
-        List<string> keys = new List<string>();
-        float[] argusEmbeddings = new float[batchSize * embedSize];
-        int[] heights = new int[batchSize];
-        int[] widths = new int[batchSize];
-
-        string[] inputName = { "in_feat", "in_h", "in_w" };
-        string[] outputName = { "out_score" };
-        var in_feat_Shapes = new int[2] { batchSize, embedSize };
-        int idx = 0;
-        foreach (Row row in input.Rows)
+        public AttractivenessRow(string key, float score)
         {
-            keys.Add(row["Key"].String);
+            Key = key;
+            Score = score;
+        }
+    }
 
-            var embed = row["AVEV6Vector_Binary"].Binary;
-            Buffer.BlockCopy(embed, 0, argusEmbeddings, idx * embed.Length, embed.Length);
+    public class AttractivenessProcessor : Processor
+    {
+        int batchSize = 16;
+        private OnnxWrapper.OnnxRunner argusRunner = null;
+        private string embeddingPath = string.Empty;
+        private int embedSize = 2048;
+        private float max_val = 1.0f;
+        private float min_val = 0.0f;
 
-            heights[idx] = BitConverter.ToInt32(row["Height"].Binary, 0);
-            widths[idx] = BitConverter.ToInt32(row["Width"].Binary, 0);
+        private float TrimScore(float value)
+        {
+            return Math.Max(min_val, Math.Min(max_val, value));
+        }
 
-            idx += 1;
-            if (idx == batchSize)
+        public override bool RunSingleThreaded { get { return true; } }
+
+        public override Schema Produces(string[] columns, string[] args, Schema input)
+        {
+            Schema schema = new Schema();
+            schema.Add(new ColumnInfo("Key", ColumnDataType.String));
+            schema.Add(new ColumnInfo("Score", ColumnDataType.Float));
+            return schema;
+        }
+
+        private void Init(string[] args)
+        {
+            if (argusRunner != null) return;
+            var modelName = args[0];
+            embedSize = int.Parse(args[1]);
+            argusRunner = new OnnxWrapper.OnnxRunner(modelName);
+        }
+
+        public override IEnumerable<Row> Process(RowSet input, Row output, string[] args)
+        {
+            Init(args);
+            List<string> keys = new List<string>();
+            float[] argusEmbeddings = new float[batchSize * embedSize];
+            int[] heights = new int[batchSize * 1];
+            int[] widths = new int[batchSize * 1];
+
+            string[] inputName = { "in_feat", "in_h", "in_w" };
+            string[] outputName = { "out_score" };
+            int idx = 0;
+            foreach (Row row in input.Rows)
             {
-                var ret = OutputRows(keys, argusEmbeddings, heights, widths, in_feat_Shapes, inputName, outputName);
+                keys.Add(row["Key"].String);
+
+                var embed = row["AVEV6Vector_Binary"].Binary;
+                Buffer.BlockCopy(embed, 0, argusEmbeddings, idx * embed.Length, embed.Length);
+
+                var embedHeight = row["Height"].Binary;
+                Buffer.BlockCopy(embedHeight, 0, heights, idx * embedHeight.Length, embedHeight.Length);
+
+                var embedWidth = row["Width"].Binary;
+                Buffer.BlockCopy(embedWidth, 0, widths, idx * embedWidth.Length, embedWidth.Length);
+
+                idx += 1;
+                if (idx == batchSize)
+                {
+                    var inputs = new List<Array>
+                    {
+                        argusEmbeddings,
+                        heights,
+                        widths
+                    };
+
+                    var inputShapes = new List<int[]>
+                    {
+                        new int[2] { batchSize, embedSize },
+                        new int[2] { batchSize, 1 },
+                        new int[2] { batchSize, 1 }
+                    };
+
+                    var ret = OutputRows(keys, inputs, inputShapes, inputName, outputName);
+                    foreach (var o in ret)
+                    {
+                        output.Reset();
+                        output["Key"].Set(o.Key);
+                        output["Score"].Set(o.Score);
+
+                        yield return output;
+                    }
+
+                    keys.Clear();
+                    idx = 0;
+                }
+            }
+
+            if (idx > 0)
+            {
+                float[] restEmbeddings = new float[idx * embedSize];
+                Array.Copy(argusEmbeddings, 0, restEmbeddings, 0, idx * embedSize);
+
+
+                int[] restHeights = new int[idx * 1];
+                Array.Copy(heights, 0, restHeights, 0, idx * 1);
+
+                int[] restWidths = new int[idx * 1];
+                Array.Copy(widths, 0, restWidths, 0, idx * 1);
+
+
+                var inputs = new List<Array>
+                {
+                    restEmbeddings,
+                    restHeights,
+                    restWidths
+                };
+
+                var inputShapes = new List<int[]>
+                {
+                    new int[2] { idx, embedSize},
+                    new int[2] { idx, 1 },
+                    new int[2] { idx, 1 }
+                };
+
+                var ret = OutputRows(keys, inputs, inputShapes, inputName, outputName);
                 foreach (var o in ret)
                 {
                     output.Reset();
@@ -202,64 +236,25 @@ public class AttractivenessProcessor : Processor
 
                     yield return output;
                 }
-
-                keys.Clear();
-                idx = 0;
             }
         }
 
-        if (idx > 0)
+        private List<AttractivenessRow> OutputRows(List<string> keys, List<Array> inputs, List<int[]> inputsShapes, string[] inputNames, string[] outputNames)
         {
-            float[] restEmbeddings = new float[idx * embedSize];
-            Array.Copy(argusEmbeddings, 0, restEmbeddings, 0, idx * embedSize);
-
-            int[] restHeights = new int[idx];
-            Array.Copy(heights, 0, restHeights, 0, idx);
-
-            int[] restWidths = new int[idx];
-            Array.Copy(widths, 0, restWidths, 0, idx);
-
-            var ret = OutputRows(keys, restEmbeddings, restHeights, restWidths, new int[2] { idx, embedSize }, inputName, outputName);
-            foreach (var o in ret)
+            var ret = new List<AttractivenessRow>();
+            var res = argusRunner.Run(inputs, inputsShapes, inputNames.ToList(), outputNames.ToList());
+            var argusLogits = res[0] as float[,];
+            for (var i = 0; i < keys.Count; i++)
             {
-                output.Reset();
-                output["Key"].Set(o.Key);
-                output["Score"].Set(o.Score);
-
-                yield return output;
+                ret.Add(new AttractivenessRow(
+                            keys[i],
+                            argusLogits[i, 0]
+                            ));
             }
+            return ret;
         }
     }
 
-    private List<AttractivenessRow> OutputRows(List<string> keys, float[] argusEmbed, int[] heights, int[] widths, int[] in_feat_Shapes, string[] inputNames, string[] outputNames)
-    {
-        var ret = new List<AttractivenessRow>();
-        var inputs = new List<Array>
-        {
-            argusEmbed,
-            heights,
-            widths      
-        };
-
-        var inputShapesAll = new List<int[]>
-        {
-            in_feat_Shapes, 
-            new int[2] { batchSize, 1 },
-            new int[2] { batchSize, 1 }
-        };
-
-        var res = argusRunner.Run(inputs, inputShapesAll, inputNames.ToList(), outputNames.ToList());
-        var argusLogits = res[0] as float[,]; 
-        for (var i = 0; i < keys.Count; i++)
-        {
-            ret.Add(new AttractivenessRow(
-                    keys[i],
-                    TrimScore(argusLogits[i, 1])
-                    ));
-        }
-        return ret;
-    }
-}
 
 public static UInt32 s_updateTime = MmrHelper.DateToMmrTime(DateTime.Parse("2024-12-15"));
 
