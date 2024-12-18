@@ -22,11 +22,11 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 USING MMRV2.Core;
 
 
-#DECLARE PRISMV4_SNAP String = @@INPUT_PRISMV4_SNAP@@;
-#DECLARE MD5_FILE String = @@INPUT_MD5_FILE@@;
-#DECLARE TURINGMMV2_DELTA_BLOB String = @@INPUT_TURINGMMV2_BLOB_DELTA@@;
-#DECLARE TURINGMMV2_SCHEMA String = @@INPUT_TURINGMMV2_BLOB_SCHEMA@@;
-#DECLARE PRISMV4_SNAP_UPDATE String = @@OUTPUT_PRISMV4_SNAP@@;
+#DECLARE PRISMV4_SNAP String = "/shares/MMRepository.prod/MMRepository/Prod/Image/Prism/IndexGen/60BFeaturesBackfill/PrismyV4_FaceFeatures_2024_12_17_withMD5.ss";
+#DECLARE MD5_FILE String = "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Snapshot/Md5ToMKey/2024_12_17/MKeyToMd5.ss";
+#DECLARE TURINGMMV2_DELTA_BLOB String = "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Snapshot/Blob/Delta/2024_12_18/Image_BlobDelta_Metadata.ss";
+#DECLARE TURINGMMV2_SCHEMA String = "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Snapshot/Blob/Delta/2024_12_18/Image_BlobDelta_Schema.xml";
+#DECLARE PRISMV4_SNAP_UPDATE String = "/local/users/-yangtian/PrismyV4_FaceFeatures_2024_12_18_withMD5.ss";
 
 RESOURCE @TURINGMMV2_SCHEMA;
 
@@ -139,7 +139,7 @@ MergedPrismyV4 =
                           "RN,Priority");
 
 
-	
+
 OUTPUT MergedPrismyV4
 TO SSTREAM @PRISMV4_SNAP_UPDATE HASH CLUSTERED BY ImageKey INTO 5000;// REFERENCES SSTREAM @PRISMV4_SNAP SORTED BY ImageKey;
 
@@ -178,11 +178,11 @@ public class Utils
     
     
     public static byte[] FloatArray2Bytes(float[] values)
-	{
-		byte[] array = new byte[values.Length * 4];
-		Buffer.BlockCopy(values, 0, array, 0, array.Length);
-		return array;
-	}
+{
+byte[] array = new byte[values.Length * 4];
+Buffer.BlockCopy(values, 0, array, 0, array.Length);
+return array;
+}
     public static long GetTimestamp()
     {
         long timeStamp = DateTimeOffset.Now.ToUnixTimeSeconds();
@@ -427,20 +427,20 @@ public class KidFaceProcessor : Processor
         embedSize = int.Parse(args[1]);
         argusRunner = new OnnxWrapper.OnnxRunner(modelName);
     }
-//
-//    private byte[] FloatArray2Bytes(float[] values)
-//    {
-//        var bytes = new byte[values.Length * sizeof(float)];
-//        Buffer.BlockCopy(values, 0, bytes, 0, bytes.Length);
-//        return bytes;
-//    }
-//
-//    private float[] Bytes2FloatArray(byte[] data)
-//    {
-//        float[] values = new float[data.Length / sizeof(float)];
-//        Buffer.BlockCopy(data, 0, values, 0, data.Length);
-//        return values;
-//    }
+
+    private byte[] FloatArray2Bytes(float[] values)
+    {
+        var bytes = new byte[values.Length * sizeof(float)];
+        Buffer.BlockCopy(values, 0, bytes, 0, bytes.Length);
+        return bytes;
+    }
+
+    private float[] Bytes2FloatArray(byte[] data)
+    {
+        float[] values = new float[data.Length / sizeof(float)];
+        Buffer.BlockCopy(data, 0, values, 0, data.Length);
+        return values;
+    }
 
     private List<KidFaceRow> OutputRows(List<string> keys, float[] argusEmbed, int[] inputShapes, string[] inputNames, string[] outputNames)
     {
