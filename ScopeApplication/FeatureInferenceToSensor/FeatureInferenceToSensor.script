@@ -28,7 +28,6 @@ RESOURCE "/local/Prod/Image/Selection/OnnxModel/Attractiveness/attv3_tail.onnx";
 #DECLARE In_Candidate string = "/local/Prod/Image/Selection/IU.Feature/Candidate_2024_12_17.ss";
 #DECLARE In_Features string = "/local/Prod/Image/Selection/IU.Feature/Candidate_Features_2024_12_15.ss";
 
-#DECLARE Out_Sensor string = "/local/users/v-yangtian/AttractiveV3Sensor.ss";
 
 Candidate =
     SELECT *
