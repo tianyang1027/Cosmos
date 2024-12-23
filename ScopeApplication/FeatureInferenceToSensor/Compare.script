@@ -1,0 +1,31 @@
+﻿// Copyright (C) Microsoft Corporation. All rights reserved.
+// Script GUID:d43af1e8-0c68-47f1-8a69-c3f0d77031a9
+// Used for tracking history
+
+
+OldAttractiveV3Sensor =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Repository/Sensor/Other/2024_12_19/AttractiveV3Sensor.ss"
+    );
+
+
+NewAttractiveV3Sensor =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/users/v-yangtian/2024_12_19/AttractiveV3Sensor.ss"
+    );
+
+
+SELECT o.Key AS Key,
+       o.MediaFeature__AttractivenessScore AS Old_MediaFeature__AttractivenessScore,
+       n.MediaFeature__AttractivenessScore AS New_MediaFeature__AttractivenessScore
+FROM OldAttractiveV3Sensor AS o
+INNER JOIN
+    NewAttractiveV3Sensor AS n
+    ON o.Key == n.Key;
+
+OUTPUT TO SSTREAM "/local/users/v-yangtian/2024_12_19/CompareAttractivenessScore.ss";
+

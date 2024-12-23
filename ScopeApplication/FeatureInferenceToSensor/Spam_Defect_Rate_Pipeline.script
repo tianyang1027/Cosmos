@@ -1,0 +1,220 @@
+﻿REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+RESOURCE  @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.ScheduleSelection.dll";
+RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\IndexSelection\NoduleRankFile\tld.txt";
+
+RESOURCE  "/local/Prod/Image/Binaries/IndexQualityPackage/HtmlAgilityPack.dll";
+REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/ImageIndexQuality.dll";
+
+USING System;
+USING System.Collections.Generic;
+USING System.IO;
+USING System.Text;
+USING ScopeRuntime;
+USING MMRV2.Utility;
+
+MODULE @"/local/Prod/Image/Selection/fishtank/FishtankMainResourceSimple.module";
+MODULE @"/local/Prod/Image/Selection/fishtank/SpamTableMainSpamDemotionMain.module";
+
+#DECLARE Par_StreamExpiry                       string = "180";
+#DECLARE Par_Date                               string = "2024_12_13"; 
+
+
+#DECLARE In_PageCrawlResult                     string =  "/local/Prod/Image/Selection/GeoRep/FromCosmos08/SpamDefectRate/2024_12_13/SFS/CrawlResult_DefectPage_2024_12_13-job.ss";
+#DECLARE In_CrawlResult                         string =  "/local/Prod/Image/Selection/GeoRep/FromCosmos08/SpamDefectRate/2024_12_13/SFS/CrawlResult_DefectImage_2024_12_13-job.ss";
+#DECLARE In_Candidate                           string =  "/local/Prod/Image/Metrics/SpamDefectRate/2024_12_13/samples/sample_urls.ss";
+
+
+#DECLARE Out_Candidate                          string =  "/local/users/v-yangtian/CrawlSuccess_samples_SpamDefectRate_2024_12_13.ss";
+#DECLARE Out_DeadLinkCoverage                   string =  "/local/users/v-yangtian/DeadLinkCoverage_samples_SpamDefectRate_2024_12_13.ss";
+#DECLARE Out_PageDeadLinkCoverage               string =  "/local/users/v-yangtian/PageDeadLinkCoverage_samples_SpamDefectRate_2024_12_13.ss";
+#DECLARE Out_ClickSetStatus                     string =  "/local/users/v-yangtian/Status_samples_SpamDefectRate_2024_12_13.ss";
+
+//#DECLARE Out_SpamPages                        string =  @@Out_SpamPages@@;
+#DECLARE Out_DeadLinkPages                      string =  "/local/users/v-yangtian/DeadLinkPages_samples_SpamDefectRate_2024_12_13.ss";
+#DECLARE Out_DeadLinkImages                     string =  "/local/users/v-yangtian/DeadLinkImages_samples_SpamDefectRate_2024_12_13.ss";
+
+
+
+// Main
+Candidate = SSTREAM @In_Candidate;
+
+Candidate = SELECT groups AS Groups, murl AS query, purl AS PageUrl, HashValue.GetHttpUrlHashBase64String(murl) AS QueryKey, location, language FROM Candidate; // change names to keep the same format as the original script
+
+PageCrawlResult = SSTREAM @In_PageCrawlResult;
+PageCrawlResult = PROCESS PageCrawlResult USING Microsoft.Bing.ImageIndexQuality.Measurement.NoIndexProcessor(PageContentColumn:"Body", HttpHeaderColumn:"HttpHeader", Debug:true, HttpCodeColumn:"LastDownLoadHttpCode");
+
+PageCrawlResult_Candidate = 
+    SELECT Candidate.*, Body, LastDownLoadHttpCode,  (LastDownLoadHttpCode == 200) AS PageCrawlSuccess, (LastDownLoadHttpCode == 301 OR LastDownLoadHttpCode == 302) AS PageCrawlRedirect,  IsDeadLink(LastDownLoadHttpCode, SFSStatus) AS PageDeadLink, IF(LastDownLoadHttpCode == 200,(NoIndex ?? false),(bool?)null) AS NoIndexPage, IF(LastDownLoadHttpCode == 200,(NoImageIndex ?? false),(bool?)null) AS NoImageIndexPage //, IsCrushed(Classify(PageUrl)) AS IsSpam
+    FROM Candidate  INNER JOIN PageCrawlResult  ON    Candidate.PageUrl == PageCrawlResult.Url;
+
+PageCrawlResult_Candidate = 
+ PROCESS PageCrawlResult_Candidate USING  Microsoft.Bing.ImageIndexQuality.Measurement.ImageOnPageProcessor(ImageUrlColumn:"query",PageContentColumn:"Body",Debug:false,HttpCodeColumn:"LastDownLoadHttpCode");
+
+CrawlResult = SSTREAM @In_CrawlResult;
+
+CrawlResult = 
+    SELECT *, (LastDownLoadHttpCode == 200) AS CrawlSuccess, (LastDownLoadHttpCode == 301 OR LastDownLoadHttpCode == 302) AS CrawlRedirect, IsDeadLink(LastDownLoadHttpCode, SFSStatus) AS DeadLink FROM CrawlResult;
+
+CrawlSuccess = SELECT *  FROM CrawlResult WHERE CrawlSuccess;
+
+UsefulPages =
+    SELECT PageUrl FROM PageCrawlResult_Candidate WHERE ImageOnPage == true;
+    //SELECT PageUrl FROM PageCrawlResult_Candidate WHERE ImageOnPage == true AND NOT IsSpam AND NoIndexPage == false;
+
+SELECT * FROM Candidate 
+LEFT SEMIJOIN CrawlSuccess ON Candidate.query == CrawlSuccess.Url
+LEFT SEMIJOIN UsefulPages  ON Candidate.PageUrl == UsefulPages.PageUrl;
+
+OUTPUT TO SSTREAM @Out_Candidate
+HASH CLUSTERED BY QueryKey SORTED BY QueryKey
+WITH STREAMEXPIRY @Par_StreamExpiry;
+
+
+
+SELECT Groups AS Name, COUNTIF(CrawlSuccess) AS CrawlSuccess, COUNTIF(CrawlRedirect) AS CrawlRedirect, COUNTIF(DeadLink) AS DeadLink, DateTime.Parse(@Par_Date.Replace("_","-")).Date AS Date FROM CrawlResult INNER JOIN Candidate ON CrawlResult.Url == Candidate.query;
+
+OUTPUT TO SSTREAM @Out_DeadLinkCoverage
+WITH STREAMEXPIRY @Par_StreamExpiry;
+
+SELECT Groups AS Name, COUNT(*) AS Total, COUNTIF(PageCrawlSuccess) AS CrawlSuccess, COUNTIF(PageCrawlRedirect) AS CrawlRedirect, COUNTIF(PageDeadLink) AS DeadLink, COUNTIF(ImageOnPage==true) AS ImageOnPage, COUNTIF(NoIndexPage==true) AS NoIndexPage, COUNTIF(NoImageIndexPage==true) AS NoImageIndexPage, DateTime.Parse(@Par_Date.Replace("_","-")).Date AS Date  FROM PageCrawlResult_Candidate;
+
+OUTPUT TO SSTREAM @Out_PageDeadLinkCoverage
+WITH STREAMEXPIRY @Par_StreamExpiry;
+
+
+SELECT Groups AS Name, PageUrl FROM PageCrawlResult_Candidate WHERE PageDeadLink;
+
+OUTPUT TO @Out_DeadLinkPages ORDER BY Name, PageUrl WITH STREAMEXPIRY @Par_StreamExpiry;
+
+SELECT Groups AS Name, Url FROM CrawlResult INNER JOIN Candidate ON CrawlResult.Url == Candidate.query WHERE DeadLink;
+
+OUTPUT TO @Out_DeadLinkImages ORDER BY Name, Url WITH STREAMEXPIRY @Par_StreamExpiry;
+
+
+Candidate = 
+    SELECT Candidate.query, Candidate.PageUrl, Candidate.Groups, Candidate.location, Candidate.language,
+           PageCrawlSuccess, PageCrawlRedirect,  PageDeadLink, ImageOnPage,  NoIndexPage, //IsSpam,
+           CrawlResult.CrawlSuccess, CrawlResult.CrawlRedirect, CrawlResult.DeadLink
+
+    FROM Candidate  
+    LEFT OUTER JOIN PageCrawlResult_Candidate  ON    Candidate.PageUrl == PageCrawlResult_Candidate.PageUrl
+    LEFT OUTER JOIN CrawlResult                      ON    Candidate.query ==   CrawlResult.Url;
+
+SELECT query, PageUrl, Groups, location, language, PageCrawlSuccess, PageCrawlRedirect, PageDeadLink, ImageOnPage,  NoIndexPage, CrawlSuccess AS ImageCrawlSuccess, CrawlRedirect AS ImageCrawlRedirect, DeadLink AS ImageDeadLink, DateTime.Parse(@Par_Date.Replace("_","-")).Date AS Date FROM Candidate;
+//SELECT query, PageUrl, Groups, PageCrawlSuccess, PageCrawlRedirect, PageDeadLink, ImageOnPage,  NoIndexPage, IsSpam, CrawlSuccess AS ImageCrawlSuccess, CrawlRedirect AS ImageCrawlRedirect, DeadLink AS ImageDeadLink, DateTime.Parse(@Par_Date.Replace("_","-")).Date AS Date FROM Candidate;
+
+
+SELECT *, ROW_NUMBER() OVER(PARTITION BY query, PageUrl, Groups ORDER BY query, PageUrl, Groups DESC) AS RN
+HAVING RN == 1;
+
+OUTPUT TO SSTREAM @Out_ClickSetStatus
+WITH STREAMEXPIRY @Par_StreamExpiry;
+
+
+#CS
+using FishTankUtility;
+
+public static SpamTableHelper mtable_mainline = null;
+public static HashSet<string> crushingSpamClassSet = new HashSet<string>() {"Crush", "Spam"};
+public static Object _lock = new Object();
+
+public static string Classify(string url)
+{
+        if (mtable_mainline == null)
+        {
+            lock(_lock)
+            {
+                if (mtable_mainline == null)
+                {
+                    mtable_mainline = new SpamTableHelper(SpamTableHelper.CommonFileSet.AllSpamDemotion);
+                }
+            }
+        }
+        return mtable_mainline.Classify(url);
+}
+
+
+public static bool IsCrushed(string spamClass)
+{
+    return crushingSpamClassSet.Contains(spamClass);
+}
+
+public static bool IsDeadLink(ushort LastDownLoadHttpCode, ushort SFSStatus)
+{
+
+    if ( LastDownLoadHttpCode == 429 ) return false;
+    if ( LastDownLoadHttpCode >= 300 && LastDownLoadHttpCode <= 399 ) return false;
+    if ( SFSStatus == 5020 || SFSStatus == 5013 ) return false;
+
+    return MMRV2.ScheduleSelection.ImageStatusProcessor.IsDownloadFail((MMRV2.Utility.CrawlerErrorCode) 0, (ushort) 0, (ushort) SFSStatus);
+
+}
+
+public static bool? ImageOnPage(byte[] pageContent, string imageUrl)
+{
+
+    if (pageContent == null || imageUrl == null )
+        return null;
+
+    try
+    {
+        string imageFileName = Path.GetFileName(imageUrl.Split('?')[0]);
+        string content = System.Text.Encoding.Default.GetString(pageContent);
+
+
+        return content.Contains(imageFileName);
+    }
+    catch (Exception e)
+    {
+        return null;
+    }
+
+}
+
+public static bool? IsNoIndexPage(byte[] httpHeader, byte[] body)
+{
+    if (httpHeader == null && body == null)
+    {
+        return null; 
+    }
+
+    if (httpHeader != null)
+    {   
+        string header = System.Text.Encoding.Default.GetString(httpHeader);
+ 
+        if( header.Contains("X-Robots-Tag: noindex") || header.Contains("X-Robots-Tag: none") )
+        {
+                return true;
+        }
+    }
+    
+    if (body != null)
+    {   
+        string htmlBody = System.Text.Encoding.Default.GetString(body);
+ 
+        if( htmlBody.Contains("content=\"noindex\"")  ||  htmlBody.Contains("content=\"noimageindex\"")  )
+        {
+                return true;
+        }
+    }
+    
+    return false;
+
+}
+
+public static string GetDomainName(string url)
+{
+   string domain, host, l1path;
+
+    if (MMRV2.ScheduleSelection.Tool.ParseUrl(out domain, out host, out l1path, url))
+    {
+        return domain;
+    }
+
+    return null;
+}
+
+
+#ENDCS
