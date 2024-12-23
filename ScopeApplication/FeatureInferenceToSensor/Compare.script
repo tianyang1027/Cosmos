@@ -18,14 +18,14 @@ NewAttractiveV3Sensor =
         SSTREAM "/local/users/v-yangtian/2024_12_19/AttractiveV3Sensor.ss"
     );
 
+result =
+    SELECT COUNT( * ) AS Count
+    FROM OldAttractiveV3Sensor
 
-SELECT o.Key AS Key,
-       o.MediaFeature__AttractivenessScore AS Old_MediaFeature__AttractivenessScore,
-       n.MediaFeature__AttractivenessScore AS New_MediaFeature__AttractivenessScore
-FROM OldAttractiveV3Sensor AS o
-INNER JOIN
-    NewAttractiveV3Sensor AS n
-    ON o.Key == n.Key;
+    UNION ALL
+    SELECT COUNT( * ) AS Count
+    FROM NewAttractiveV3Sensor;
 
-OUTPUT TO SSTREAM "/local/users/v-yangtian/2024_12_19/CompareAttractivenessScore.ss";
+
+OUTPUT TO SSTREAM "/local/users/v-yangtian/2024_12_19/CountResult.ss";
 

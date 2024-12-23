@@ -14,12 +14,12 @@ USING MMRV2.Core;
 
 RESOURCE "/local/Prod/Image/Selection/OnnxModel/Attractiveness/attv3_tail.onnx";
 
-#DECLARE Par_Target string = "Attractiveness";
+#DECLARE  Par_Target string = "Attractiveness";
 
-#DECLARE In_Candidate string = "/local/Prod/Image/Selection/IU.Feature/Candidate_2024_12_19.ss";
-#DECLARE In_Features string = "/local/Prod/Image/Selection/IU.Feature/Candidate_Features_2024_12_19.ss";
+#DECLARE  In_Candidate string = "/local/Prod/Image/Selection/IU.Feature/Candidate_2024_12_21.ss";
+#DECLARE  In_Features string = "/local/Prod/Image/Selection/IU.Feature/Candidate_Features_2024_12_21.ss";
 
-#DECLARE Out_Sensor string = "/local/users/v-yangtian/2024_12_19/AttractiveV3Sensor.ss";
+#DECLARE  Out_Sensor string = "/local/users/v-yangtian/2024_12_21/AttractiveV3Sensor.ss";
 
 Candidate =
     SELECT *
@@ -43,7 +43,7 @@ Features =
 
 Score =
     PROCESS Features
-    USING Microsoft.Bing.ImageIndexQuality.OnnxRunner.AttractivenessProcessor("attv3_tail.onnx", "16", "2048","AVEV6Vector_Binary")
+    USING Microsoft.Bing.ImageIndexQuality.OnnxRunner.AttractivenessProcessor("attv3_tail.onnx", "16", "2048", "AVEV6Vector_Binary")
     WHERE AVEV6Vector_Binary != null;
 
 ImageDedup =
@@ -70,6 +70,15 @@ HASH
     INTO 2000
     SORTED BY Key;
 
+Count =
+    SELECT COUNT( * ) AS Count
+    FROM Features
+    UNION ALL
+    SELECT COUNT( * ) AS Count
+    FROM Sensors;
+
+OUTPUT Count TO SSTREAM "/local/users/v-yangtian/2024_12_21/CountResult.ss";
+
 #CS
-public static UInt32 s_updateTime = MmrHelper.DateToMmrTime(DateTime.Parse("2024-12-19"));
+public static UInt32 s_updateTime = MmrHelper.DateToMmrTime(DateTime.Parse("2024-12_21"));
 #ENDCS
