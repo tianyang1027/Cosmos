@@ -33,8 +33,10 @@
     <Script Include="DebugToolToTestGivenSetOfImages.script" />
     <Script Include="DebugTool_PPE.script" />
     <Script Include="DebugTool_PROD.script" />
+    <Script Include="FeatureInferenceToSensor\Compare.script" />
     <Script Include="FeatureInferenceToSensor\FeatureInferenceToSensor.script" />
     <Script Include="FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script" />
+    <Script Include="FeatureInferenceToSensor\Spam_Defect_Rate_Pipeline.script" />
     <Script Include="FileSetsSample.script" />
     <Script Include="Freshness\ActiveIndex\DiscoveryNodule.script" />
     <Script Include="Freshness\ActiveIndex\Image.script" />
@@ -112,11 +114,17 @@
     <ScriptCode Include="DebugTool_PROD.script.cs">
       <DependentUpon>DebugTool_PROD.script</DependentUpon>
     </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\Compare.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\Compare.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\FeatureInferenceToSensor.script.cs">
       <DependentUpon>FeatureInferenceToSensor\FeatureInferenceToSensor.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script.cs">
       <DependentUpon>FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\Spam_Defect_Rate_Pipeline.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\Spam_Defect_Rate_Pipeline.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="FileSetsSample.script.cs">
       <DependentUpon>FileSetsSample.script</DependentUpon>
