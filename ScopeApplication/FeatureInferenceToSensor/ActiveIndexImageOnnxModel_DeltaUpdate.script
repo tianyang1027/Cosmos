@@ -1,0 +1,308 @@
+﻿REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+RESOURCE  @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.SnapshotMerger.dll";
+REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/Microsoft.ML.OnnxRuntime.dll";
+REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/System.Buffers.dll";
+REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/System.Memory.dll";
+REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/System.Numerics.Vectors.dll";
+REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/System.Runtime.CompilerServices.Unsafe.dll";
+REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/ImageIndexQuality.dll";
+RESOURCE "/local/Prod/Image/Binaries/IndexQualityPackage/onnxruntime.dll";
+USING MMRV2.Utility;
+USING MMRV2.Core;
+
+RESOURCE "/local/Prod/Image/Selection/OnnxModel/PrismyContent/prismyv1_tail.onnx";
+
+#DECLARE Par_EmptyStream string = "/local/Prod/Image/Repository/__placeholder__.ss";
+
+
+#DECLARE  OnnxModelName string = Path.GetFileName("/local/Prod/Image/Selection/OnnxModel/PrismyContent/prismyv1_tail.onnx");
+#DECLARE  Par_BatchSize string = "16";
+#DECLARE  Par_EmbedSize string = "2048";
+#DECLARE  Par_FeatureName string = "AVEV6Vector_Binary";
+
+// Blob
+#DECLARE In_ImageBlobBaseSchema string = @@In_ImageBlobBaseSchema@@;
+#DECLARE In_ImageBlobBaseRepo string = Path.GetDirectoryName(@In_ImageBlobBaseSchema);
+RESOURCE @In_ImageBlobBaseSchema;
+
+// Partner's Image
+#DECLARE In_PartnerImages string = @@In_PartnerImages@@;
+
+//Media Snapshot
+RESOURCE @@In_MediaSnapshotSchema@@;
+#DECLARE Par_MediaSnapshotSchema string = String.Concat("Metadata:", "Image_Media_Schema.xml");
+
+//-------------- Process active nodule ----------------
+activeNoduleRaw = VIEW @@In_ActiveNoduleView@@;
+activeNodule =
+    SELECT MUrlKey,
+           PUrlKey,
+           MUrl,
+           PUrl
+    FROM activeNoduleRaw;
+
+#IF (@In_PartnerImages != @Par_EmptyStream )
+
+activeImage = 
+    SELECT MUrlKey AS Key FROM activeNodule
+            UNION ALL
+    SELECT Key FROM (SSTREAM @In_PartnerImages) ;
+
+activeImage = 
+    SELECT DISTINCT Key FROM activeImage;
+
+#ELSE
+
+activeImage =
+    SELECT DISTINCT MUrlKey AS Key
+    FROM activeNodule;
+
+#ENDIF
+
+//-------------- Process metadata -------------------
+metaDataRaw = SSTREAM @@In_MediaSnapshot@@;
+metaData = 
+    SELECT * 
+    FROM metaDataRaw
+         LEFT SEMIJOIN activeImage 
+    ON metaDataRaw.Key == activeImage.Key;
+
+metaData = 
+    PROCESS metaData
+    USING MMRV2.Core.MmrScopeTypeProcessor(
+        "-schemaPath", 
+        @Par_MediaSnapshotSchema,  
+        "-outputFeatures",
+            "MediaFeature__Height",
+            "MediaFeature__Width",
+            "MediaFeature__MD5",
+            "-outputVector",  
+            ""
+        ) 
+    HAVING MediaFeature__Height != null AND MediaFeature__Width != null AND MediaFeature__MD5 != null;
+
+metaData = 
+    SELECT Key, 
+           MediaFeature__MD5 AS MediaMD5,
+           MediaFeature__Width.GetValueOrDefault() AS Width,
+           MediaFeature__Height.GetValueOrDefault() AS Height
+    FROM metaData
+    WHERE MediaFeature__Height > 0 && MediaFeature__Width > 0;
+
+//-------------- Get Images in need of delta update ------
+#IF (@@Par_Score@@.Contains("Attractiveness"))
+    imageInputSensor =
+        SELECT Key,
+               MediaMD5,
+               MediaFeature__AttractivenessScore AS Score
+        FROM (SSTREAM @@In_ImageScoreSensor@@);
+
+#ELSEIF (@@Par_Score@@.Contains("Prismy"))
+    imageInputSensor =
+        SELECT Key,
+               MediaMD5,
+               MediaFeature__PrismyContentScore AS Score
+        FROM (SSTREAM @@In_ImageScoreSensor@@);
+#ENDIF
+
+processedImage =
+    SELECT Key,
+           MediaMD5,
+           Score
+    FROM imageInputSensor 
+         INNER JOIN metaData
+         ON imageInputSensor.Key == metaData.Key AND imageInputSensor.MediaMD5 == metaData.MediaMD5;
+
+
+// image for delta update
+unprocessedImage =
+    SELECT *
+    FROM metaData 
+         LEFT ANTISEMIJOIN imageInputSensor
+         ON metaData.Key == imageInputSensor.Key
+            AND metaData.MediaMD5 == imageInputSensor.MediaMD5;           
+    
+
+//-------------- Process image blob data -------------------
+imageBlobDelta = VIEW @@In_ImageBlobDeltaView@@;   
+//only includes the images in the delta and the corresponding DNN feature is not null and exsiting in active nodule
+imageBlobDeltaFiltered = 
+    SELECT *
+    FROM imageBlobDelta
+            LEFT SEMIJOIN
+                unprocessedImage
+            ON imageBlobDelta.Key == unprocessedImage.Key;
+
+imageDNN =
+    PROCESS imageBlobDeltaFiltered
+    USING MMRV2.Core.MmrScopeTypeProcessor(
+            "-schemaPath", "Metadata:Image_BlobDelta_Schema.xml", 
+            "-outputFeatures",
+                "BlobVersion__BlobMd5",
+                "LargeFeature__AVEV6Vector_Binary"
+          )
+    HAVING LargeFeature__AVEV6Vector_Binary != null AND BlobVersion__BlobMd5 != null;
+
+imageDNNSize =
+    SELECT Key,
+           MediaMD5,
+           LargeFeature__AVEV6Vector_Binary AS AVEV6Vector_Binary,
+           // Int32 -> byte[]
+           BitConverter.GetBytes(Height) AS Height,
+           BitConverter.GetBytes(Width) AS Width
+    FROM imageDNN 
+         INNER JOIN unprocessedImage 
+         ON imageDNN.Key == unprocessedImage.Key
+         AND imageDNN.BlobVersion__BlobMd5 == unprocessedImage.MediaMD5;
+
+//processedImageDelta =
+//    PROCESS imageDNNSize
+//    PRODUCE Key,
+//            MediaMD5,
+//            Score
+//    USING IUPipelineScopeProcessor(
+//            "--input=AVEV6Vector_Binary:Binary, Height:Binary, Width:Binary", 
+//            "--output=Score:Float", 
+//            @Par_OnnxProcessor
+//    );
+processedImageDelta =
+    PROCESS imageDNNSize
+    USING Microsoft.Bing.ImageIndexQuality.OnnxRunner.AttractivenessProcessor(@OnnxModelName, @Par_BatchSize, @Par_EmbedSize, @Par_FeatureName)
+    WHERE AVEV6Vector_Binary != null;
+
+processedImageDelta =
+    SELECT Key,
+           MediaMD5,
+           (float) Score.GetValueOrDefault() AS Score
+    FROM processedImageDelta
+    WHERE Score.HasValue;     
+
+processedImage = 
+    SELECT * 
+    FROM processedImageDelta
+    UNION
+    SELECT * 
+    FROM processedImage;
+
+//-------------- Process image blob base data -------------------
+LOOP(I, 8)
+{   
+    #DECLARE In_ImageBlobBase string = @In_ImageBlobBaseRepo + "/Image_BlobBase_Metadata.@@I@@.ss";
+    imageBlob = SSTREAM @In_ImageBlobBase;
+    
+    //filter by active nodule
+    imageBlobFiltered =
+        SELECT *
+        FROM imageBlob
+             LEFT SEMIJOIN
+                 unprocessedImage
+             ON imageBlob.Key == unprocessedImage.Key;    
+ 
+    imageDNN =
+        PROCESS imageBlobFiltered
+        USING MMRV2.Core.MmrScopeTypeProcessor(
+                    "-schemaPath", "Metadata:Image_BlobBase_Schema.xml", 
+                    "-outputFeatures",
+                        "BlobVersion__BlobMd5",
+                        "LargeFeature__AVEV6Vector_Binary"
+              )
+        HAVING LargeFeature__AVEV6Vector_Binary != null AND BlobVersion__BlobMd5 != null;
+
+    imageDNNSize =
+        SELECT Key,
+               MediaMD5,
+               LargeFeature__AVEV6Vector_Binary AS AVEV6Vector_Binary,
+               // Int32 -> byte[]
+               BitConverter.GetBytes(Height) AS Height,
+               BitConverter.GetBytes(Width) AS Width
+        FROM imageDNN
+             INNER JOIN unprocessedImage 
+             ON imageDNN.Key == unprocessedImage.Key AND imageDNN.BlobVersion__BlobMd5 == unprocessedImage.MediaMD5;
+       
+//    processedImage@@I@@ =
+//        PROCESS imageDNNSize
+//        PRODUCE Key,
+//                MediaMD5,
+//                Score
+//        USING IUPipelineScopeProcessor(
+//                "--input=AVEV6Vector_Binary:Binary, Height:Binary, Width:Binary", 
+//                "--output=Score:Float", 
+//                @Par_OnnxProcessor
+//        );
+
+ processedImage@@I@@ =
+    PROCESS imageDNNSize
+    USING Microsoft.Bing.ImageIndexQuality.OnnxRunner.AttractivenessProcessor(@OnnxModelName, @Par_BatchSize, @Par_EmbedSize, @Par_FeatureName)
+    WHERE AVEV6Vector_Binary != null;
+
+    processedImage@@I@@ = 
+        SELECT Key,
+               MediaMD5,
+               (float) Score.GetValueOrDefault() AS Score
+        FROM processedImage@@I@@
+        WHERE Score.HasValue;
+      
+    processedImage = 
+        SELECT * 
+        FROM processedImage@@I@@
+        UNION
+        SELECT * 
+        FROM processedImage;
+
+}
+
+processedImageDedup = 
+    SELECT Key,
+           MediaMD5,
+           FIRST(Score) AS Score
+    FROM processedImage
+    GROUP BY Key, MediaMD5;
+
+#IF (@@Par_Score@@.Contains("Attractiveness"))
+    imageOutputTensor =
+        SELECT Key,
+               MediaMD5,
+               Score AS MediaFeature__AttractivenessScore,
+               s_updateTime AS UpdateTime
+        FROM processedImageDedup;
+
+    // Propogate image-level AttV3 score to ActiveIndex nodules.
+    scoreNodule = 
+        SELECT activeNodule.MUrlKey,
+               PUrlKey,
+               MUrl,
+               PUrl,
+               MediaMD5,
+               Score
+        FROM activeNodule
+             INNER JOIN processedImageDedup
+             ON activeNodule.MUrlKey == processedImageDedup.Key;
+
+
+    OUTPUT scoreNodule TO SSTREAM @@Out_ImageAttScore@@
+    HASH CLUSTERED BY MUrlKey
+    SORTED BY MUrlKey
+    WITH STREAMEXPIRY @@Par_StreamExpiry@@;
+
+    
+#ELSEIF (@@Par_Score@@.Contains("Prismy"))
+    imageOutputTensor =
+        SELECT Key,
+               MediaMD5,
+               Score AS MediaFeature__PrismyContentScore,
+               s_updateTime AS UpdateTime
+        FROM processedImageDedup;           
+#ENDIF
+
+
+OUTPUT imageOutputTensor TO SSTREAM @@Out_Sensor@@
+HASH CLUSTERED BY Key
+SORTED BY Key
+WITH STREAMEXPIRY @@Par_StreamExpiry@@;
+
+
+#CS
+public static UInt32 s_updateTime = MmrHelper.DateToMmrTime(DateTime.Parse(@@Par_Date@@));
+#ENDCS

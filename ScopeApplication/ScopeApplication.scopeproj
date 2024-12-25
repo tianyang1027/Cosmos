@@ -33,6 +33,12 @@
     <Script Include="DebugToolToTestGivenSetOfImages.script" />
     <Script Include="DebugTool_PPE.script" />
     <Script Include="DebugTool_PROD.script" />
+    <Script Include="FeatureInferenceToSensor\ActiveIndexImageOnnxModel_DeltaUpdate.script">
+      <RemoveUselessParameters>False</RemoveUselessParameters>
+      <ScopeOldParameters>In_ImageBlobBaseSchema=(\"/local/Prod/Image/Repository/Snapshot/Blob/Base/2024_12_23/Image_BlobBase_Schema.xml\"),In_PartnerImages=(\"/local/Prod/Image/Repository/__placeholder__.ss\"),In_MediaSnapshotSchema=(\"/local/Prod/Image/Repository/Snapshot/Media/2024_12_23/Image_Media_Schema.xml\"),In_ActiveNoduleView=(\"/local/Prod/Image/Repository/ActiveDocsCombined/LatestActiveNodulesList.view\"),In_MediaSnapshot=(\"/local/Prod/Image/Repository/Snapshot/Media/2024_12_23/Image_Media_Metadata.ss\"),Par_Score=(\"Prismy\"),In_ImageScoreSensor=(\"/local/Prod/Image/Repository/Sensor/Other/2024_12_23/PrismyContentV1Sensor.ss\"),In_ImageBlobDeltaView=(\"/local/Prod/Image/Repository/Schema/Latest/Blob_Delta.view\"),Out_ImageAttScore=(\"/local/users/v-yangtian/AttractivenessScoreV3.ss\"),Par_StreamExpiry=(\"10\"),Out_Sensor=(\"/local/users/v-yangtian/PrismyContentV1Sensor.ss\"),Par_Date=(\"2024_12_23\")</ScopeOldParameters>
+      <ScopeClusterParameters>
+      </ScopeClusterParameters>
+    </Script>
     <Script Include="FeatureInferenceToSensor\Compare.script" />
     <Script Include="FeatureInferenceToSensor\FeatureInferenceToSensor.script" />
     <Script Include="FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script" />
@@ -113,6 +119,9 @@
     </ScriptCode>
     <ScriptCode Include="DebugTool_PROD.script.cs">
       <DependentUpon>DebugTool_PROD.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\ActiveIndexImageOnnxModel_DeltaUpdate.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\ActiveIndexImageOnnxModel_DeltaUpdate.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\Compare.script.cs">
       <DependentUpon>FeatureInferenceToSensor\Compare.script</DependentUpon>
