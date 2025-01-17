@@ -103,7 +103,7 @@ metaData =
     imageInputSensor =
         SELECT Key,
                MediaMD5,
-               MediaFeature__PrismyContentScore AS Score
+               MediaFeature__AttractivenessScore AS Score
         FROM (SSTREAM @@In_ImageScoreSensor@@);
 #ENDIF
 
@@ -175,7 +175,7 @@ processedImageDelta =
 processedImageDelta =
     SELECT Key,
            MediaMD5,
-           (float) Score.GetValueOrDefault() AS Score
+           Score
     FROM processedImageDelta
     WHERE Score.HasValue;     
 

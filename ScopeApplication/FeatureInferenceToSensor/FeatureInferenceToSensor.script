@@ -8,18 +8,23 @@ REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/System.Memory.dll";
 REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/System.Numerics.Vectors.dll";
 REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/System.Runtime.CompilerServices.Unsafe.dll";
 REFERENCE "/local/Prod/Image/Binaries/IndexQualityPackage/ImageIndexQuality.dll";
-RESOURCE "/local/users/v-yangtian/binaries/onnxruntime.dll";
+RESOURCE "/local/Prod/Image/Binaries/IndexQualityPackage/onnxruntime.dll";
 USING MMRV2.Utility;
 USING MMRV2.Core;
 
+//RESOURCE "/local/Prod/Image/Selection/OnnxModel/PrismyContent/prismyv1_tail.onnx";
+//
+//#DECLARE  Par_Target string = "PrismyContent";
+
 RESOURCE "/local/Prod/Image/Selection/OnnxModel/Attractiveness/attv3_tail.onnx";
 
-#DECLARE  Par_Target string = "Attractiveness";
+#DECLARE Par_Target string = "Attractiveness";
 
-#DECLARE  In_Candidate string = "/local/Prod/Image/Selection/IU.Feature/Candidate_2024_12_21.ss";
-#DECLARE  In_Features string = "/local/Prod/Image/Selection/IU.Feature/Candidate_Features_2024_12_21.ss";
+#DECLARE  In_Candidate string = "/local/Prod/Image/Selection/IU.Feature/Candidate_2024_12_25.ss";
+#DECLARE  In_Features string = "/local/Prod/Image/Selection/IU.Feature/Candidate_Features_2024_12_25.ss";
 
-#DECLARE  Out_Sensor string = "/local/users/v-yangtian/2024_12_21/AttractiveV3Sensor.ss";
+//#DECLARE  Out_Sensor string = "/local/users/v-yangtian/2024_12_25/PrismyContentV1Sensor.ss";
+#DECLARE  Out_Sensor string = "/local/users/v-yangtian/2024_12_25/AttractiveV3Sensor.ss";
 
 Candidate =
     SELECT *
@@ -29,6 +34,8 @@ Candidate =
     )
 #IF(@Par_Target == "Attractiveness")
         WHERE AttractiveScore_Required
+#ELSEIF(@Par_Target == "PrismyContent")
+        WHERE PrismyContentScore_Required
 #ENDIF
 ;
 
@@ -60,7 +67,9 @@ Sensors =
            s_updateTime AS UpdateTime,
            MediaMD5,
 #IF(@Par_Target == "Attractiveness")
-               Score AS MediaFeature__AttractivenessScore
+           Score AS MediaFeature__AttractivenessScore
+#ELSEIF(@Par_Target == "PrismyContent")
+           Score AS MediaFeature__PrismyContentScore
 #ENDIF
 ;
 
@@ -70,15 +79,6 @@ HASH
     INTO 2000
     SORTED BY Key;
 
-Count =
-    SELECT COUNT( * ) AS Count
-    FROM Features
-    UNION ALL
-    SELECT COUNT( * ) AS Count
-    FROM Sensors;
-
-OUTPUT Count TO SSTREAM "/local/users/v-yangtian/2024_12_21/CountResult.ss";
-
 #CS
-public static UInt32 s_updateTime = MmrHelper.DateToMmrTime(DateTime.Parse("2024-12_21"));
+public static UInt32 s_updateTime = MmrHelper.DateToMmrTime(DateTime.Parse("2024-12_25"));
 #ENDCS

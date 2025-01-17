@@ -1,0 +1,19 @@
+﻿// Copyright (C) Microsoft Corporation. All rights reserved.
+// Script GUID:d1d76e68-c91b-4fc8-9eed-920c2c5cef2c
+// Used for tracking history
+
+
+
+input =
+    SELECT MediaKey,
+           MUrl
+    FROM
+    (
+        SSTREAM "/shares/SegmentRelevance/SegmentRelevance/users/jichen4/XC/Google/2023-10-18_2024-10-23/Clicked/Top21M/Image-NGramXCs.ss"
+    );
+
+
+OUTPUT TO "/local/Prod/Image/Repository/Sensor/PageCaption/MessageQueue/v-yangtian/Image-NGramXCs.tsv";
+
+
+
