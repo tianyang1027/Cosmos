@@ -1,0 +1,43 @@
+﻿// Copyright (C) Microsoft Corporation. All rights reserved.
+// Script GUID:ae6af28c-c4a2-4134-b235-6ec033500caf
+// Used for tracking history
+
+#DECLARE loop_number_minus_one int = 200;
+
+List =
+    SELECT MediaKey,
+           MUrl
+    FROM
+    (
+        SSTREAM "/shares/SegmentRelevance/SegmentRelevance/users/jichen4/XC/Google/2023-10-18_2024-10-23/Clicked/Top21M/Image-NGramXCs.ss"
+    );
+
+NumberedRows =
+    SELECT ROW_NUMBER() OVER() AS RowNumber,
+           NTILE(200) OVER() AS PartitionNumber,
+           *
+    FROM List;
+
+NumberedRows =
+    SELECT *.Except(PartitionNumber),
+           getDateString((int) PartitionNumber) AS PartitionNumberStr
+    FROM NumberedRows;
+
+LOOP(n, @loop_number_minus_one)
+{
+index_file_partition = 
+    SELECT *
+    FROM NumberedRows
+    WHERE PartitionNumberStr == getDateString(@@n@@+1);
+
+OUTPUT index_file_partition
+TO "/local/users/v-yangtian/PageCaption/{PartitionNumberStr}/Image-NGramXCs.tsv";
+};
+
+#CS
+public static string getDateString(int i)
+{
+    return (i-1).ToString();
+}
+
+#ENDCS

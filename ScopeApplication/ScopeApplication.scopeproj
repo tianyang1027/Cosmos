@@ -40,6 +40,7 @@
     </Script>
     <Script Include="FeatureInferenceToSensor\Compare.script" />
     <Script Include="FeatureInferenceToSensor\Convert.script" />
+    <Script Include="FeatureInferenceToSensor\cx.script" />
     <Script Include="FeatureInferenceToSensor\FeatureInferenceToSensor.script" />
     <Script Include="FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script" />
     <Script Include="FeatureInferenceToSensor\Spam_Defect_Rate_Pipeline.script" />
@@ -128,6 +129,9 @@
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\Convert.script.cs">
       <DependentUpon>FeatureInferenceToSensor\Convert.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\cx.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\cx.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\FeatureInferenceToSensor.script.cs">
       <DependentUpon>FeatureInferenceToSensor\FeatureInferenceToSensor.script</DependentUpon>

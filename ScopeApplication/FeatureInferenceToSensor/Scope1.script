@@ -2,14 +2,12 @@
 // Script GUID:d1d76e68-c91b-4fc8-9eed-920c2c5cef2c
 // Used for tracking history
 
-
-
 REFERENCE @"Microsoft.CSharp.dll";
 REFERENCE @"System.Web.dll";
 REFERENCE @"System.Net.Http.dll";
 
 input =
-    SELECT TOP 1000000 MediaKey,
+    SELECT MediaKey,
                  MUrl
     FROM
     (
@@ -20,22 +18,20 @@ input =
 output =
     SELECT MediaKey,
            MUrl,
-           GetBase64String(MUrl) AS Base64String
+           GetIMageBytes(MUrl) AS IMageBytes
     FROM input;
 
-
-OUTPUT output TO "/local/users/v-yangtian/Image-NGramXCs-Result-top1000000.tsv"
-USING DefaultTextOutputter(outputHeader: true);
+OUTPUT TO SSTREAM "/local/users/v-yangtian/Image-NGramXCs-Result.ss";
 
 
 #CS
 using System.Net.Http;
 
-public static string GetBase64String(string murl)
+public static byte[] GetIMageBytes(string murl)
 {
     if (string.IsNullOrWhiteSpace(murl))
     {
-        return string.Empty;
+        return null;
     }
     try
     {
@@ -47,19 +43,19 @@ public static string GetBase64String(string murl)
             if (response.IsSuccessStatusCode)
             {
                 byte[] imageBytes = response.Content.ReadAsByteArrayAsync().Result;
-                return Convert.ToBase64String(imageBytes);
+                return imageBytes;
             }
             else
             {
                 Console.WriteLine($"Failed to fetch image. URL: {murl}, Status Code: {response.StatusCode}");
-                return string.Empty;
+                return null;
             }
         }
     }
     catch (Exception ex)
     {
         Console.WriteLine($"Error fetching image from URL: {murl}, Exception: {ex.Message}");
-        return string.Empty;
+        return null;
     }
 }
 #ENDCS

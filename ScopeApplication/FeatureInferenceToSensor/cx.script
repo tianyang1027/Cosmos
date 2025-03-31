@@ -1,0 +1,32 @@
+﻿REFERENCE "/local/users/v-yangtian/Microsoft.ML.OnnxRuntime.dll";
+REFERENCE "/local/users/v-yangtian/System.Buffers.dll";
+REFERENCE "/local/users/v-yangtian/System.Memory.dll";
+REFERENCE "/local/users/v-yangtian/System.Numerics.Vectors.dll";
+REFERENCE "/local/users/v-yangtian/System.Runtime.CompilerServices.Unsafe.dll";
+REFERENCE "/local/users/v-yangtian/XCProcessor.dll";
+RESOURCE "/local/users/v-yangtian/onnxruntime.dll";
+
+RESOURCE "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/query_Rank/classifier.onnx";
+
+
+ImageFeatLabel =
+    EXTRACT Key,
+            NGrams,
+            ImgEmbedding,
+            MUrlWords,
+            Alt,
+            Title,
+            PUrlWords
+    FROM "/local/users/jichen4/XC/Google/2023-10-18_2024-10-23/Clicked/Balance/Split/SIEMV3_D32_ImgText/test/ImageFeatLabel_0.tsv"
+    USING Extractors.Tsv();
+
+
+result =
+    PROCESS ImageFeatLabel
+    USING Microsoft.Bing.ImageIndexQuality.OnnxRunner.DocProcessor("classifier.onnx", "16");
+
+
+OUTPUT
+TO "/local/users/v-yangtian/result.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
