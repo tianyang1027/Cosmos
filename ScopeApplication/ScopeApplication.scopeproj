@@ -43,6 +43,10 @@
     <Script Include="FeatureInferenceToSensor\cx.script" />
     <Script Include="FeatureInferenceToSensor\FeatureInferenceToSensor.script" />
     <Script Include="FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script" />
+    <Script Include="FeatureInferenceToSensor\query_rank_train.script" />
+    <Script Include="FeatureInferenceToSensor\query_rank_val.script" />
+    <Script Include="FeatureInferenceToSensor\query_ret_train.script" />
+    <Script Include="FeatureInferenceToSensor\query_ret_val.script" />
     <Script Include="FeatureInferenceToSensor\Spam_Defect_Rate_Pipeline.script" />
     <Script Include="FileSetsSample.script" />
     <Script Include="Freshness\ActiveIndex\DiscoveryNodule.script" />
@@ -138,6 +142,18 @@
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script.cs">
       <DependentUpon>FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\query_rank_train.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\query_rank_train.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\query_rank_val.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\query_rank_val.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\query_ret_train.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\query_ret_train.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\query_ret_val.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\query_ret_val.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\Spam_Defect_Rate_Pipeline.script.cs">
       <DependentUpon>FeatureInferenceToSensor\Spam_Defect_Rate_Pipeline.script</DependentUpon>
