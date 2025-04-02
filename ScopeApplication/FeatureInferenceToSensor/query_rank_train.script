@@ -10,22 +10,29 @@ RESOURCE "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/query_Rank/
 
 
 ImageFeatLabel =
-    EXTRACT Key:string,
-            NGrams:string,
-            ImgEmbedding:string,
-            MUrlWords:string,
-            Alt:string,
-            Title:string,
-            PUrlWords:string,
-            _filenum:int
+    EXTRACT Key : string,
+            NGrams : string,
+            ImgEmbedding : string,
+            MUrlWords : string,
+            Alt : string,
+            Title : string,
+            PUrlWords : string,
+            _filenum : int
     FROM "/local/users/jichen4/XC/Google/2023-10-18_2024-10-23/Clicked/Balance/Split/SIEMV3_D32_ImgText/train/ImageFeatLabel_{_filenum}.tsv"
     USING Extractors.Tsv(skipFirstNRows: 1);
 
-ImageFeatLabel = SELECT *
-      FROM ImageFeatLabel
-      WHERE ( _filenum >= 0  )
-          AND ( _filenum <= 10 );
-
+ImageFeatLabel =
+    SELECT Key,
+           FIRST(NGrams) AS NGrams,
+           FIRST(ImgEmbedding) AS ImgEmbedding,
+           FIRST(MUrlWords) AS MUrlWords,
+           FIRST(Alt) AS Alt,
+           FIRST(Title) AS Title,
+           FIRST(PUrlWords) AS PUrlWords
+    FROM ImageFeatLabel
+    WHERE (_filenum >= 0)
+          AND (_filenum <= 10)
+    GROUP BY Key;
 
 result =
     PROCESS ImageFeatLabel
