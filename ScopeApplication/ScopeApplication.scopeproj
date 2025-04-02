@@ -42,6 +42,8 @@
     <Script Include="FeatureInferenceToSensor\Convert.script" />
     <Script Include="FeatureInferenceToSensor\cx.script" />
     <Script Include="FeatureInferenceToSensor\FeatureInferenceToSensor.script" />
+    <Script Include="FeatureInferenceToSensor\keyword_rank.script" />
+    <Script Include="FeatureInferenceToSensor\keyword_ret.script" />
     <Script Include="FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script" />
     <Script Include="FeatureInferenceToSensor\query_rank_train.script" />
     <Script Include="FeatureInferenceToSensor\query_rank_val.script" />
@@ -139,6 +141,12 @@
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\FeatureInferenceToSensor.script.cs">
       <DependentUpon>FeatureInferenceToSensor\FeatureInferenceToSensor.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\keyword_rank.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\keyword_rank.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\keyword_ret.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\keyword_ret.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script.cs">
       <DependentUpon>FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script</DependentUpon>

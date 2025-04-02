@@ -1,0 +1,27 @@
+﻿REFERENCE "/local/users/v-yangtian/Microsoft.ML.OnnxRuntime.dll";
+REFERENCE "/local/users/v-yangtian/System.Buffers.dll";
+REFERENCE "/local/users/v-yangtian/System.Memory.dll";
+REFERENCE "/local/users/v-yangtian/System.Numerics.Vectors.dll";
+REFERENCE "/local/users/v-yangtian/System.Runtime.CompilerServices.Unsafe.dll";
+REFERENCE "/local/users/v-yangtian/Label_Quantized.dll";
+RESOURCE "/local/users/v-yangtian/onnxruntime.dll";
+
+RESOURCE "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/keyword_Rank/classifier.onnx";
+
+
+Label_Quantized =
+    SELECT *
+    FROM
+    (
+        SSTREAM "/local/users/jichen4/XC/Google/2023-10-18_2024-10-23/Clicked/Balance/Text/SIEMV3_D32/Label_Quantized.ss"
+    );
+
+
+result =
+    PROCESS Label_Quantized
+    USING Microsoft.Bing.ImageIndexQuality.OnnxRunner.LableProcessor("classifier.onnx", "16");
+
+
+OUTPUT
+TO "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/keyword_Rank/xc_label_embedding_csharp.tsv"
+USING DefaultTextOutputter(outputHeader: true);
