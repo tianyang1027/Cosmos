@@ -1,3 +1,27 @@
-﻿// Copyright (C) Microsoft Corporation. All rights reserved.
-// Script GUID:6f8c5533-111b-43d8-adab-e89cb7f47326
-// Used for tracking history
+﻿xc_label_embedding_csharp =
+    EXTRACT Text : string,
+            Embedding : string
+    FROM "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/keyword_Ret/xc_label_embedding_csharp.tsv"
+    USING Extractors.Tsv(skipFirstNRows: 1);
+
+
+xc_label_embedding_python =
+    EXTRACT Text : string,
+            Embedding : string
+    FROM "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/keyword_Ret/xc_label_embedding_python.tsv"
+    USING Extractors.Tsv(skipFirstNRows: 1);
+
+
+
+compare =
+    SELECT y.Text AS Text,
+           y.Embedding AS Embedding_python,
+           c.Embedding AS Embedding_csharp
+    FROM xc_label_embedding_csharp AS c
+    INNER JOIN
+        xc_label_embedding_python AS y
+        ON c.Text == y.Text;
+
+OUTPUT
+TO "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/keyword_Ret/compare_reuslt.tsv"
+USING DefaultTextOutputter(outputHeader: true);
