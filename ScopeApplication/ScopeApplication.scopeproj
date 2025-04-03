@@ -40,15 +40,21 @@
     </Script>
     <Script Include="FeatureInferenceToSensor\Compare.script" />
     <Script Include="FeatureInferenceToSensor\Convert.script" />
+    <Script Include="FeatureInferenceToSensor\keyword_rank_compare.script" />
     <Script Include="FeatureInferenceToSensor\cx.script" />
     <Script Include="FeatureInferenceToSensor\FeatureInferenceToSensor.script" />
     <Script Include="FeatureInferenceToSensor\keyword_rank.script" />
     <Script Include="FeatureInferenceToSensor\keyword_ret.script" />
+    <Script Include="FeatureInferenceToSensor\keyword_ret_compare.script" />
     <Script Include="FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script" />
     <Script Include="FeatureInferenceToSensor\query_rank_train.script" />
+    <Script Include="FeatureInferenceToSensor\query_rank_train_compare.script" />
     <Script Include="FeatureInferenceToSensor\query_rank_val.script" />
+    <Script Include="FeatureInferenceToSensor\query_rank_val_compare.script" />
     <Script Include="FeatureInferenceToSensor\query_ret_train.script" />
+    <Script Include="FeatureInferenceToSensor\query_ret_train_compare.script" />
     <Script Include="FeatureInferenceToSensor\query_ret_val.script" />
+    <Script Include="FeatureInferenceToSensor\query_ret_val_compare.script" />
     <Script Include="FeatureInferenceToSensor\Spam_Defect_Rate_Pipeline.script" />
     <Script Include="FileSetsSample.script" />
     <Script Include="Freshness\ActiveIndex\DiscoveryNodule.script" />
@@ -136,6 +142,9 @@
     <ScriptCode Include="FeatureInferenceToSensor\Convert.script.cs">
       <DependentUpon>FeatureInferenceToSensor\Convert.script</DependentUpon>
     </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\keyword_rank_compare.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\keyword_rank_compare.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\cx.script.cs">
       <DependentUpon>FeatureInferenceToSensor\cx.script</DependentUpon>
     </ScriptCode>
@@ -148,20 +157,35 @@
     <ScriptCode Include="FeatureInferenceToSensor\keyword_ret.script.cs">
       <DependentUpon>FeatureInferenceToSensor\keyword_ret.script</DependentUpon>
     </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\keyword_ret_compare.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\keyword_ret_compare.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script.cs">
       <DependentUpon>FeatureInferenceToSensor\PrismyV4AndFaceFeaturesDailyInference.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\query_rank_train.script.cs">
       <DependentUpon>FeatureInferenceToSensor\query_rank_train.script</DependentUpon>
     </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\query_rank_train_compare.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\query_rank_train_compare.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\query_rank_val.script.cs">
       <DependentUpon>FeatureInferenceToSensor\query_rank_val.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\query_rank_val_compare.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\query_rank_val_compare.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\query_ret_train.script.cs">
       <DependentUpon>FeatureInferenceToSensor\query_ret_train.script</DependentUpon>
     </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\query_ret_train_compare.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\query_ret_train_compare.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\query_ret_val.script.cs">
       <DependentUpon>FeatureInferenceToSensor\query_ret_val.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="FeatureInferenceToSensor\query_ret_val_compare.script.cs">
+      <DependentUpon>FeatureInferenceToSensor\query_ret_val_compare.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="FeatureInferenceToSensor\Spam_Defect_Rate_Pipeline.script.cs">
       <DependentUpon>FeatureInferenceToSensor\Spam_Defect_Rate_Pipeline.script</DependentUpon>
