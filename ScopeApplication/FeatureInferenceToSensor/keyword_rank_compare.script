@@ -13,15 +13,48 @@ xc_label_embedding_python =
 
 
 
-compare =
+L2DistanceData =
     SELECT y.Text AS Text,
-           y.Embedding AS Embedding_python,
-           c.Embedding AS Embedding_csharp
+           L2Distance(y.Embedding.Split(',').Select(double.Parse).ToArray(), y.Embedding.Split(',').Select(double.Parse).ToArray()) AS L2Distance
     FROM xc_label_embedding_csharp AS c
     INNER JOIN
         xc_label_embedding_python AS y
-        ON c.Text == y.Text;
+        ON c.Text == y.Text
+    ORDER BY L2Distance DESC;
 
 OUTPUT
-TO "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/keyword_Rank/comparee_reuslt.tsv"
+TO "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/keyword_Rank/L2Distance_row.tsv"
 USING DefaultTextOutputter(outputHeader: true);
+
+
+L2DistanceDataAvg =
+    SELECT AVG(L2Distance) AS L2Distance_AVG
+    FROM L2DistanceData;
+
+OUTPUT
+TO "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/keyword_Rank/L2Distance_Avg.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+
+#CS
+
+using System;
+
+static double L2Distance(double[] arr1, double[] arr2)
+{
+    if (arr1.Length != arr2.Length)
+    {
+        throw new ArgumentException("Arrays must have the same length");
+    }
+
+    double sum = 0;
+    for (int i = 0; i < arr1.Length; i++)
+    {
+        // Calculate the squared difference and add to sum
+        sum += Math.Pow(arr1[i] - arr2[i], 2);
+    }
+
+    // Return the square root of the sum
+    return Math.Sqrt(sum);
+}
+#ENDCS

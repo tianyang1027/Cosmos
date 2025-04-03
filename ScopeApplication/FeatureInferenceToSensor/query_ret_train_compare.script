@@ -1,3 +1,60 @@
-﻿// Copyright (C) Microsoft Corporation. All rights reserved.
-// Script GUID:7101ae91-0c3d-4cdb-b2b9-cceeb4cf5b11
-// Used for tracking history
+﻿xc_label_embedding_csharp =
+    EXTRACT Key : string,
+            Embedding : string
+    FROM "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/query_Ret/train_xc_query_embedding_csharp.tsv"
+    USING Extractors.Tsv(skipFirstNRows: 1);
+
+
+xc_label_embedding_python =
+    EXTRACT Key : string,
+            Embedding : string
+    FROM "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/query_Ret/train_xc_query_embedding_python.tsv"
+    USING Extractors.Tsv(skipFirstNRows: 1);
+
+
+
+L2DistanceData =
+    SELECT y.Key AS Key,
+           L2Distance(y.Embedding.Split(',').Select(double.Parse).ToArray(), y.Embedding.Split(',').Select(double.Parse).ToArray()) AS L2Distance
+    FROM xc_label_embedding_csharp AS c
+    INNER JOIN
+        xc_label_embedding_python AS y
+        ON c.Key == y.Key
+    ORDER BY L2Distance DESC;
+
+OUTPUT
+TO "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/query_Ret/train_L2Distance_row.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+
+L2DistanceDataAvg =
+    SELECT AVG(L2Distance) AS L2Distance_AVG
+    FROM L2DistanceData;
+
+OUTPUT
+TO "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/query_Ret/train_L2Distance_Avg.tsv"
+USING DefaultTextOutputter(outputHeader: true);
+
+
+#CS
+
+using System;
+
+static double L2Distance(double[] arr1, double[] arr2)
+{
+    if (arr1.Length != arr2.Length)
+    {
+        throw new ArgumentException("Arrays must have the same length");
+    }
+
+    double sum = 0;
+    for (int i = 0; i < arr1.Length; i++)
+    {
+        // Calculate the squared difference and add to sum
+        sum += Math.Pow(arr1[i] - arr2[i], 2);
+    }
+
+    // Return the square root of the sum
+    return Math.Sqrt(sum);
+}
+#ENDCS
