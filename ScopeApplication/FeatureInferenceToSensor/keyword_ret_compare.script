@@ -13,9 +13,9 @@ xc_label_embedding_python =
 
 L2DistanceData =
     SELECT p.Text AS Text,
+           GetL2Distance(c.Embedding.Split(',').Select(double.Parse).ToArray(), p.Embedding.Split(',').Select(double.Parse).ToArray()) AS L2Distance,
            c.Embedding AS Embedding_csharp,
-           p.Embedding AS Embedding_python,
-           L2Distance(c.Embedding.Split(',').Select(double.Parse).ToArray(), p.Embedding.Split(',').Select(double.Parse).ToArray()) AS L2Distance
+           p.Embedding AS Embedding_python
     FROM xc_label_embedding_csharp AS c
     INNER JOIN
         xc_label_embedding_python AS p
@@ -40,7 +40,7 @@ USING DefaultTextOutputter(outputHeader: true);
 
 using System;
 
-static double L2Distance(double[] arr1, double[] arr2)
+static double GetL2Distance(double[] arr1, double[] arr2)
 {
     if (arr1.Length != arr2.Length)
     {
