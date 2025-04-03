@@ -11,15 +11,15 @@ xc_label_embedding_python =
     FROM "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/keyword_Ret/xc_label_embedding_python.tsv"
     USING Extractors.Tsv(skipFirstNRows: 1);
 
-
-
 L2DistanceData =
-    SELECT y.Text AS Text,
-           L2Distance(c.Embedding.Split(',').Select(double.Parse).ToArray(), y.Embedding.Split(',').Select(double.Parse).ToArray()) AS L2Distance
+    SELECT p.Text AS Text,
+           c.Embedding AS Embedding_csharp,
+           p.Embedding AS Embedding_python,
+           L2Distance(c.Embedding.Split(',').Select(double.Parse).ToArray(), p.Embedding.Split(',').Select(double.Parse).ToArray()) AS L2Distance
     FROM xc_label_embedding_csharp AS c
     INNER JOIN
-        xc_label_embedding_python AS y
-        ON c.Text == y.Text
+        xc_label_embedding_python AS p
+        ON c.Text == p.Text
     ORDER BY L2Distance DESC;
 
 OUTPUT
