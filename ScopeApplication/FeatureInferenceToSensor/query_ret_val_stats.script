@@ -1,0 +1,35 @@
+﻿L2Distance_row =
+    EXTRACT Key : string,
+            L2Distance : float,
+            Embedding_csharp : string,
+            Embedding_python : string
+    FROM "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/query_Ret/val_L2Distance_row.tsv"
+    USING Extractors.Tsv(skipFirstNRows: 1);
+
+
+largeL2Distance =
+    SELECT COUNT( * ) AS Count
+    FROM L2Distance_row
+    WHERE L2Distance > 0.1;
+
+
+total_count =
+    SELECT COUNT( * ) AS Total
+    FROM L2Distance_row;
+
+cross_result =
+    SELECT Count,
+           Total
+    FROM largeL2Distance
+    CROSS JOIN
+        total_count;
+
+stats_result =
+    SELECT Count AS largeL2DistanceCount,
+           Total AS TotalCount,
+           (1.0 * Count / Total) AS percentage
+    FROM cross_result;
+
+OUTPUT
+TO "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/query_Ret/val_L2Distance_stats.tsv"
+USING DefaultTextOutputter(outputHeader: true);

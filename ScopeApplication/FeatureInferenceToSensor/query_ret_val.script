@@ -42,3 +42,5 @@ result =
 OUTPUT
 TO "/local/users/jichen4/XC/Models/1Encoder2HeadsDocLabel/onnx/query_Ret/val_xc_query_embedding_csharp.tsv"
 USING DefaultTextOutputter(outputHeader: true);
+
+
