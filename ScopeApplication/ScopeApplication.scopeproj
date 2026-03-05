@@ -30,6 +30,7 @@
     <Script Include="CleanupBadSeed.script" />
     <Script Include="Clustering.script" />
     <Script Include="ContentCoverage_6_IndexCoverage.script" />
+    <Script Include="Dashbord\task1.script" />
     <Script Include="DebugToolToTestGivenSetOfImages.script" />
     <Script Include="DebugTool_PPE.script" />
     <Script Include="DebugTool_PROD.script" />
@@ -123,6 +124,9 @@
     </ScriptCode>
     <ScriptCode Include="ContentCoverage_6_IndexCoverage.script.cs">
       <DependentUpon>ContentCoverage_6_IndexCoverage.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="Dashbord\task1.script.cs">
+      <DependentUpon>Dashbord\task1.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="DebugToolToTestGivenSetOfImages.script.cs">
       <DependentUpon>DebugToolToTestGivenSetOfImages.script</DependentUpon>
@@ -335,6 +339,7 @@
     <Folder Include="HIt App_Old" />
     <Folder Include="Freshness" />
     <Folder Include="FeatureInferenceToSensor" />
+    <Folder Include="Dashbord" />
   </ItemGroup>
   <Import Project="$(AppData)\Microsoft\ScopeStudio\MsBuild\1.0\Scope.targets" />
 </Project>

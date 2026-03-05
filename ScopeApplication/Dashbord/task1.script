@@ -1,0 +1,52 @@
+﻿
+ProcessedData = SELECT  EventId,
+                        RawQuery,
+                        NormalizedQuery,
+                        Dataset,
+                        Market,
+                        userLanguage,
+                        userRegion,
+                        flights,
+                        GetSuppressValue(CarouselDebugLog) AS CarouselState,
+                        CarouselLayout,
+                        CarouselPlacement,
+                        //GetSuppressValue(CarouselDebugLog) AS NavState,
+                        NavLayout,
+                        NavPlacement,
+                        GetSuppressValue(SingleAddressDebugLog) AS SingleAddressState,
+                        SingleAddressLayout,
+                        SingleAddressPlacement,
+                        GetSuppressValue(SegmentSubIntentDebugLog) AS SegmentSubIntentState,
+                        SegmentSubIntentLayout,
+                        SegmentSubIntentPlacement
+FROM (SSTREAM "/local/users/ruijieyan/Dataset/Triggering/RealEstateMagazineSlapiLog/2026-03/01.ss");
+
+OUTPUT ProcessedData
+TO "/local/users/v-yangtian/Titan/RealEstateImpression/2026/03/01.parquet"
+USING Outputters.Parquet();
+
+
+
+
+#CS
+
+public static string GetSuppressValue(string input)
+{
+    if (string.IsNullOrEmpty(input))
+        return string.Empty;
+
+    string[] pairs = input.Split('^');
+
+    foreach (var pair in pairs)
+    {
+        if (pair.StartsWith("suppress=", StringComparison.OrdinalIgnoreCase))
+        {
+            int index = pair.IndexOf('=');
+            return index >= 0 && index < pair.Length - 1 ? pair.Substring(index + 1) : string.Empty;
+        }
+    }
+
+    return string.Empty;
+}
+
+#ENDCS
