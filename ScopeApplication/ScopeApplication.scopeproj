@@ -97,6 +97,9 @@
     <Script Include="LoopSamples.script" />
     <Script Include="LwNoduleText_Combine.script" />
     <Script Include="Metrics_1110_4.script" />
+    <Script Include="OpenL1\IDF\IDFstat.script" />
+    <Script Include="OpenL1\IDF\SampleIDF.script" />
+    <Script Include="OpenL1\UIS\ExtractUrlHash.script" />
     <Script Include="page_title.script" />
     <Script Include="PIVOT.script" />
     <Script Include="ouput_latest_week_dedupe.script" />
@@ -287,6 +290,15 @@
     <ScriptCode Include="Metrics_1110_4.script.cs">
       <DependentUpon>Metrics_1110_4.script</DependentUpon>
     </ScriptCode>
+    <ScriptCode Include="OpenL1\IDF\IDFstat.script.cs">
+      <DependentUpon>OpenL1\IDF\IDFstat.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="OpenL1\IDF\SampleIDF.script.cs">
+      <DependentUpon>OpenL1\IDF\SampleIDF.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="OpenL1\UIS\ExtractUrlHash.script.cs">
+      <DependentUpon>OpenL1\UIS\ExtractUrlHash.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="page_title.script.cs">
       <DependentUpon>page_title.script</DependentUpon>
     </ScriptCode>
@@ -340,6 +352,9 @@
     <Folder Include="Freshness" />
     <Folder Include="FeatureInferenceToSensor" />
     <Folder Include="Dashbord" />
+    <Folder Include="OpenL1" />
+    <Folder Include="OpenL1\IDF" />
+    <Folder Include="OpenL1\UIS" />
   </ItemGroup>
   <Import Project="$(AppData)\Microsoft\ScopeStudio\MsBuild\1.0\Scope.targets" />
 </Project>

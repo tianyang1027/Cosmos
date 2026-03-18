@@ -1,0 +1,145 @@
+REFERENCE @"/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.ScheduleSelection.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bing.HashUtil.dll";
+REFERENCE "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.Core.dll";
+REFERENCE "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.SnapshotMerger.dll";
+REFERENCE "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.Utility.dll";
+RESOURCE  "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/HashValue.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.dll";
+RESOURCE  "/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.pdb",
+          "/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.xml";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\DiscoverySelection.Shared.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\DiscoverySelection.Util.dll";
+RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\tld.txt";
+
+
+
+USING MMRV2.Utility;
+USING MMRV2.Core;
+USING Microsoft.SegmentRelevance.ScopeLib;  
+
+// In this script, we sample 8B Organic IDF from n (3) days of daily RawImageIDF stream.
+// First, we run the stat script (IDFstat.script) to get the number of nodules.
+// Then we calculate the sampling ratio and run this script.
+// Make sure to set the ratio in the script
+
+
+#DECLARE In_IDF        string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/%Y_%m_%d/RawImageIDF.ss?date=today-9...today-7"; 
+#DECLARE Output_Folder string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data/IDF/";
+#DECLARE Out_Stat      string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data/IDF/DataStatus.ss";
+
+
+NoduleRank =
+    SELECT Key,
+           PageKey AS PKey,
+           MediaUrl AS MUrl,
+           PageUrl AS PUrl,
+           StaticRank,
+           IDFBlob
+    FROM (SSTREAM @In_IDF);
+
+NoduleRank =
+    SELECT Key, 
+           PKey,
+           FIRST(MUrl) AS MUrl,
+           FIRST(PUrl) AS PUrl,
+           FIRST(StaticRank) AS StaticRank,
+           FIRST(IDFBlob) AS IDFBlob
+    GROUP BY Key, PKey;
+
+
+index = 
+    SELECT * FROM NoduleRank SAMPLE UNIFORM (0.347827);
+
+index = SELECT MUrl, PUrl, StaticRank, IDFBlob, GetDomain(PUrl) AS PDomain, GetCombinedHash(MUrl, PUrl) AS UrlHash16B;
+
+index =
+    SELECT 
+    
+        UrlHash16B,
+        StaticRank,
+        MUrl,
+        PUrl,
+        PDomain,
+        IDFBlob AS IdfBlob
+    FROM index;
+
+index =
+    SELECT index.*,
+           UrlHashToPartitionId(UrlHash16B) AS PartitionId;
+
+stat =
+    SELECT COUNT() AS TotalCount
+    FROM index;
+
+OUTPUT stat
+TO SSTREAM @Out_Stat;
+
+#DECLARE i int = 0;
+LOOP(i, 32)
+{
+    index_0 = SELECT *.Except(PartitionId) FROM index WHERE 512 * @@i@@ <= PartitionId AND PartitionId < 512 * (@@i@@ + 1);
+    OUTPUT index_0 TO SSTREAM (@Output_Folder + "Data_Segment_@@i@@.ss")
+                   HASH
+    CLUSTERED BY UrlHash16B
+    INTO 2000
+    SORTED BY UrlHash16B;
+}
+
+#CS    
+using Microsoft.SCOPE.Types;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using ScopeRuntime;
+using Microsoft.Bing.HashUtil;
+
+public static byte[] ParseHexString(string hex)
+{
+    byte[] hash = new byte[16];
+    for (int i = 0; i < hex.Length / 2; i++)
+    {
+        var upper = Convert.ToByte(hex.Substring(2 * i, 1), 16);
+        var lower = Convert.ToByte(hex.Substring(2 * i + 1, 1), 16);
+        if (upper <= 0x0F && lower <= 0x0F)
+        {
+        hash[i] = (byte)(lower | (upper << 4));
+        }
+        else
+        {
+        return new byte[16];
+        }
+    }
+ return hash;
+}    
+    
+Int64 UrlHashToPartitionId(string urlHash)
+{
+     byte[] bytes = ParseHexString(urlHash);
+     var hashLow = BitConverter.ToUInt64(bytes, 0);
+     var hashHigh = BitConverter.ToUInt64(bytes, 8);
+     // Use lower bits (first 8 bytes) to generate partition id
+     Int64 partitionId = (Int64)((hashLow >> 4) % 16384);
+     return partitionId;
+}
+
+public static string GetCombinedHash(string mUrl, string pUrl)
+{
+    string mKey = HutHash.GetUrlHashAsBase64String(mUrl);
+    string pKey = HutHash.GetUrlHashAsBase64String(pUrl);
+    byte[] bCodes = HutHash.GetHashAsBinary(mKey + pKey);
+    return string.Concat(bCodes.Select(b => b.ToString("X2")));
+}
+
+public static string GetDomain(string url)
+{
+   string domain, host, l1path;
+    
+    if (MMRV2.ScheduleSelection.Tool.ParseUrl(out domain, out host, out l1path, url)) 
+    {
+        return domain;
+    }
+    
+    return null;
+}
+#ENDCS

@@ -1,0 +1,24 @@
+// Script to extract UrlHash16B from the output of Sample8BNoduleFromPublish.script
+
+#DECLARE In_Dir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data/IDF/";
+#DECLARE Out_Dir string = @"/local/users/v-yangtian/XC/OpenL1/";
+//#DECLARE In_Tsv string = @In_Dir + "Nodule_10B.tsv";
+#DECLARE  Out_Tsv string = @Out_Dir + "Nodule_8B.tsv";
+
+
+Data = 
+    SSTREAM STREAMSET @In_Dir 
+    PATTERN "Data_Segment_%n.ss"
+    RANGE __serialnum = ["0", "31"];
+
+//UrlHashes = 
+//    EXTRACT UrlHash16B:string
+//    FROM @In_Tsv
+//    USING DefaultTextExtractor(skipFirstNRows: 1);
+
+UrlHashes =SELECT UrlHash16B FROM Data;
+
+
+OUTPUT UrlHashes
+TO @Out_Tsv
+USING DefaultTextOutputter(outputHeader: true);

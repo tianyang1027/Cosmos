@@ -10,7 +10,7 @@ ProcessedData = SELECT  EventId,
                         GetSuppressValue(CarouselDebugLog) AS CarouselState,
                         CarouselLayout,
                         CarouselPlacement,
-                        //GetSuppressValue(CarouselDebugLog) AS NavState,
+                        GetSuppressValue(CarouselDebugLog) AS NavState,
                         NavLayout,
                         NavPlacement,
                         GetSuppressValue(SingleAddressDebugLog) AS SingleAddressState,
@@ -24,8 +24,6 @@ FROM (SSTREAM "/local/users/ruijieyan/Dataset/Triggering/RealEstateMagazineSlapi
 OUTPUT ProcessedData
 TO "/local/users/v-yangtian/Titan/RealEstateImpression/2026/03/01.parquet"
 USING Outputters.Parquet();
-
-
 
 
 #CS
