@@ -101,6 +101,7 @@
     <Script Include="OpenL1\IDF\SampleIDF.script" />
     <Script Include="OpenL1\UIS\ConvertHexToByte.script" />
     <Script Include="OpenL1\UIS\ExtractUrlHash.script" />
+    <Script Include="OpenL1\UIS\PartitionSaveUISIDF.script" />
     <Script Include="page_title.script" />
     <Script Include="PIVOT.script" />
     <Script Include="ouput_latest_week_dedupe.script" />
@@ -302,6 +303,9 @@
     </ScriptCode>
     <ScriptCode Include="OpenL1\UIS\ExtractUrlHash.script.cs">
       <DependentUpon>OpenL1\UIS\ExtractUrlHash.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="OpenL1\UIS\PartitionSaveUISIDF.script.cs">
+      <DependentUpon>OpenL1\UIS\PartitionSaveUISIDF.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="page_title.script.cs">
       <DependentUpon>page_title.script</DependentUpon>

@@ -1,0 +1,53 @@
+// Script to extract UrlHash16B from the output of Sample8BNoduleFromPublish.script
+
+#DECLARE Dir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data";
+#DECLARE In_UIS_0 string = $"{@Dir}/UIS_20260317/Data_Segment_0-15.ss";
+#DECLARE In_UIS_1 string = $"{@Dir}/UIS_20260317/Data_Segment_16-31.ss";
+
+#DECLARE  In_Organic string =   $"{@Dir}/IDF/";
+
+organic = 
+    SELECT UrlHash16B,
+           StaticRank
+    FROM (
+             SSTREAM STREAMSET @In_Organic
+             PATTERN "Data_Segment_%n.ss"
+             RANGE __serialnum = ["0", "31"]
+    );
+
+uis =
+    SELECT *
+    FROM
+    (
+        SSTREAM @In_UIS_0
+    )
+    UNION
+    SELECT *
+    FROM
+    (
+        SSTREAM @In_UIS_1
+    );
+
+comb = 
+    SELECT organic.UrlHash16B AS UrlHash16B,
+           organic.StaticRank AS StaticRank,
+           uis.IdfBlob AS IdfBlob,
+           BucketId
+    FROM organic INNER JOIN uis
+    ON organic.UrlHash16B == uis.UrlHash16B;
+
+#DECLARE i int = 0;
+LOOP(i, 32)
+{
+    #DECLARE  Out_File string =  $"{@Dir}/UIS_20260317/Data_Segment_@@i@@.ss";
+    partition =
+        SELECT *.Except(BucketId)
+        FROM comb
+        WHERE BucketId == @@i@@;
+
+    OUTPUT partition
+    TO SSTREAM @Out_File
+    HASH CLUSTERED BY UrlHash16B
+    INTO 2000
+    SORTED BY UrlHash16B;
+}
