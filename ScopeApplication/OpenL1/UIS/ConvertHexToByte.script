@@ -1,0 +1,66 @@
+// Script to convert HexString to byte[] and repartition
+#DECLARE InputDir string = @"/local/Prod/Image/Selection/OpenL1";
+#DECLARE OutputDir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data/UIS_20260317/";
+
+// Extract the data
+data = 
+    EXTRACT UrlHash16B : string,
+            HexBlob : string
+    FROM STREAMSET @InputDir 
+    PATTERN "mmuisimage.%n.tsv"
+    RANGE __serialnum =["8384", "16383"]
+    USING DefaultTextExtractor(delimiter:'\t');
+
+// Convert HexString to byte[] and calculate BucketId
+converted = 
+    SELECT UrlHash16B,
+           HexUtils.HexToBytes(HexBlob) AS IdfBlob,
+           (int)(HexUtils.UrlHashToPartitionId(UrlHash16B) / 512) AS BucketId
+    FROM data;
+
+OUTPUT converted
+TO SSTREAM @OutputDir + "Data_Segment_16-31.ss"
+HASH CLUSTERED BY UrlHash16B
+INTO 2000
+SORTED BY UrlHash16B;
+
+#CS
+using System;
+
+public static class HexUtils
+{
+    public static byte[] HexToBytes(string hex)
+    {
+        if (string.IsNullOrEmpty(hex))
+        {
+            return new byte[0];
+        }
+
+        if (hex.Length % 2 != 0)
+        {
+            // Handle odd length if necessary, or throw
+            throw new ArgumentException("Hex string must have an even length");
+        }
+
+        byte[] bytes = new byte[hex.Length / 2];
+        for (int i = 0; i < hex.Length; i += 2)
+        {
+            bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+        }
+        return bytes;
+    }
+
+    public static Int64 UrlHashToPartitionId(string urlHash)
+    {
+         byte[] bytes = HexToBytes(urlHash);
+         // Ensure we have enough bytes
+         if (bytes.Length < 8) return 0; 
+
+         var hashLow = BitConverter.ToUInt64(bytes, 0);
+         // Use lower bits (first 8 bytes) to generate partition id
+         // Logic taken from Sample8BNoduleFromPublish.script
+         Int64 partitionId = (Int64)((hashLow >> 4) % 16384);
+         return partitionId;
+    }
+}
+#ENDCS
