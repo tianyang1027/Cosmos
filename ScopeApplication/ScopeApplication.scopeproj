@@ -97,11 +97,14 @@
     <Script Include="LoopSamples.script" />
     <Script Include="LwNoduleText_Combine.script" />
     <Script Include="Metrics_1110_4.script" />
+    <Script Include="OpenL1\IDF\SampleIDF_3.script" />
+    <Script Include="OpenL1\IDF\SampleIDF_2.script" />
+    <Script Include="OpenL1\IDF\GetIDF.script" />
     <Script Include="OpenL1\IDF\IDFstat.script" />
-    <Script Include="OpenL1\IDF\SampleIDF.script" />
-    <Script Include="OpenL1\UIS\ConvertHexToByte.script" />
-    <Script Include="OpenL1\UIS\ExtractUrlHash.script" />
-    <Script Include="OpenL1\UIS\PartitionSaveUISIDF.script" />
+    <Script Include="OpenL1\IDF\SampleIDF_1.script" />
+    <Script Include="OpenL1\UIS\ConvertHexToByte_3.script" />
+    <Script Include="OpenL1\UIS\ExtractUrlHash_2.script" />
+    <Script Include="OpenL1\UIS\PartitionSaveUISIDF_4.script" />
     <Script Include="page_title.script" />
     <Script Include="PIVOT.script" />
     <Script Include="ouput_latest_week_dedupe.script" />
@@ -292,20 +295,29 @@
     <ScriptCode Include="Metrics_1110_4.script.cs">
       <DependentUpon>Metrics_1110_4.script</DependentUpon>
     </ScriptCode>
+    <ScriptCode Include="OpenL1\IDF\SampleIDF_3.script.cs">
+      <DependentUpon>OpenL1\IDF\SampleIDF_3.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="OpenL1\IDF\SampleIDF_2.script.cs">
+      <DependentUpon>OpenL1\IDF\SampleIDF_2.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="OpenL1\IDF\GetIDF.script.cs">
+      <DependentUpon>OpenL1\IDF\GetIDF.script</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="OpenL1\IDF\IDFstat.script.cs">
       <DependentUpon>OpenL1\IDF\IDFstat.script</DependentUpon>
     </ScriptCode>
-    <ScriptCode Include="OpenL1\IDF\SampleIDF.script.cs">
-      <DependentUpon>OpenL1\IDF\SampleIDF.script</DependentUpon>
+    <ScriptCode Include="OpenL1\IDF\SampleIDF_1.script.cs">
+      <DependentUpon>OpenL1\IDF\SampleIDF_1.script</DependentUpon>
     </ScriptCode>
-    <ScriptCode Include="OpenL1\UIS\ConvertHexToByte.script.cs">
-      <DependentUpon>OpenL1\UIS\ConvertHexToByte.script</DependentUpon>
+    <ScriptCode Include="OpenL1\UIS\ConvertHexToByte_3.script.cs">
+      <DependentUpon>OpenL1\UIS\ConvertHexToByte_3.script</DependentUpon>
     </ScriptCode>
-    <ScriptCode Include="OpenL1\UIS\ExtractUrlHash.script.cs">
-      <DependentUpon>OpenL1\UIS\ExtractUrlHash.script</DependentUpon>
+    <ScriptCode Include="OpenL1\UIS\ExtractUrlHash_2.script.cs">
+      <DependentUpon>OpenL1\UIS\ExtractUrlHash_2.script</DependentUpon>
     </ScriptCode>
-    <ScriptCode Include="OpenL1\UIS\PartitionSaveUISIDF.script.cs">
-      <DependentUpon>OpenL1\UIS\PartitionSaveUISIDF.script</DependentUpon>
+    <ScriptCode Include="OpenL1\UIS\PartitionSaveUISIDF_4.script.cs">
+      <DependentUpon>OpenL1\UIS\PartitionSaveUISIDF_4.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="page_title.script.cs">
       <DependentUpon>page_title.script</DependentUpon>

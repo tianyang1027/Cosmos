@@ -23,38 +23,74 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 // Make sure to set the ratio in the script
 
 
-#DECLARE In_IDF        string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/%Y_%m_%d/RawImageIDF.ss?date=today-9...today-7"; 
-#DECLARE Output_Folder string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data/IDF/";
-#DECLARE Out_Stat      string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data/IDF/DataStatus.ss";
+
+#DECLARE Output_Folder string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260409_Data/IDF/";
+#DECLARE Out_Stat      string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260409_Data/IDF/DataStatus.ss";
 
 
-NoduleRank =
-    SELECT Key,
-           PageKey AS PKey,
-           MediaUrl AS MUrl,
-           PageUrl AS PUrl,
-           StaticRank,
-           IDFBlob
-    FROM (SSTREAM @In_IDF);
 
-NoduleRank =
-    SELECT Key, 
-           PKey,
-           FIRST(MUrl) AS MUrl,
-           FIRST(PUrl) AS PUrl,
-           FIRST(StaticRank) AS StaticRank,
-           FIRST(IDFBlob) AS IDFBlob
-    GROUP BY Key, PKey;
+match_result =
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/IDF_Match_Result_2.ss");
+
+dup =
+    SELECT
+        PUrl,
+        MUrl,
+        COUNT(*) AS DupCount
+    FROM match_result
+    GROUP BY PUrl, MUrl;
+
+OUTPUT dup
+TO SSTREAM "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260409_Data/IDF/dup.ss";
+
+dist =
+    SELECT
+        DupCount,
+        COUNT(*) AS NoduleCount
+    FROM dup
+    GROUP BY DupCount;
+
+OUTPUT dist
+TO SSTREAM "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260409_Data/IDF/dist.ss";
+
+dist_ordered =
+    SELECT
+        DupCount,
+        NoduleCount,
+        SUM(NoduleCount) OVER (ORDER BY DupCount ROWS UNBOUNDED PRECEDING) AS CumCount,
+        SUM(NoduleCount) OVER () AS TotalCount
+    FROM dist;
+
+threshold =
+    SELECT TOP 1
+        DupCount AS T
+    FROM dist_ordered
+    WHERE (double)CumCount / TotalCount >= 0.8
+    ORDER BY T;
+
+OUTPUT threshold
+TO "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260409_Data/IDF/threshold.tsv"
+USING Outputters.Tsv();
 
 
-index = 
-    SELECT * FROM NoduleRank SAMPLE UNIFORM (0.347827);
+index =
+    SELECT *
+    FROM
+    (
+        SELECT 
+            s.*,
+            ROW_NUMBER() OVER (PARTITION BY s.PUrl, s.MUrl) AS RowID,
+            t.T
+        FROM match_result AS s
+        CROSS JOIN threshold AS t
+    ) AS x
+    WHERE x.RowID <= x.T;
+
 
 index = SELECT MUrl, PUrl, StaticRank, IDFBlob, GetDomain(PUrl) AS PDomain, GetCombinedHash(MUrl, PUrl) AS UrlHash16B;
 
 index =
     SELECT 
-    
         UrlHash16B,
         StaticRank,
         MUrl,

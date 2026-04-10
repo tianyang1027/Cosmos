@@ -1,0 +1,38 @@
+﻿#DECLARE In_IDF        string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/%Y_%m_%d/RawImageIDF.ss?date=today-8...today-1";
+#DECLARE In_DupMapping string ="/local/Prod/Image/Metrics/IGV2/CrowdFidelity/2026_03_31/ContentBase/DupMapping/DupMapping_Prod_sub.ss";
+
+
+
+dupMapping =
+    SELECT * FROM (SSTREAM @In_DupMapping);
+
+NoduleRank =
+    SELECT Key,
+           PageKey AS PKey,
+           MediaUrl AS MUrl,
+           PageUrl AS PUrl,
+           StaticRank,
+           IDFBlob
+    FROM (SSTREAM @In_IDF);
+
+NoduleRank =
+    SELECT Key, 
+           PKey,
+           FIRST(MUrl) AS MUrl,
+           FIRST(PUrl) AS PUrl,
+           FIRST(StaticRank) AS StaticRank,
+           FIRST(IDFBlob) AS IDFBlob
+    GROUP BY Key, PKey;
+
+IDF_Match_Result = 
+    SELECT f.Key,
+           f.PKey,
+           f.MUrl,
+           f.PUrl,
+           n.StaticRank,
+           n.IDFBlob
+FROM dupMapping AS f INNER JOIN NoduleRank AS n
+ON f.Key == n.Key AND f.PKey == n.PKey;
+
+OUTPUT IDF_Match_Result
+TO SSTREAM "/local/users/v-yangtian/IDF_Match_Result_2.ss";
