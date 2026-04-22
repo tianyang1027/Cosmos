@@ -97,6 +97,7 @@
     <Script Include="LoopSamples.script" />
     <Script Include="LwNoduleText_Combine.script" />
     <Script Include="Metrics_1110_4.script" />
+    <Script Include="OpenL1\IDF\GetThreshold.script" />
     <Script Include="OpenL1\IDF\SampleIDF_3.script" />
     <Script Include="OpenL1\IDF\SampleIDF_2.script" />
     <Script Include="OpenL1\IDF\GetIDF.script" />
@@ -294,6 +295,9 @@
     </ScriptCode>
     <ScriptCode Include="Metrics_1110_4.script.cs">
       <DependentUpon>Metrics_1110_4.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="OpenL1\IDF\GetThreshold.script.cs">
+      <DependentUpon>OpenL1\IDF\GetThreshold.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="OpenL1\IDF\SampleIDF_3.script.cs">
       <DependentUpon>OpenL1\IDF\SampleIDF_3.script</DependentUpon>

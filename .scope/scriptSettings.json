@@ -1,0 +1,1033 @@
+{
+    "scripts": {
+        "ScopeApplication/cleanupbadseed.script": {
+            "account": "vc://cosmos11/MMRepository.prod",
+            "clusterRun": {
+                "priority": "1000",
+                "tokens": "0",
+                "vcPercent": "0",
+                "autoToken": "0",
+                "jobName": "ScopeApplication_CleanupBadSeed",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-maxPercentInputUnavailability 100 ",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "CleanupBadSeed.script.cs"
+            ]
+        },
+        "ScopeApplication/dashbord/task1.script": {
+            "account": "vc://cosmos09/RealEstate",
+            "clusterRun": {
+                "priority": "1",
+                "tokens": "0",
+                "vcPercent": "0",
+                "autoToken": "0",
+                "jobName": "task1",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-maxPercentInputUnavailability 100",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Dashbord\\task1.script.cs"
+            ]
+        },
+        "ScopeApplication/openl1/idf/getidf.script": {
+            "account": "vc://cosmos11/MMRepository.prod",
+            "clusterRun": {
+                "priority": "1",
+                "tokens": "0",
+                "vcPercent": "0",
+                "autoToken": "0",
+                "jobName": "GetIDF",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-MaxTempDataHeldBytesPerToken 11000000000000 -MaxTotalInputSize 11000000000000000",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\IDF\\GetIDF.script.cs"
+            ]
+        },
+        "ScopeApplication/openl1/idf/idfstat.script": {
+            "account": "vc://cosmos11/MMRepository.prod",
+            "clusterRun": {
+                "priority": "1",
+                "tokens": "0",
+                "vcPercent": "0",
+                "autoToken": "0",
+                "jobName": "IDFstat",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-maxPercentInputUnavailability 100",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\IDF\\IDFstat.script.cs"
+            ]
+        },
+        "ScopeApplication/openl1/idf/sampleidf_1.script": {
+            "account": "vc://cosmos11/MMRepository.prod",
+            "clusterRun": {
+                "priority": "1",
+                "tokens": "0",
+                "vcPercent": "0",
+                "autoToken": "0",
+                "jobName": "SampleIDF_1",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-maxPercentInputUnavailability 100",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\IDF\\SampleIDF_1.script.cs"
+            ]
+        },
+        "ScopeApplication/openl1/idf/sampleidf_2.script": {
+            "account": "vc://cosmos11/MMRepository.prod",
+            "clusterRun": {
+                "priority": "1",
+                "tokens": "0",
+                "vcPercent": "3",
+                "autoToken": "0",
+                "jobName": "SampleIDF_2",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-MaxTempDataHeldBytesPerToken 11000000000000 -MaxTotalInputSize 11000000000000000",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\IDF\\SampleIDF_2.script.cs"
+            ]
+        },
+        "ScopeApplication/openl1/idf/sampleidf_3.script": {
+            "account": "vc://cosmos11/MMRepository.prod",
+            "clusterRun": {
+                "priority": "1",
+                "tokens": "0",
+                "vcPercent": "0",
+                "autoToken": "0",
+                "jobName": "SampleIDF_3",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-MaxTempDataHeldBytesPerToken 11000000000000 -MaxTotalInputSize 11000000000000000",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\IDF\\SampleIDF_3.script.cs"
+            ]
+        },
+        "ScopeApplication/openl1/uis/extracturlhash_2.script": {
+            "account": "vc://cosmos11/MMRepository.prod",
+            "clusterRun": {
+                "priority": "1",
+                "tokens": "0",
+                "vcPercent": "0",
+                "autoToken": "0",
+                "jobName": "ExtractUrlHash_2",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-maxPercentInputUnavailability 100",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\UIS\\ExtractUrlHash_2.script.cs"
+            ]
+        },
+        "ScopeApplication/clustering.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Clustering.script.cs"
+            ]
+        },
+        "ScopeApplication/contentcoverage_6_indexcoverage.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "ContentCoverage_6_IndexCoverage.script.cs"
+            ]
+        },
+        "ScopeApplication/debugtooltotestgivensetofimages.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "DebugToolToTestGivenSetOfImages.script.cs"
+            ]
+        },
+        "ScopeApplication/debugtool_ppe.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "DebugTool_PPE.script.cs"
+            ]
+        },
+        "ScopeApplication/debugtool_prod.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "DebugTool_PROD.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/activeindeximageonnxmodel_deltaupdate.script": {
+            "account": "",
+            "clusterRun": {
+                "params": "In_ImageBlobBaseSchema=(\\\"/local/Prod/Image/Repository/Snapshot/Blob/Base/2024_12_23/Image_BlobBase_Schema.xml\\\"),In_PartnerImages=(\\\"/local/Prod/Image/Repository/__placeholder__.ss\\\"),In_MediaSnapshotSchema=(\\\"/local/Prod/Image/Repository/Snapshot/Media/2024_12_23/Image_Media_Schema.xml\\\"),In_ActiveNoduleView=(\\\"/local/Prod/Image/Repository/ActiveDocsCombined/LatestActiveNodulesList.view\\\"),In_MediaSnapshot=(\\\"/local/Prod/Image/Repository/Snapshot/Media/2024_12_23/Image_Media_Metadata.ss\\\"),Par_Score=(\\\"Prismy\\\"),In_ImageScoreSensor=(\\\"/local/Prod/Image/Repository/Sensor/Other/2024_12_23/PrismyContentV1Sensor.ss\\\"),In_ImageBlobDeltaView=(\\\"/local/Prod/Image/Repository/Schema/Latest/Blob_Delta.view\\\"),Out_ImageAttScore=(\\\"/local/users/v-yangtian/AttractivenessScoreV3.ss\\\"),Par_StreamExpiry=(\\\"10\\\"),Out_Sensor=(\\\"/local/users/v-yangtian/PrismyContentV1Sensor.ss\\\"),Par_Date=(\\\"2024_12_23\\\")",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "params": "In_ImageBlobBaseSchema=(\\\"/local/Prod/Image/Repository/Snapshot/Blob/Base/2024_12_23/Image_BlobBase_Schema.xml\\\"),In_PartnerImages=(\\\"/local/Prod/Image/Repository/__placeholder__.ss\\\"),In_MediaSnapshotSchema=(\\\"/local/Prod/Image/Repository/Snapshot/Media/2024_12_23/Image_Media_Schema.xml\\\"),In_ActiveNoduleView=(\\\"/local/Prod/Image/Repository/ActiveDocsCombined/LatestActiveNodulesList.view\\\"),In_MediaSnapshot=(\\\"/local/Prod/Image/Repository/Snapshot/Media/2024_12_23/Image_Media_Metadata.ss\\\"),Par_Score=(\\\"Prismy\\\"),In_ImageScoreSensor=(\\\"/local/Prod/Image/Repository/Sensor/Other/2024_12_23/PrismyContentV1Sensor.ss\\\"),In_ImageBlobDeltaView=(\\\"/local/Prod/Image/Repository/Schema/Latest/Blob_Delta.view\\\"),Out_ImageAttScore=(\\\"/local/users/v-yangtian/AttractivenessScoreV3.ss\\\"),Par_StreamExpiry=(\\\"10\\\"),Out_Sensor=(\\\"/local/users/v-yangtian/PrismyContentV1Sensor.ss\\\"),Par_Date=(\\\"2024_12_23\\\")",
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\ActiveIndexImageOnnxModel_DeltaUpdate.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/compare.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\Compare.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/convert.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\Convert.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/keyword_rank_compare.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\keyword_rank_compare.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/cx.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\cx.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/featureinferencetosensor.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\FeatureInferenceToSensor.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/keyword_rank.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\keyword_rank.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/keyword_ret.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\keyword_ret.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/keyword_ret_compare.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\keyword_ret_compare.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/prismyv4andfacefeaturesdailyinference.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\PrismyV4AndFaceFeaturesDailyInference.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/query_rank_train.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\query_rank_train.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/query_rank_train_compare.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\query_rank_train_compare.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/query_rank_val.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\query_rank_val.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/query_rank_val_compare.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\query_rank_val_compare.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/query_ret_train.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\query_ret_train.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/query_ret_train_compare.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\query_ret_train_compare.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/query_ret_val.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\query_ret_val.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/query_ret_val_compare.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\query_ret_val_compare.script.cs"
+            ]
+        },
+        "ScopeApplication/featureinferencetosensor/spam_defect_rate_pipeline.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FeatureInferenceToSensor\\Spam_Defect_Rate_Pipeline.script.cs"
+            ]
+        },
+        "ScopeApplication/filesetssample.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "FileSetsSample.script.cs"
+            ]
+        },
+        "ScopeApplication/freshness/activeindex/discoverynodule.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Freshness\\ActiveIndex\\DiscoveryNodule.script.cs"
+            ]
+        },
+        "ScopeApplication/freshness/activeindex/image.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Freshness\\ActiveIndex\\Image.script.cs"
+            ]
+        },
+        "ScopeApplication/freshness/activeindex/nodule.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Freshness\\ActiveIndex\\Nodule.script.cs"
+            ]
+        },
+        "ScopeApplication/freshness/activeindex/page.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Freshness\\ActiveIndex\\Page.script.cs"
+            ]
+        },
+        "ScopeApplication/generate50ksamples.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Generate50kSamples.script.cs"
+            ]
+        },
+        "ScopeApplication/generate_detrimental.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Generate_Detrimental.script.cs"
+            ]
+        },
+        "ScopeApplication/generate_domainantcolorbackgroundrankfile.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Generate_DomainantColorBackgroundRankFile.script.cs"
+            ]
+        },
+        "ScopeApplication/generate_latestdetrimental.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Generate_LatestDetrimental.script.cs"
+            ]
+        },
+        "ScopeApplication/generate_pagetitle.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Generate_PageTitle.script.cs"
+            ]
+        },
+        "ScopeApplication/getimageembedding.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "GetImageEmbedding.script.cs"
+            ]
+        },
+        "ScopeApplication/getmd5.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "GetMD5.script.cs"
+            ]
+        },
+        "ScopeApplication/gettopics.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "GetTopics.script.cs"
+            ]
+        },
+        "ScopeApplication/hitapp_0_sampleimpression.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "HitApp_0_SampleImpression.script.cs"
+            ]
+        },
+        "ScopeApplication/hitapp_0_sampleindex.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "HitApp_0_SampleIndex.script.cs"
+            ]
+        },
+        "ScopeApplication/hitapp_0_sampleindex_senddetrimental.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "HitApp_0_SampleIndex_SendDetrimental.script.cs"
+            ]
+        },
+        "ScopeApplication/hitapp_1_generatepointwisedefect.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "HitApp_1_GeneratePointwiseDefect.script.cs"
+            ]
+        },
+        "ScopeApplication/hitapp_new/hitapp_4_postprocessing.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "HitApp_New\\HitApp_4_Postprocessing.script.cs"
+            ]
+        },
+        "ScopeApplication/imagetypeanalysis.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "ImageTypeAnalysis.script.cs"
+            ]
+        },
+        "ScopeApplication/indexselection_0_generatefeatures.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "IndexSelection_0_GenerateFeatures.script.cs"
+            ]
+        },
+        "ScopeApplication/indexselection_0_generatefeatures_ppe.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "IndexSelection_0_GenerateFeatures_PPE.script.cs"
+            ]
+        },
+        "ScopeApplication/indexselection_1_generaterankfile2.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "IndexSelection_1_GenerateRankFile2.script.cs"
+            ]
+        },
+        "ScopeApplication/indexselection_1_generaterankfile_ppe.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "params": "In_BlockListDomain=(\\\"\\\"),Par_T2S2Th=(\\\"\\\"),Par_RemoveDupOnPageDomain=(\\\"\\\"),Par_RemoveDupOnLanuage=(\\\"\\\"),Par_ControlRank=(\\\"\\\"),In_Features=(\\\"\\\"),In_BlockList=(\\\"\\\"),In_BlockNodules=(\\\"\\\"),In_BlockListT2S2Mapping=(\\\"\\\"),Out_RankFile_NoDetrimental=(\\\"\\\"),Out_RankFile_NoDefect=(\\\"\\\"),Out_StatFile=(\\\"\\\"),Out_RankFile=(\\\"\\\")",
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "IndexSelection_1_GenerateRankFile_PPE.script.cs"
+            ]
+        },
+        "ScopeApplication/indexselection_1_generaterankfile.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "IndexSelection_1_GenerateRankFile.script.cs"
+            ]
+        },
+        "ScopeApplication/indexselection_1_generaterankfile_ppe2.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "IndexSelection_1_GenerateRankFile_PPE2.script.cs"
+            ]
+        },
+        "ScopeApplication/indexselection_2_topicstamping.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "IndexSelection_2_TopicStamping.script.cs"
+            ]
+        },
+        "ScopeApplication/indexselection_2_topicstamping_ppe.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "IndexSelection_2_TopicStamping_PPE.script.cs"
+            ]
+        },
+        "ScopeApplication/largediscrepancybetwee activeindex .script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Largediscrepancybetwee ActiveIndex .script.cs"
+            ]
+        },
+        "ScopeApplication/loopsamples.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "LoopSamples.script.cs"
+            ]
+        },
+        "ScopeApplication/lwnoduletext_combine.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "LwNoduleText_Combine.script.cs"
+            ]
+        },
+        "ScopeApplication/metrics_1110_4.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Metrics_1110_4.script.cs"
+            ]
+        },
+        "ScopeApplication/openl1/uis/converthextobyte_3.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\UIS\\ConvertHexToByte_3.script.cs"
+            ]
+        },
+        "ScopeApplication/openl1/uis/partitionsaveuisidf_4.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\UIS\\PartitionSaveUISIDF_4.script.cs"
+            ]
+        },
+        "ScopeApplication/page_title.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "page_title.script.cs"
+            ]
+        },
+        "ScopeApplication/pivot.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "PIVOT.script.cs"
+            ]
+        },
+        "ScopeApplication/ouput_latest_week_dedupe.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "ouput_latest_week_dedupe.script.cs"
+            ]
+        },
+        "ScopeApplication/ouput_latest_week.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "ouput_latest_week.script.cs"
+            ]
+        },
+        "ScopeApplication/prismyv3nondefect.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "PrismyV3NonDefect.script.cs"
+            ]
+        },
+        "ScopeApplication/prismyv3rank.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "PrismyV3Rank.script.cs"
+            ]
+        },
+        "ScopeApplication/scope2.script": {
+            "account": "",
+            "clusterRun": {
+                "params": "In_Nodule=(\\\"/local/users/v-yingchen/Fidelity/Production.Nodule.Report.NormalizeInIndex.2022_12_05.tsv\\\")",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "params": "In_Nodule=(\\\"/local/users/v-yingchen/Fidelity/Production.Nodule.Report.NormalizeInIndex.2022_12_05.tsv\\\")",
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Scope2.script.cs"
+            ]
+        },
+        "ScopeApplication/scope4.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "Scope4.script.cs"
+            ]
+        },
+        "ScopeApplication/ss2tsv.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "SS2TSV.script.cs"
+            ]
+        },
+        "ScopeApplication/t2s2.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "T2S2.script.cs"
+            ]
+        },
+        "ScopeApplication/t2s2_test.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "T2S2_Test.script.cs"
+            ]
+        },
+        "ScopeApplication/updatelabeleddetrimentalnodules.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "UpdateLabeledDetrimentalNodules.script.cs"
+            ]
+        },
+        "ScopeApplication/update_detrimental_feature.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "update_detrimental_feature.script.cs"
+            ]
+        },
+        "ScopeApplication/wrapstarcosmosdata.script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "WrapStarCosmosData.script.cs"
+            ]
+        },
+        "ScopeApplication/wrapstarcosmosdata_deviantart .script": {
+            "account": "",
+            "clusterRun": {
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "WrapStarCosmosData_Deviantart .script.cs"
+            ]
+        }
+    }
+}
