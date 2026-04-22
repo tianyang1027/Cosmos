@@ -24,24 +24,27 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 
 
 
-#DECLARE Output_Folder string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260409_Data/IDF/";
-#DECLARE Out_Stat      string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260409_Data/IDF/DataStatus.ss";
+#DECLARE Output_Folder string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260420_Data/IDF/";
+#DECLARE Out_Stat      string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260420_Data/IDF/DataStatus.ss";
+#DECLARE In_Dir string = "/local/users/v-yangtian/IDF";
 
 
+IDF_Match_Result = 
+    SSTREAM STREAMSET @In_Dir 
+    PATTERN "IDF_Match_Result_%n.ss"
+    RANGE __serialnum = ["1", "6"];
 
-match_result =
-    SELECT * FROM (SSTREAM "/local/users/v-yangtian/IDF_Match_Result_2.ss");
 
 dup =
     SELECT
         PUrl,
         MUrl,
         COUNT(*) AS DupCount
-    FROM match_result
+    FROM IDF_Match_Result
     GROUP BY PUrl, MUrl;
 
 OUTPUT dup
-TO SSTREAM "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260409_Data/IDF/dup.ss";
+TO SSTREAM "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260420_Data/IDF/dup.ss";
 
 dist =
     SELECT
@@ -51,7 +54,7 @@ dist =
     GROUP BY DupCount;
 
 OUTPUT dist
-TO SSTREAM "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260409_Data/IDF/dist.ss";
+TO SSTREAM "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260420_Data/IDF/dist.ss";
 
 dist_ordered =
     SELECT
@@ -69,22 +72,23 @@ threshold =
     ORDER BY T;
 
 OUTPUT threshold
-TO "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260409_Data/IDF/threshold.tsv"
+TO "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260420_Data/IDF/threshold.tsv"
 USING Outputters.Tsv();
 
 
+ranked =
+    SELECT 
+        s.*,
+        ROW_NUMBER() OVER (PARTITION BY s.PUrl, s.MUrl) AS RowID
+    FROM IDF_Match_Result AS s;
+
 index =
-    SELECT *
-    FROM
-    (
-        SELECT 
-            s.*,
-            ROW_NUMBER() OVER (PARTITION BY s.PUrl, s.MUrl) AS RowID,
-            t.T
-        FROM match_result AS s
-        CROSS JOIN threshold AS t
-    ) AS x
-    WHERE x.RowID <= x.T;
+    SELECT r.*, t.T
+    FROM ranked AS r
+    CROSS JOIN threshold AS t
+    WHERE r.RowID <= t.T;
+
+
 
 
 index = SELECT MUrl, PUrl, StaticRank, IDFBlob, GetDomain(PUrl) AS PDomain, GetCombinedHash(MUrl, PUrl) AS UrlHash16B;

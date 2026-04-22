@@ -23,11 +23,10 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 // Make sure to set the ratio in the script
 
 
-#DECLARE In_IDF        string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/%Y_%m_%d/RawImageIDF.ss?date=today-5...today-3"; 
-#DECLARE Output_Folder string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260331_Data/IDF/";
-#DECLARE Out_Stat      string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260331_Data/IDF/DataStatus.ss";
-#DECLARE In_DupMapping string ="/local/Prod/Image/Metrics/IGV2/CrowdFidelity/2026_03_31/ContentBase/DupMapping/DupMapping_Prod_sub.ss";
-#DECLARE Out_stat_before string = "/local/users/v-yangtian/stat_before.ss";
+#DECLARE In_IDF        string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/%Y_%m_%d/RawImageIDF.ss?date=today-9...today-4"; 
+#DECLARE Output_Folder string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260422_Data/IDF/";
+#DECLARE Out_Stat      string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260422_Data/IDF/DataStatus.ss";
+#DECLARE In_DupMapping string ="/local/Prod/Image/Metrics/IGV2/CrowdFidelity/2026_04_13/ContentBase/DupMapping/DupMapping_Prod_sub.ss";
 
 
 dup =
@@ -71,25 +70,17 @@ TO "/local/users/v-yangtian/threshold.tsv"
 USING Outputters.Tsv();
 
 
-filtered_raw =
-    SELECT *
-    FROM
-    (
-        SELECT 
-            s.*,
-            ROW_NUMBER() OVER (PARTITION BY s.PUrl, s.MUrl) AS RowID,
-            t.T
-        FROM (SSTREAM @In_DupMapping) AS s
-        CROSS JOIN threshold AS t
-    ) AS x
-    WHERE x.RowID <= x.T;
+ranked =
+    SELECT 
+        s.*,
+        ROW_NUMBER() OVER (PARTITION BY s.PUrl, s.MUrl) AS RowID
+    FROM (SSTREAM @In_DupMapping) AS s;
 
-stat_before =
-    SELECT COUNT() AS TotalCount
-    FROM filtered_raw;
-
-OUTPUT stat_before
-TO SSTREAM @Out_stat_before;
+DupMappingIndex =
+    SELECT r.*, t.T
+    FROM ranked AS r
+    CROSS JOIN threshold AS t
+    WHERE r.RowID <= t.T;
 
 NoduleRank =
     SELECT Key,
@@ -111,14 +102,25 @@ NoduleRank =
 
 
 index = 
-    SELECT f.Key,
-           f.PKey,
-           f.MUrl,
-           f.PUrl,
+    SELECT n.Key,
+           n.PKey,
+           n.MUrl,
+           n.PUrl,
            n.StaticRank,
            n.IDFBlob
-FROM filtered_raw AS f INNER JOIN NoduleRank AS n
-ON f.Key == n.Key AND f.PKey == n.PKey;
+FROM DupMappingIndex AS f INNER JOIN NoduleRank AS n
+ON f.t2s2MUrl == n.MUrl AND f.t2s2PUrl == n.PUrl;
+
+
+index =
+    SELECT Key, 
+           PKey,
+           FIRST(MUrl) AS MUrl,
+           FIRST(PUrl) AS PUrl,
+           FIRST(StaticRank) AS StaticRank,
+           FIRST(IDFBlob) AS IDFBlob
+    GROUP BY Key, PKey;
+
 
 
 index = SELECT MUrl, PUrl, StaticRank, IDFBlob, GetDomain(PUrl) AS PDomain, GetCombinedHash(MUrl, PUrl) AS UrlHash16B;
