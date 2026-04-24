@@ -24,12 +24,23 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 
 
 #DECLARE Output_Folder string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260422_Data/IDF/";
-#DECLARE Out_Stat      string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260422_Data/IDF/DataStatus.ss"
-#DECLARE inputPath string = "/local/users/v-yangtian/2026_04_22/index_{*}.ss";
+#DECLARE Out_Stat      string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260422_Data/IDF/DataStatus.ss";
 
 
-index = SELECT * FROM (SSTREAM @inputPath);
 
+index =
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/2026_04_22/index_0412.ss")
+    UNION ALL
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/2026_04_22/index_0413.ss")
+    UNION ALL
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/2026_04_22/index_0414.ss")
+    UNION ALL
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/2026_04_22/index_0415.ss")
+    UNION ALL
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/2026_04_22/index_0416.ss")
+    UNION ALL
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/2026_04_22/index_0417.ss");
+    
 index =
     SELECT Key, 
            PKey,

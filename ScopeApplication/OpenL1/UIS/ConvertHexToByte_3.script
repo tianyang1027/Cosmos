@@ -1,14 +1,14 @@
 // Script to convert HexString to byte[] and repartition
 #DECLARE InputDir string = @"/local/Prod/Image/Selection/OpenL1";
-#DECLARE OutputDir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data/UIS_20260317/";
+#DECLARE OutputDir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260422_Data/UIS_20260422/";
 
 // Extract the data
 data = 
     EXTRACT UrlHash16B : string,
             HexBlob : string
     FROM STREAMSET @InputDir 
-    PATTERN "mmuisimage.%n.tsv"
-    RANGE __serialnum =["8384", "16383"]
+    PATTERN "mmuisimageall.%n.tsv"
+    RANGE __serialnum =["0", "15"]
     USING DefaultTextExtractor(delimiter:'\t');
 
 // Convert HexString to byte[] and calculate BucketId
@@ -19,7 +19,7 @@ converted =
     FROM data;
 
 OUTPUT converted
-TO SSTREAM @OutputDir + "Data_Segment_16-31.ss"
+TO SSTREAM @OutputDir + "Data_Segment_0-15.ss"
 HASH CLUSTERED BY UrlHash16B
 INTO 2000
 SORTED BY UrlHash16B;

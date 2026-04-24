@@ -1,16 +1,28 @@
 // Script to extract UrlHash16B from the output of Sample8BNoduleFromPublish.script
 
 #DECLARE Dir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data";
+#DECLARE Dir2 string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260422_Data/";
 #DECLARE In_UIS_0 string = $"{@Dir}/UIS_20260317/Data_Segment_0-15.ss";
 #DECLARE In_UIS_1 string = $"{@Dir}/UIS_20260317/Data_Segment_16-31.ss";
+#DECLARE In_UIS_2 string = $"{@Dir2}/UIS_20260422/Data_Segment_0-15.ss";
 
 #DECLARE  In_Organic string =   $"{@Dir}/IDF/";
+#DECLARE  In_Organic2 string =   $"{@Dir2}/IDF/";
 
 organic = 
     SELECT UrlHash16B,
            StaticRank
     FROM (
              SSTREAM STREAMSET @In_Organic
+             PATTERN "Data_Segment_%n.ss"
+             RANGE __serialnum = ["0", "31"]
+    );
+
+organic2 = 
+    SELECT UrlHash16B,
+           StaticRank
+    FROM (
+             SSTREAM STREAMSET @In_Organic2
              PATTERN "Data_Segment_%n.ss"
              RANGE __serialnum = ["0", "31"]
     );
@@ -26,6 +38,12 @@ uis =
     FROM
     (
         SSTREAM @In_UIS_1
+    )
+    UNION
+    SELECT *
+    FROM
+    (
+        SSTREAM @In_UIS_2
     );
 
 comb = 
@@ -39,7 +57,7 @@ comb =
 #DECLARE i int = 0;
 LOOP(i, 32)
 {
-    #DECLARE  Out_File string =  $"{@Dir}/UIS_20260317/Data_Segment_@@i@@.ss";
+    #DECLARE  Out_File string =  $"{@Dir}/UIS_20260422/Data_Segment_@@i@@.ss";
     partition =
         SELECT *.Except(BucketId)
         FROM comb
