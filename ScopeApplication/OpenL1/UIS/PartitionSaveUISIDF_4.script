@@ -16,9 +16,8 @@ organic =
              SSTREAM STREAMSET @In_Organic
              PATTERN "Data_Segment_%n.ss"
              RANGE __serialnum = ["0", "31"]
-    );
-
-organic2 = 
+    )
+    UNION
     SELECT UrlHash16B,
            StaticRank
     FROM (
