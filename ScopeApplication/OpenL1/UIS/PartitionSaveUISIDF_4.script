@@ -1,13 +1,28 @@
 // Script to extract UrlHash16B from the output of Sample8BNoduleFromPublish.script
+REFERENCE @"/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.ScheduleSelection.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bing.HashUtil.dll";
+REFERENCE "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.Core.dll";
+REFERENCE "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.SnapshotMerger.dll";
+REFERENCE "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.Utility.dll";
+RESOURCE  "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/HashValue.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.dll";
+RESOURCE  "/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.pdb",
+          "/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.xml";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\DiscoverySelection.Shared.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\DiscoverySelection.Util.dll";
+RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\tld.txt";
 
-#DECLARE Dir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data";
+
+#DECLARE Dir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data/";
 #DECLARE Dir2 string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260422_Data/";
+#DECLARE OutDir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260425_Data/";
 #DECLARE In_UIS_0 string = $"{@Dir}/UIS_20260317/Data_Segment_0-15.ss";
 #DECLARE In_UIS_1 string = $"{@Dir}/UIS_20260317/Data_Segment_16-31.ss";
 #DECLARE In_UIS_2 string = $"{@Dir2}/UIS_20260422/Data_Segment_0-15.ss";
 
 #DECLARE  In_Organic string =   $"{@Dir}/IDF/";
 #DECLARE  In_Organic2 string =   $"{@Dir2}/IDF/";
+#DECLARE  Out_MergedIDF string =   $"{@OutDir}/IDF/";
 
 organic = 
     SELECT UrlHash16B,
@@ -25,6 +40,22 @@ organic =
              PATTERN "Data_Segment_%n.ss"
              RANGE __serialnum = ["0", "31"]
     );
+
+organic =
+    SELECT organic.*,
+           UrlHashToPartitionId(UrlHash16B) AS PartitionId;
+
+#DECLARE j int = 0;
+LOOP(j, 32)
+{
+    organic_0 = SELECT *.Except(PartitionId) FROM organic WHERE 512 * @@j@@ <= PartitionId AND PartitionId < 512 * (@@j@@ + 1);
+    OUTPUT organic_0 TO SSTREAM (@Out_MergedIDF + "Data_Segment_@@j@@.ss")
+                   HASH
+    CLUSTERED BY UrlHash16B
+    INTO 2000
+    SORTED BY UrlHash16B;
+}
+
 
 uis =
     SELECT *
@@ -56,7 +87,7 @@ comb =
 #DECLARE i int = 0;
 LOOP(i, 32)
 {
-    #DECLARE  Out_File string =  $"{@Dir}/UIS_20260422/Data_Segment_@@i@@.ss";
+    #DECLARE  Out_File string =  $"{@OutDir}/UIS_20260425/Data_Segment_@@i@@.ss";
     partition =
         SELECT *.Except(BucketId)
         FROM comb
@@ -68,3 +99,44 @@ LOOP(i, 32)
     INTO 2000
     SORTED BY UrlHash16B;
 }
+
+
+#CS    
+using Microsoft.SCOPE.Types;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using ScopeRuntime;
+using Microsoft.Bing.HashUtil;
+
+public static byte[] ParseHexString(string hex)
+{
+    byte[] hash = new byte[16];
+    for (int i = 0; i < hex.Length / 2; i++)
+    {
+        var upper = Convert.ToByte(hex.Substring(2 * i, 1), 16);
+        var lower = Convert.ToByte(hex.Substring(2 * i + 1, 1), 16);
+        if (upper <= 0x0F && lower <= 0x0F)
+        {
+        hash[i] = (byte)(lower | (upper << 4));
+        }
+        else
+        {
+        return new byte[16];
+        }
+    }
+ return hash;
+}    
+    
+Int64 UrlHashToPartitionId(string urlHash)
+{
+     byte[] bytes = ParseHexString(urlHash);
+     var hashLow = BitConverter.ToUInt64(bytes, 0);
+     var hashHigh = BitConverter.ToUInt64(bytes, 8);
+     // Use lower bits (first 8 bytes) to generate partition id
+     Int64 partitionId = (Int64)((hashLow >> 4) % 16384);
+     return partitionId;
+}
+
+#ENDCS
