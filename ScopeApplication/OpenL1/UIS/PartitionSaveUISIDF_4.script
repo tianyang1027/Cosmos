@@ -26,7 +26,11 @@ RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelect
 
 organic = 
     SELECT UrlHash16B,
-           StaticRank
+           StaticRank,
+           MUrl,
+           PUrl,
+           PDomain,
+           IdfBlob
     FROM (
              SSTREAM STREAMSET @In_Organic
              PATTERN "Data_Segment_%n.ss"
@@ -34,7 +38,11 @@ organic =
     )
     UNION
     SELECT UrlHash16B,
-           StaticRank
+           StaticRank,
+           MUrl,
+           PUrl,
+           PDomain,
+           IdfBlob
     FROM (
              SSTREAM STREAMSET @In_Organic2
              PATTERN "Data_Segment_%n.ss"
