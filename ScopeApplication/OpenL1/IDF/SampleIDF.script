@@ -1,0 +1,267 @@
+REFERENCE @"/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.ScheduleSelection.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/Reco/Resources/Microsoft.Bing.HashUtil.dll";
+REFERENCE "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.Core.dll";
+REFERENCE "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.SnapshotMerger.dll";
+REFERENCE "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/MMRV2.Utility.dll";
+RESOURCE  "/shares/MMRepository.prod/MMRepository/Prod/Image/Repository/Binaries/HashValue.dll";
+REFERENCE "/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.dll";
+RESOURCE  "/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.pdb",
+          "/shares/SegmentRelevance/SegmentRelevance/MMShared/bin/Relevance.ScopeLib.xml";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\DiscoverySelection.Shared.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\DiscoverySelection.Util.dll";
+RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\tld.txt";
+
+
+
+USING MMRV2.Utility;
+USING MMRV2.Core;
+USING Microsoft.SegmentRelevance.ScopeLib;
+
+#DECLARE In_IDF               string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/%Y_%m_%d/RawImageIDF.ss?date=today-5...today-1";
+#DECLARE In_NoduleRank        string = "/local/Prod/Image/Selection/AfterCrawlSelectionV4.3/2026_08_06/NoduleRankFile_Unified.ss";
+#DECLARE In_Click             string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.click.training.top50.hrs.tsv";
+#DECLARE In_Click2            string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.click2.training.top50.hrs.tsv";
+#DECLARE In_HRS               string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.hrs.training.top50.hrs.tsv";
+#DECLARE In_DCG               string = "/local/users/jichen4/XC/L1/training_data/DCG/DCG_Labels.ss";
+#DECLARE In_Edge3P_Click      string = "/local/users/jichen4/XC/L1/training_data/Edge3p_Click/Edge3p_Click_Mini_Labels.ss";
+#DECLARE In_Edge3P_Position   string = "/local/users/jichen4/XC/L1/training_data/Edge3p_Position/Edge3p_Position_Mini_Labels.ss";
+
+#DECLARE Output_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260810_Data/IDF/";
+#DECLARE Out_Stat             string = @Output_Folder + "DataStatus.ss";
+#DECLARE Out_UrlHashMatch     string = @Output_Folder + "Union_UrlHash16B_IDF_NoduleRank_MatchResult.ss";
+
+IDF =
+    SELECT *
+    FROM (SSTREAM @In_IDF);
+
+NoduleRank =
+    SELECT *
+    FROM (SSTREAM @In_NoduleRank);
+
+
+IDF_NoduleRank =
+    SELECT I.Key,
+           I.PageKey AS PKey,
+           //I.StaticRank,
+           I.IDFBlob,
+           NR.MUrl,
+           NR.PUrl,
+           GetCombinedHash(NR.MUrl, NR.PUrl) AS UrlHash16B
+    FROM IDF AS I
+         INNER JOIN NoduleRank AS NR
+             ON I.Key == NR.Key AND I.PageKey == NR.PKey;
+
+
+IDF_NoduleRank =
+    SELECT Key,
+           PKey,
+           //FIRST(StaticRank) AS StaticRank,
+           FIRST(IDFBlob) AS IDFBlob,
+           FIRST(MUrl) AS MUrl,
+           FIRST(PUrl) AS PUrl,
+           FIRST(UrlHash16B) AS UrlHash16B
+    FROM IDF_NoduleRank
+    GROUP BY Key, PKey;
+
+
+IDF_NoduleRank_BeforeDedupeCount =
+    SELECT COUNT() AS TotalCount
+    FROM IDF_NoduleRank;
+
+OUTPUT IDF_NoduleRank_BeforeDedupeCount
+TO SSTREAM (@Output_Folder + "IDF_NoduleRank_BeforeDedupeCount.ss");
+
+Click =
+    EXTRACT Column0,
+            Column1,
+            Column2,
+            Column3,
+            Column4,
+            Column5,
+            UrlHash16B
+    FROM @In_Click
+    USING Extractors.Tsv();
+
+Click2 =
+    EXTRACT Column0,
+            Column1,
+            Column2,
+            Column3,
+            Column4,
+            Column5,
+            UrlHash16B
+    FROM @In_Click2
+    USING Extractors.Tsv();
+
+HRS =
+    EXTRACT Column0,
+            Column1,
+            Column2,
+            Column3,
+            Column4,
+            Column5,
+            UrlHash16B
+    FROM @In_HRS
+    USING Extractors.Tsv();
+
+DCG =
+    SELECT *
+    FROM (SSTREAM @In_DCG);
+
+Edge3P_Click =
+    SELECT *
+    FROM (SSTREAM @In_Edge3P_Click);
+
+Edge3P_Position =
+    SELECT *
+    FROM (SSTREAM @In_Edge3P_Position);
+
+Union_UrlHash16B =
+    SELECT UrlHash16B FROM Click
+    UNION ALL
+    SELECT UrlHash16B FROM Click2
+    UNION ALL
+    SELECT UrlHash16B FROM HRS
+    UNION ALL
+    SELECT UrlHash16B FROM DCG
+    UNION ALL
+    SELECT UrlHash16B FROM Edge3P_Click
+    UNION ALL
+    SELECT UrlHash16B FROM Edge3P_Position;
+
+
+UrlHashMatchResult =
+    SELECT UU.UrlHash16B,
+           INR.Key,
+           INR.PKey,
+           INR.MUrl,
+           INR.PUrl,
+           INR.IDFBlob,
+           IF(INR.UrlHash16B == null, "Unmatched", "Matched") AS MatchStatus
+    FROM Union_UrlHash16B AS UU
+         LEFT JOIN IDF_NoduleRank AS INR
+             ON UU.UrlHash16B == INR.UrlHash16B;
+
+OUTPUT UrlHashMatchResult
+TO SSTREAM @Out_UrlHashMatch;
+
+Matched_Include_Nodule=
+    SELECT *
+    FROM UrlHashMatchResult
+    WHERE MatchStatus == "Matched";
+
+OUTPUT Matched_Include_Nodule
+TO SSTREAM (@Output_Folder + "Matched_UrlHash16B_IDF_NoduleRank.ss");
+
+
+//sample 7.5B IDF
+Sample_Nodule =
+    SELECT *
+    FROM IDF_NoduleRank
+    SAMPLE UNIFORM (0.347827); // 7.5B / IDF_NoduleRank_BeforeDedupeCount = 0.326088
+
+//Union the sampled 7.5B IDF with the matched include IDF, and get the final 8B IDF
+index =
+    SELECT  MUrl,
+            PUrl,
+            IDFBlob AS IdfBlob,
+            GetDomain(PUrl) AS PDomain,
+            UrlHash16B
+    FROM Sample_Nodule
+    UNION ALL
+    SELECT 
+            MUrl,
+            PUrl,
+            IDFBlob AS IdfBlob,
+            GetDomain(PUrl) AS PDomain,
+            UrlHash16B
+    FROM Matched_Include_Nodule;
+
+
+index =
+    SELECT index.*,
+           UrlHashToPartitionId(UrlHash16B) AS PartitionId;
+
+stat =
+    SELECT COUNT() AS TotalCount
+    FROM index;
+
+OUTPUT stat
+TO SSTREAM @Out_Stat;
+
+#DECLARE i int = 0;
+LOOP(i, 32)
+{
+    index_0 =
+        SELECT *.Except(PartitionId)
+        FROM index
+        WHERE 512 * @@i@@ <= PartitionId
+              AND PartitionId < 512 * (@@i@@ + 1);
+
+    OUTPUT index_0
+    TO SSTREAM (@Output_Folder + "Data_Segment_@@i@@.ss")
+    HASH CLUSTERED BY UrlHash16B
+    INTO 2000
+    SORTED BY UrlHash16B;
+}
+
+#CS
+using Microsoft.SCOPE.Types;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using ScopeRuntime;
+using Microsoft.Bing.HashUtil;
+
+public static byte[] ParseHexString(string hex)
+{
+    byte[] hash = new byte[16];
+    for (int i = 0; i < hex.Length / 2; i++)
+    {
+        var upper = Convert.ToByte(hex.Substring(2 * i, 1), 16);
+        var lower = Convert.ToByte(hex.Substring(2 * i + 1, 1), 16);
+        if (upper <= 0x0F && lower <= 0x0F)
+        {
+            hash[i] = (byte)(lower | (upper << 4));
+        }
+        else
+        {
+            return new byte[16];
+        }
+    }
+
+    return hash;
+}
+
+Int64 UrlHashToPartitionId(string urlHash)
+{
+    byte[] bytes = ParseHexString(urlHash);
+    var hashLow = BitConverter.ToUInt64(bytes, 0);
+    var hashHigh = BitConverter.ToUInt64(bytes, 8);
+    // Use lower bits (first 8 bytes) to generate partition id
+    Int64 partitionId = (Int64)((hashLow >> 4) % 16384);
+    return partitionId;
+}
+
+public static string GetCombinedHash(string mUrl, string pUrl)
+{
+    string mKey = HutHash.GetUrlHashAsBase64String(mUrl);
+    string pKey = HutHash.GetUrlHashAsBase64String(pUrl);
+    byte[] bCodes = HutHash.GetHashAsBinary(mKey + pKey);
+    return string.Concat(bCodes.Select(b => b.ToString("X2")));
+}
+
+public static string GetDomain(string url)
+{
+    string domain, host, l1path;
+
+    if (MMRV2.ScheduleSelection.Tool.ParseUrl(out domain, out host, out l1path, url))
+    {
+        return domain;
+    }
+
+    return null;
+}
+
+#ENDCS
