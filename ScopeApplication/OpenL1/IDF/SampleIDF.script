@@ -117,21 +117,22 @@ Edge3P_Position =
     FROM (SSTREAM @In_Edge3P_Position);
 
 Union_UrlHash16B =
-    SELECT UrlHash16B FROM Click
+    SELECT "Click" AS TypeName, UrlHash16B FROM Click
     UNION ALL
-    SELECT UrlHash16B FROM Click2
+    SELECT "Click2" AS TypeName, UrlHash16B FROM Click2
     UNION ALL
-    SELECT UrlHash16B FROM HRS
+    SELECT "HRS" AS TypeName, UrlHash16B FROM HRS
     UNION ALL
-    SELECT UrlHash16B FROM DCG
+    SELECT "DCG" AS TypeName, UrlHash16B FROM DCG
     UNION ALL
-    SELECT UrlHash16B FROM Edge3P_Click
+    SELECT "Edge3P_Click" AS TypeName, UrlHash16B FROM Edge3P_Click
     UNION ALL
-    SELECT UrlHash16B FROM Edge3P_Position;
+    SELECT "Edge3P_Position" AS TypeName, UrlHash16B FROM Edge3P_Position;
 
 
 UrlHashMatchResult =
-    SELECT UU.UrlHash16B,
+    SELECT UU.TypeName,
+           UU.UrlHash16B,
            INR.Key,
            INR.PKey,
            INR.MUrl,
