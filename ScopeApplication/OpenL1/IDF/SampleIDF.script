@@ -17,8 +17,8 @@ USING MMRV2.Utility;
 USING MMRV2.Core;
 USING Microsoft.SegmentRelevance.ScopeLib;
 
-#DECLARE In_IDF               string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/%Y_%m_%d/RawImageIDF.ss?date=today-5...today-1";
-#DECLARE In_NoduleRank        string = "/local/Prod/Image/Selection/AfterCrawlSelectionV4.3/2026_08_10/NoduleRankFile_Unified.ss";
+//#DECLARE In_IDF               string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/%Y_%m_%d/RawImageIDF.ss?date=today-5...today-1";
+//#DECLARE In_NoduleRank        string = "/local/Prod/Image/Selection/AfterCrawlSelectionV4.3/2026_08_10/NoduleRankFile_Unified.ss";
 #DECLARE In_Click             string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.click.training.top50.hrs.tsv";
 #DECLARE In_Click2            string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.click2.training.top50.hrs.tsv";
 #DECLARE In_HRS               string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.hrs.training.top50.hrs.tsv";
@@ -29,48 +29,62 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 #DECLARE Output_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260810_Data/IDF/";
 #DECLARE Out_Stat             string = @Output_Folder + "DataStatus.ss";
 #DECLARE Out_UrlHashMatch     string = @Output_Folder + "Union_UrlHash16B_IDF_NoduleRank_MatchResult.ss";
-#DECLARE Out_MatchedTypeStat  string = @Output_Folder + "Matched_Include_Nodule_TypeStats.ss";
+#DECLARE Out_MatchTypeStat    string = @Output_Folder + "UrlHashMatchResult_TypeStats.ss";
 
-IDF =
-    SELECT *
-    FROM (SSTREAM @In_IDF);
-
-NoduleRank =
-    SELECT *
-    FROM (SSTREAM @In_NoduleRank);
-
+//IDF =
+//    SELECT *
+//    FROM (SSTREAM @In_IDF);
+//
+//NoduleRank =
+//    SELECT *
+//    FROM (SSTREAM @In_NoduleRank);
+//
+//
+//IDF_NoduleRank =
+//    SELECT I.Key,
+//           I.PageKey AS PKey,
+//           I.IDFBlob,
+//           NR.MUrl,
+//           NR.PUrl,
+//           NR.AdjustedRank AS StaticRank,
+//           GetCombinedHash(NR.MUrl, NR.PUrl) AS UrlHash16B
+//    FROM IDF AS I
+//         INNER JOIN NoduleRank AS NR
+//             ON I.Key == NR.Key AND I.PageKey == NR.PKey;
+//
+//
+//IDF_NoduleRank =
+//    SELECT Key,
+//           PKey,
+//           FIRST(StaticRank) AS StaticRank,
+//           FIRST(IDFBlob) AS IDFBlob,
+//           FIRST(MUrl) AS MUrl,
+//           FIRST(PUrl) AS PUrl,
+//           FIRST(UrlHash16B) AS UrlHash16B
+//    FROM IDF_NoduleRank
+//    GROUP BY Key, PKey;
+//
+//
+//IDF_NoduleRank_BeforeDedupeCount =
+//    SELECT COUNT() AS TotalCount
+//    FROM IDF_NoduleRank;
+//
+//OUTPUT IDF_NoduleRank_BeforeDedupeCount
+//TO SSTREAM (@Output_Folder + "IDF_NoduleRank_BeforeDedupeCount.ss");
 
 IDF_NoduleRank =
-    SELECT I.Key,
-           I.PageKey AS PKey,
-           I.IDFBlob,
-           NR.MUrl,
-           NR.PUrl,
-           NR.AdjustedRank AS StaticRank,
-           GetCombinedHash(NR.MUrl, NR.PUrl) AS UrlHash16B
-    FROM IDF AS I
-         INNER JOIN NoduleRank AS NR
-             ON I.Key == NR.Key AND I.PageKey == NR.PKey;
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_05/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_06/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_07/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_08/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_09/IDF/IDF_NoduleRank.ss");
 
+IDF_NoduleRank = SELECT *,GetCombinedHash(MUrl, PUrl) AS UrlHash16B FROM IDF_NoduleRank;
 
-IDF_NoduleRank =
-    SELECT Key,
-           PKey,
-           FIRST(StaticRank) AS StaticRank,
-           FIRST(IDFBlob) AS IDFBlob,
-           FIRST(MUrl) AS MUrl,
-           FIRST(PUrl) AS PUrl,
-           FIRST(UrlHash16B) AS UrlHash16B
-    FROM IDF_NoduleRank
-    GROUP BY Key, PKey;
-
-
-IDF_NoduleRank_BeforeDedupeCount =
-    SELECT COUNT() AS TotalCount
-    FROM IDF_NoduleRank;
-
-OUTPUT IDF_NoduleRank_BeforeDedupeCount
-TO SSTREAM (@Output_Folder + "IDF_NoduleRank_BeforeDedupeCount.ss");
 
 Click =
     EXTRACT Column0,
@@ -120,7 +134,7 @@ Edge3P_Position =
 Union_UrlHash16B =
     SELECT "Click" AS TypeName, UrlHash16B FROM Click
     UNION
-    SELECT "Click2" AS TypeName, UrlHash16B FROM Click2
+    SELECT "Click" AS TypeName, UrlHash16B FROM Click2
     UNION
     SELECT "HRS" AS TypeName, UrlHash16B FROM HRS
     UNION 
@@ -156,34 +170,32 @@ Matched_Include_Nodule=
 OUTPUT Matched_Include_Nodule
 TO SSTREAM (@Output_Folder + "Matched_UrlHash16B_IDF_NoduleRank.ss");
 
-Matched_Include_Nodule_Total =
-    SELECT COUNT() AS TotalCount
-    FROM Matched_Include_Nodule;
-
-Matched_Include_Nodule_ByType =
+UrlHashMatchResult_TypeCounts =
     SELECT TypeName,
-           COUNT() AS TypeCount
-    FROM Matched_Include_Nodule
+           COUNT() AS TotalCount,
+           COUNTIF(MatchStatus == "Matched") AS MatchedCount,
+           COUNTIF(MatchStatus == "Unmatched") AS UnmatchedCount
+    FROM UrlHashMatchResult
     GROUP BY TypeName;
 
-Matched_Include_Nodule_TypeStats =
-    SELECT S.TypeName,
-           S.TypeCount,
-           T.TotalCount,
-           S.TypeCount * 1.0 / T.TotalCount AS Percentage
-    FROM Matched_Include_Nodule_ByType AS S
-         CROSS JOIN
-             Matched_Include_Nodule_Total AS T;
+UrlHashMatchResult_TypeStats =
+    SELECT TypeName,
+           TotalCount,
+           MatchedCount,
+           UnmatchedCount,
+           MatchedCount * 1.0 / TotalCount AS MatchedPercentage,
+           UnmatchedCount * 1.0 / TotalCount AS UnmatchedPercentage
+    FROM UrlHashMatchResult_TypeCounts;
 
-OUTPUT Matched_Include_Nodule_TypeStats
-TO SSTREAM @Out_MatchedTypeStat;
+OUTPUT UrlHashMatchResult_TypeStats
+TO SSTREAM @Out_MatchTypeStat;
 
 
 //sample 7.5B IDF
 Sample_Nodule =
     SELECT *
     FROM IDF_NoduleRank
-    SAMPLE UNIFORM (0.347827); // 7.5B / IDF_NoduleRank_BeforeDedupeCount = 0.326088
+    SAMPLE UNIFORM (0.347827);
 
 //Union the sampled 7.5B IDF with the matched include IDF, and get the final 8B IDF
 index =
