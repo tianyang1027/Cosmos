@@ -1,43 +1,52 @@
-﻿// In this script, we read in and count n (3) days of daily RawImageIDF stream.
-// First, run this script (IDFstat.script) to get the number of nodules.
-// Then we calculate the sampling ratio (8B/count) and run the sampling script (SampleIDF.script).
+﻿
+#DECLARE Date string = "2026_08_09";
+#DECLARE In_IDF               string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/" + @Date + "/RawImageIDF.ss";
+#DECLARE In_NoduleRank        string = "/local/Prod/Image/Selection/AfterCrawlSelectionV4.3/2026_08_10/NoduleRankFile_Unified.ss";
+#DECLARE Output_Folder        string = "/local/users/v-yangtian/OpenL1/"+ @Date + "/IDF/";
 
-//
-//#DECLARE In_IDF   string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/%Y_%m_%d/RawImageIDF.ss?date=today-9...today-7"; 
-//#DECLARE Out_Stat string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260317_Data/IDFstat.ss"; 
-//
-//
-//NoduleRank =
-//    SELECT Key,
-//           PageKey AS PKey,
-//           MediaUrl AS MUrl,
-//           PageUrl AS PUrl,
-//           StaticRank,
-//           IDFBlob
-//    FROM (SSTREAM @In_IDF);
-//
-//NoduleRank =
-//    SELECT DISTINCT Key, 
-//           PKey,
-//           FIRST(MUrl) AS MUrl,
-//           FIRST(PUrl) AS PUrl,
-//           FIRST(StaticRank) AS StaticRank,
-//           FIRST(IDFBlob) AS IDFBlob
-//    GROUP BY Key, PKey;
-//
-//stats = 
-//    SELECT "All" AS Name,
-//           COUNT() AS Count
-//    FROM NoduleRank;
-//
-//OUTPUT stats TO SSTREAM @Out_Stat;
+IDF =
+    SELECT Key,
+           PageKey,
+           IDFBlob
+    FROM (SSTREAM @In_IDF);
+
+NoduleRank =
+    SELECT Key,
+           PKey,
+           MUrl,
+           PUrl,
+           AdjustedRank
+    FROM (SSTREAM @In_NoduleRank);
 
 
-data=SELECT
-        PUrl,
-        MUrl
-    FROM (SSTREAM "/local/Prod/Image/Metrics/IGV2/CrowdFidelity/2026_03_31/ContentBase/DupMapping/DupMapping_Prod_sub.ss");
+IDF_NoduleRank =
+    SELECT I.Key,
+           I.PageKey AS PKey,
+           I.IDFBlob,
+           NR.MUrl,
+           NR.PUrl,
+           NR.AdjustedRank AS StaticRank
+    FROM IDF AS I
+         INNER JOIN NoduleRank AS NR
+             ON I.Key == NR.Key AND I.PageKey == NR.PKey;
 
-OUTPUT data
-TO "/local/users/v-yangtian/data.tsv"
-USING Outputters.Tsv();
+
+IDF_NoduleRank =
+    SELECT Key,
+           PKey,
+           FIRST(StaticRank) AS StaticRank,
+           FIRST(IDFBlob) AS IDFBlob,
+           FIRST(MUrl) AS MUrl,
+           FIRST(PUrl) AS PUrl
+    FROM IDF_NoduleRank
+    GROUP BY Key, PKey;
+
+OUTPUT IDF_NoduleRank
+TO SSTREAM (@Output_Folder + "IDF_NoduleRank.ss");
+
+IDF_NoduleRank_BeforeDedupeCount =
+    SELECT COUNT() AS TotalCount
+    FROM IDF_NoduleRank;
+
+OUTPUT IDF_NoduleRank_BeforeDedupeCount
+TO SSTREAM (@Output_Folder + "IDF_NoduleRank_BeforeDedupeCount.ss");
