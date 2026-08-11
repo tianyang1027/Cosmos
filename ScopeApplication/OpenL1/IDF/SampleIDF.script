@@ -18,7 +18,7 @@ USING MMRV2.Core;
 USING Microsoft.SegmentRelevance.ScopeLib;
 
 #DECLARE In_IDF               string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/%Y_%m_%d/RawImageIDF.ss?date=today-5...today-1";
-#DECLARE In_NoduleRank        string = "/local/Prod/Image/Selection/AfterCrawlSelectionV4.3/2026_08_06/NoduleRankFile_Unified.ss";
+#DECLARE In_NoduleRank        string = "/local/Prod/Image/Selection/AfterCrawlSelectionV4.3/2026_08_10/NoduleRankFile_Unified.ss";
 #DECLARE In_Click             string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.click.training.top50.hrs.tsv";
 #DECLARE In_Click2            string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.click2.training.top50.hrs.tsv";
 #DECLARE In_HRS               string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.hrs.training.top50.hrs.tsv";
@@ -29,6 +29,7 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 #DECLARE Output_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260810_Data/IDF/";
 #DECLARE Out_Stat             string = @Output_Folder + "DataStatus.ss";
 #DECLARE Out_UrlHashMatch     string = @Output_Folder + "Union_UrlHash16B_IDF_NoduleRank_MatchResult.ss";
+#DECLARE Out_MatchedTypeStat  string = @Output_Folder + "Matched_Include_Nodule_TypeStats.ss";
 
 IDF =
     SELECT *
@@ -42,10 +43,10 @@ NoduleRank =
 IDF_NoduleRank =
     SELECT I.Key,
            I.PageKey AS PKey,
-           //I.StaticRank,
            I.IDFBlob,
            NR.MUrl,
            NR.PUrl,
+           NR.AdjustedRank AS StaticRank,
            GetCombinedHash(NR.MUrl, NR.PUrl) AS UrlHash16B
     FROM IDF AS I
          INNER JOIN NoduleRank AS NR
@@ -55,7 +56,7 @@ IDF_NoduleRank =
 IDF_NoduleRank =
     SELECT Key,
            PKey,
-           //FIRST(StaticRank) AS StaticRank,
+           FIRST(StaticRank) AS StaticRank,
            FIRST(IDFBlob) AS IDFBlob,
            FIRST(MUrl) AS MUrl,
            FIRST(PUrl) AS PUrl,
@@ -118,15 +119,15 @@ Edge3P_Position =
 
 Union_UrlHash16B =
     SELECT "Click" AS TypeName, UrlHash16B FROM Click
-    UNION ALL
+    UNION
     SELECT "Click2" AS TypeName, UrlHash16B FROM Click2
-    UNION ALL
+    UNION
     SELECT "HRS" AS TypeName, UrlHash16B FROM HRS
-    UNION ALL
+    UNION 
     SELECT "DCG" AS TypeName, UrlHash16B FROM DCG
-    UNION ALL
+    UNION
     SELECT "Edge3P_Click" AS TypeName, UrlHash16B FROM Edge3P_Click
-    UNION ALL
+    UNION
     SELECT "Edge3P_Position" AS TypeName, UrlHash16B FROM Edge3P_Position;
 
 
@@ -138,6 +139,7 @@ UrlHashMatchResult =
            INR.MUrl,
            INR.PUrl,
            INR.IDFBlob,
+           INR.StaticRank,
            IF(INR.UrlHash16B == null, "Unmatched", "Matched") AS MatchStatus
     FROM Union_UrlHash16B AS UU
          LEFT JOIN IDF_NoduleRank AS INR
@@ -154,6 +156,28 @@ Matched_Include_Nodule=
 OUTPUT Matched_Include_Nodule
 TO SSTREAM (@Output_Folder + "Matched_UrlHash16B_IDF_NoduleRank.ss");
 
+Matched_Include_Nodule_Total =
+    SELECT COUNT() AS TotalCount
+    FROM Matched_Include_Nodule;
+
+Matched_Include_Nodule_ByType =
+    SELECT TypeName,
+           COUNT() AS TypeCount
+    FROM Matched_Include_Nodule
+    GROUP BY TypeName;
+
+Matched_Include_Nodule_TypeStats =
+    SELECT S.TypeName,
+           S.TypeCount,
+           T.TotalCount,
+           S.TypeCount * 1.0 / T.TotalCount AS Percentage
+    FROM Matched_Include_Nodule_ByType AS S
+         CROSS JOIN
+             Matched_Include_Nodule_Total AS T;
+
+OUTPUT Matched_Include_Nodule_TypeStats
+TO SSTREAM @Out_MatchedTypeStat;
+
 
 //sample 7.5B IDF
 Sample_Nodule =
@@ -167,15 +191,17 @@ index =
             PUrl,
             IDFBlob AS IdfBlob,
             GetDomain(PUrl) AS PDomain,
-            UrlHash16B
+            UrlHash16B,
+            StaticRank
     FROM Sample_Nodule
-    UNION ALL
+    UNION
     SELECT 
             MUrl,
             PUrl,
             IDFBlob AS IdfBlob,
             GetDomain(PUrl) AS PDomain,
-            UrlHash16B
+            UrlHash16B,
+            StaticRank
     FROM Matched_Include_Nodule;
 
 
