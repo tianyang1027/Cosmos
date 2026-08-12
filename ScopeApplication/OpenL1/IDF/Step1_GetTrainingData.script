@@ -1,0 +1,70 @@
+﻿
+
+#DECLARE In_Click             string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.click.training.top50.hrs.tsv";
+#DECLARE In_Click2            string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.click2.training.top50.hrs.tsv";
+#DECLARE In_HRS               string = "/shares/SegmentRelevance/SegmentRelevance/users/qiangli/L1Data/LabeledData/image.hrs.training.top50.hrs.tsv";
+#DECLARE In_DCG               string = "/local/users/jichen4/XC/L1/training_data/DCG/DCG_Labels.ss";
+#DECLARE In_Edge3P_Click      string = "/local/users/jichen4/XC/L1/training_data/Edge3p_Click/Edge3p_Click_Mini_Labels.ss";
+#DECLARE In_Edge3P_Position   string = "/local/users/jichen4/XC/L1/training_data/Edge3p_Position/Edge3p_Position_Mini_Labels.ss";
+
+
+Click =
+    EXTRACT Column0,
+            Column1,
+            Column2,
+            Column3,
+            Column4,
+            Column5,
+            UrlHash16B
+    FROM @In_Click
+    USING Extractors.Tsv();
+
+Click2 =
+    EXTRACT Column0,
+            Column1,
+            Column2,
+            Column3,
+            Column4,
+            Column5,
+            UrlHash16B
+    FROM @In_Click2
+    USING Extractors.Tsv();
+
+HRS =
+    EXTRACT Column0,
+            Column1,
+            Column2,
+            Column3,
+            Column4,
+            Column5,
+            UrlHash16B
+    FROM @In_HRS
+    USING Extractors.Tsv();
+
+DCG =
+    SELECT *
+    FROM (SSTREAM @In_DCG);
+
+Edge3P_Click =
+    SELECT *
+    FROM (SSTREAM @In_Edge3P_Click);
+
+Edge3P_Position =
+    SELECT *
+    FROM (SSTREAM @In_Edge3P_Position);
+
+Union_UrlHash16B =
+    SELECT "Click" AS TypeName, UrlHash16B FROM Click
+    UNION
+    SELECT "Click" AS TypeName, UrlHash16B FROM Click2
+    UNION
+    SELECT "HRS" AS TypeName, UrlHash16B FROM HRS
+    UNION 
+    SELECT "DCG" AS TypeName, UrlHash16B FROM DCG
+    UNION
+    SELECT "Edge3P_Click" AS TypeName, UrlHash16B FROM Edge3P_Click
+    UNION
+    SELECT "Edge3P_Position" AS TypeName, UrlHash16B FROM Edge3P_Position;
+
+OUTPUT Union_UrlHash16B
+TO SSTREAM ("/local/users/v-yangtian/L1/training_data/Union_UrlHash16B.ss");    

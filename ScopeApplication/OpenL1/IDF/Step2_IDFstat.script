@@ -19,6 +19,7 @@ NoduleRank =
     FROM (SSTREAM @In_NoduleRank);
 
 
+
 IDF_NoduleRank =
     SELECT I.Key,
            I.PageKey AS PKey,
@@ -41,12 +42,5 @@ IDF_NoduleRank =
     FROM IDF_NoduleRank
     GROUP BY Key, PKey;
 
-OUTPUT IDF_NoduleRank
-TO SSTREAM (@Output_Folder + "IDF_NoduleRank.ss");
 
-IDF_NoduleRank_BeforeDedupeCount =
-    SELECT COUNT() AS TotalCount
-    FROM IDF_NoduleRank;
 
-OUTPUT IDF_NoduleRank_BeforeDedupeCount
-TO SSTREAM (@Output_Folder + "IDF_NoduleRank_BeforeDedupeCount.ss");
