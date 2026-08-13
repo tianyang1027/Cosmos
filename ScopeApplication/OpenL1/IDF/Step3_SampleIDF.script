@@ -25,13 +25,18 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 #DECLARE In_DCG               string = "/local/users/jichen4/XC/L1/training_data/DCG/DCG_Labels.ss";
 #DECLARE In_Edge3P_Click      string = "/local/users/jichen4/XC/L1/training_data/Edge3p_Click/Edge3p_Click_Mini_Labels.ss";
 #DECLARE In_Edge3P_Position   string = "/local/users/jichen4/XC/L1/training_data/Edge3p_Position/Edge3p_Position_Mini_Labels.ss";
+#DECLARE In_Training_data        string = "/local/users/v-yangtian/L1/training_data/Union_UrlHash16B.ss";
 
 #DECLARE Output_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260810_Data/IDF/";
+#DECLARE Output_Stats_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260810_Data/Stats/";
 #DECLARE Out_Stat             string = @Output_Folder + "DataStatus.ss";
-#DECLARE Out_UrlHashMatch     string = @Output_Folder + "Union_UrlHash16B_IDF_NoduleRank_MatchResult.ss";
-#DECLARE Out_MatchTypeStat    string = @Output_Folder + "UrlHashMatchResult_TypeStats.ss";
 
 
+
+
+Training_data =
+    SELECT *
+    FROM (SSTREAM @In_Training_data);
 
 IDF_NoduleRank =
     SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_06/IDF/IDF_NoduleRank.ss")
@@ -57,6 +62,41 @@ Matched_Training_Nodule =
     SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_10/IDF/Matched_Training_Nodule.ss");
 
 
+
+UrlHashMatchResult =
+    SELECT UU.TypeName,
+           UU.UrlHash16B,
+           INR.Key,
+           INR.PKey,
+           INR.MUrl,
+           INR.PUrl,
+           INR.IDFBlob,
+           INR.StaticRank,
+           IF(INR.UrlHash16B == null, "Unmatched", "Matched") AS MatchStatus
+    FROM Training_data AS UU
+         LEFT JOIN IDF_NoduleRank AS INR
+             ON UU.UrlHash16B == INR.UrlHash16B;
+
+
+UrlHashMatchResult_TypeCounts =
+    SELECT TypeName,
+           COUNT() AS TotalCount,
+           COUNTIF(MatchStatus == "Matched") AS MatchedCount,
+           COUNTIF(MatchStatus == "Unmatched") AS UnmatchedCount
+    FROM UrlHashMatchResult
+    GROUP BY TypeName;
+
+UrlHashMatchResult_TypeStats =
+    SELECT TypeName,
+           TotalCount,
+           MatchedCount,
+           UnmatchedCount,
+           MatchedCount * 1.0 / TotalCount AS MatchedPercentage,
+           UnmatchedCount * 1.0 / TotalCount AS UnmatchedPercentage
+    FROM UrlHashMatchResult_TypeCounts;
+
+OUTPUT UrlHashMatchResult_TypeStats
+TO SSTREAM @Output_Stats_Folder + "UrlHashMatchResult_TypeStats.ss";
 
 
 //sample 7.5B from IDF_NoduleRank

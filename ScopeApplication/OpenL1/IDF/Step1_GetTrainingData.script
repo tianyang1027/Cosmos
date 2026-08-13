@@ -56,7 +56,7 @@ Edge3P_Position =
 Union_UrlHash16B =
     SELECT "Click" AS TypeName, UrlHash16B FROM Click
     UNION
-    SELECT "Click" AS TypeName, UrlHash16B FROM Click2
+    SELECT "Click2" AS TypeName, UrlHash16B FROM Click2
     UNION
     SELECT "HRS" AS TypeName, UrlHash16B FROM HRS
     UNION 
