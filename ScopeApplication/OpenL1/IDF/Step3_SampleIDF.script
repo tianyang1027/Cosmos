@@ -27,8 +27,8 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 #DECLARE In_Edge3P_Position   string = "/local/users/jichen4/XC/L1/training_data/Edge3p_Position/Edge3p_Position_Mini_Labels.ss";
 #DECLARE In_Training_data        string = "/local/users/v-yangtian/L1/training_data/Union_UrlHash16B.ss";
 
-#DECLARE Output_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260816_Data/IDF/";
-#DECLARE Output_Stats_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260816_Data/Stats/";
+#DECLARE Output_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260817_Data/IDF/";
+#DECLARE Output_Stats_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260817_Data/Stats/";
 #DECLARE Out_Stat             string = @Output_Folder + "DataStatus.ss";
 
 
