@@ -11,10 +11,10 @@ REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelec
 REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\DiscoverySelection.Util.dll";
 RESOURCE @"D:\data\MMCB\MMRV2\ProdCo3C\Image\Binaries\searchIndexDiscoverySelection.Prod\URLRepositoryV2Snapshots\CMPRK-Prod2-Ch1\tld.txt";
 
-#DECLARE Date string = "2026_08_06";
+#DECLARE Date string = "2026_08_13";
 #DECLARE In_Training_data        string = "/local/users/v-yangtian/L1/training_data/Union_UrlHash16B.ss";
 #DECLARE In_IDF               string = "/local/Prod/Image/Repository/Snapshot/IDF-FluidImagePrototype/IDF/" + @Date + "/RawImageIDF.ss";
-#DECLARE In_NoduleRank        string = "/local/Prod/Image/Selection/AfterCrawlSelectionV4.3/2026_08_10/NoduleRankFile_Unified.ss";
+#DECLARE In_NoduleRank        string = "/local/Prod/Image/Selection/AfterCrawlSelectionV4.3/2026_08_13/NoduleRankFile_Unified.ss";
 #DECLARE Output_Folder        string = "/local/users/v-yangtian/OpenL1/"+ @Date + "/IDF/";
 #DECLARE Output_Stats_Folder        string = "/local/users/v-yangtian/OpenL1/"+ @Date + "/stats/";
 
@@ -125,6 +125,8 @@ UrlHashMatchResult_TypeStats =
            MatchedCount * 1.0 / TotalCount AS MatchedPercentage,
            UnmatchedCount * 1.0 / TotalCount AS UnmatchedPercentage
     FROM UrlHashMatchResult_TypeCounts;
+
+
 
 OUTPUT UrlHashMatchResult_TypeStats
 TO SSTREAM @Output_Stats_Folder + "UrlHashMatchResult_TypeStats.ss";

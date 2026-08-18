@@ -97,6 +97,7 @@
     <Script Include="LoopSamples.script" />
     <Script Include="LwNoduleText_Combine.script" />
     <Script Include="Metrics_1110_4.script" />
+    <Script Include="OpenL1\IDF\Stats.script" />
     <Script Include="OpenL1\IDF\Step1_GetTrainingData.script" />
     <Script Include="OpenL1\IDF\Step3_SampleIDF.script" />
     <Script Include="OpenL1\IDF\Step2_IDFstat.script" />
@@ -292,6 +293,9 @@
     </ScriptCode>
     <ScriptCode Include="Metrics_1110_4.script.cs">
       <DependentUpon>Metrics_1110_4.script</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="OpenL1\IDF\Stats.script.cs">
+      <DependentUpon>OpenL1\IDF\Stats.script</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="OpenL1\IDF\Step1_GetTrainingData.script.cs">
       <DependentUpon>OpenL1\IDF\Step1_GetTrainingData.script</DependentUpon>

@@ -1028,6 +1028,66 @@
             "codeBehindFiles": [
                 "WrapStarCosmosData_Deviantart .script.cs"
             ]
+        },
+        "ScopeApplication/openl1/idf/step1_gettrainingdata.script": {
+            "account": "",
+            "clusterRun": {
+                "priority": "1",
+                "tokens": "0",
+                "vcPercent": "3",
+                "autoToken": "0",
+                "jobName": "Step1_GetTrainingData",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-maxPercentInputUnavailability 100",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\IDF\\Step1_GetTrainingData.script.cs"
+            ]
+        },
+        "ScopeApplication/openl1/idf/step2_idfstat.script": {
+            "account": "",
+            "clusterRun": {
+                "priority": "1",
+                "tokens": "0",
+                "vcPercent": "3",
+                "autoToken": "0",
+                "jobName": "Step2_IDFstat",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-MaxTempDataHeldBytesPerToken 11000000000000 -MaxTotalInputSize 11000000000000000",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\IDF\\Step2_IDFstat.script.cs"
+            ]
+        },
+        "ScopeApplication/openl1/idf/step3_sampleidf.script": {
+            "account": "",
+            "clusterRun": {
+                "priority": "1",
+                "tokens": "0",
+                "vcPercent": "3",
+                "autoToken": "0",
+                "jobName": "Step3_SampleIDF",
+                "maxUnavailability": "100",
+                "notification": "",
+                "nebulaArgument": "-MaxTempDataHeldBytesPerToken 11000000000000 -MaxTotalInputSize 11000000000000000",
+                "targetFramework": ".netframework"
+            },
+            "localRun": {
+                "targetFramework": ".netframework"
+            },
+            "codeBehindFiles": [
+                "OpenL1\\IDF\\Step3_SampleIDF.script.cs"
+            ]
         }
     }
 }

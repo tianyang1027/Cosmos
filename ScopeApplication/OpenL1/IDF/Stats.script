@@ -1,0 +1,27 @@
+﻿
+
+#DECLARE Output_Folder        string = "/local/usersv-yangtian/";
+
+IDF_NoduleRank =
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_06/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_07/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_08/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_09/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_10/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_11/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_12/IDF/IDF_NoduleRank.ss")
+    UNION
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_13/IDF/IDF_NoduleRank.ss"); 
+
+
+IDF_NoduleRank_TotalCount = SELECT COUNT(*) AS TotalCount FROM IDF_NoduleRank;
+
+OUTPUT IDF_NoduleRank_TotalCount
+TO SSTREAM @Output_Folder + "IDF_NoduleRank_TotalCount.ss";
+

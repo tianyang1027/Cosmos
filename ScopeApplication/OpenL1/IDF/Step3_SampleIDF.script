@@ -27,8 +27,8 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 #DECLARE In_Edge3P_Position   string = "/local/users/jichen4/XC/L1/training_data/Edge3p_Position/Edge3p_Position_Mini_Labels.ss";
 #DECLARE In_Training_data        string = "/local/users/v-yangtian/L1/training_data/Union_UrlHash16B.ss";
 
-#DECLARE Output_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260810_Data/IDF/";
-#DECLARE Output_Stats_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260810_Data/Stats/";
+#DECLARE Output_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260816_Data/IDF/";
+#DECLARE Output_Stats_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260816_Data/Stats/";
 #DECLARE Out_Stat             string = @Output_Folder + "DataStatus.ss";
 
 
@@ -47,20 +47,13 @@ IDF_NoduleRank =
     UNION
     SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_09/IDF/IDF_NoduleRank.ss")
     UNION
-    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_10/IDF/IDF_NoduleRank.ss");
-
-
-Matched_Training_Nodule =
-    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_06/IDF/Matched_Training_Nodule.ss")
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_10/IDF/IDF_NoduleRank.ss")
     UNION
-    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_07/IDF/Matched_Training_Nodule.ss")
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_11/IDF/IDF_NoduleRank.ss")
     UNION
-    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_08/IDF/Matched_Training_Nodule.ss")
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_12/IDF/IDF_NoduleRank.ss")
     UNION
-    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_09/IDF/Matched_Training_Nodule.ss")
-    UNION
-    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_10/IDF/Matched_Training_Nodule.ss");
-
+    SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_13/IDF/IDF_NoduleRank.ss");  
 
 
 UrlHashMatchResult =
@@ -93,13 +86,21 @@ UrlHashMatchResult_TypeStats =
            UnmatchedCount,
            MatchedCount * 1.0 / TotalCount AS MatchedPercentage,
            UnmatchedCount * 1.0 / TotalCount AS UnmatchedPercentage
+    FROM UrlHashMatchResult_TypeCounts
+    UNION ALL
+    SELECT "Total" AS TypeName,
+           SUM(TotalCount) AS TotalCount,
+           SUM(MatchedCount) AS MatchedCount,
+           SUM(UnmatchedCount) AS UnmatchedCount,
+           SUM(MatchedCount) * 1.0 / SUM(TotalCount) AS MatchedPercentage,
+           SUM(UnmatchedCount) * 1.0 / SUM(TotalCount) AS UnmatchedPercentage
     FROM UrlHashMatchResult_TypeCounts;
 
 OUTPUT UrlHashMatchResult_TypeStats
 TO SSTREAM @Output_Stats_Folder + "UrlHashMatchResult_TypeStats.ss";
 
 
-//sample 7.5B from IDF_NoduleRank
+//sample 8B from IDF_NoduleRank
 Sample_Nodule =
     SELECT *
     FROM IDF_NoduleRank
@@ -122,7 +123,17 @@ index =
             GetDomain(PUrl) AS PDomain,
             UrlHash16B,
             StaticRank
-    FROM Matched_Training_Nodule;
+    FROM UrlHashMatchResult WHERE MatchStatus == "Matched";
+
+
+index =
+    SELECT Key, 
+           PKey,
+           FIRST(MUrl) AS MUrl,
+           FIRST(PUrl) AS PUrl,
+           FIRST(StaticRank) AS StaticRank,
+           FIRST(IDFBlob) AS IDFBlob FROM index;
+    GROUP BY Key, PKey;
 
 
 index =
