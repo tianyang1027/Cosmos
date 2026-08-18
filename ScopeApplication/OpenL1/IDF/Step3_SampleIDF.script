@@ -29,7 +29,7 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 
 #DECLARE Output_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260817_Data/IDF/";
 #DECLARE Output_Stats_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260817_Data/Stats/";
-#DECLARE Out_Stat             string = @Output_Folder + "DataStatus.ss";
+#DECLARE Out_Stat             string = @Output_Stats_Folder + "DataStatus.ss";
 
 Training_data =
     SELECT *
@@ -99,7 +99,7 @@ TO SSTREAM @Output_Stats_Folder + "UrlHashMatchResult_TypeStats.ss";
 Sample_Nodule =
     SELECT *
     FROM IDF_NoduleRank
-    SAMPLE UNIFORM (0.347827);
+    SAMPLE UNIFORM (0.1298956774);
 
 
 index =
@@ -121,15 +121,14 @@ index =
     FROM UrlHashMatchResult WHERE MatchStatus == "Matched";
 
 
-index =
-    SELECT Key, 
-           PKey,
-           FIRST(MUrl) AS MUrl,
-           FIRST(PUrl) AS PUrl,
-           FIRST(StaticRank) AS StaticRank,
-           FIRST(IDFBlob) AS IDFBlob FROM index;
-    GROUP BY Key, PKey;
-
+index = SELECT DISTINCT 
+                    MUrl,
+                    PUrl,
+                    IdfBlob,
+                    PDomain,
+                    UrlHash16B,
+                    StaticRank
+                    FROM index;
 
 index =
     SELECT index.*,
