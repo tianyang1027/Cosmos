@@ -31,9 +31,6 @@ USING Microsoft.SegmentRelevance.ScopeLib;
 #DECLARE Output_Stats_Folder        string = "/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260817_Data/Stats/";
 #DECLARE Out_Stat             string = @Output_Folder + "DataStatus.ss";
 
-
-
-
 Training_data =
     SELECT *
     FROM (SSTREAM @In_Training_data);
@@ -55,7 +52,6 @@ IDF_NoduleRank =
     UNION
     SELECT * FROM (SSTREAM "/local/users/v-yangtian/OpenL1/2026_08_13/IDF/IDF_NoduleRank.ss");  
 
-
 UrlHashMatchResult =
     SELECT UU.TypeName,
            UU.UrlHash16B,
@@ -69,7 +65,6 @@ UrlHashMatchResult =
     FROM Training_data AS UU
          LEFT JOIN IDF_NoduleRank AS INR
              ON UU.UrlHash16B == INR.UrlHash16B;
-
 
 UrlHashMatchResult_TypeCounts =
     SELECT TypeName,
