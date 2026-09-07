@@ -1,8 +1,8 @@
 // Script to extract UrlHash16B from the output of Sample8BNoduleFromPublish.script
 
-#DECLARE In_Dir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260422_Data/IDF/";
+#DECLARE In_Dir string = @"/shares/SegmentRelevance/SegmentRelevance/ImageRelevance/Fluid/OpenL1/Data/Organic/20260817_Data/IDF/";
 #DECLARE Out_Dir string = @"/local/users/v-yangtian/XC/OpenL1/";
-#DECLARE  Out_Tsv string = @Out_Dir + "Nodule_DupMapping_Prod_sub_20260422.tsv";
+#DECLARE  Out_Tsv string = @Out_Dir + "Nodule_DupMapping_Prod_sub_20260817.tsv";
 
 
 Data = 
@@ -10,12 +10,21 @@ Data =
     PATTERN "Data_Segment_%n.ss"
     RANGE __serialnum = ["0", "31"];
 
-//UrlHashes = 
-//    EXTRACT UrlHash16B:string
-//    FROM @In_Tsv
-//    USING DefaultTextExtractor(skipFirstNRows: 1);
 
-UrlHashes =SELECT UrlHash16B FROM Data;
+UrlHashes =SELECT  UrlHash16B FROM Data;
+
+TotalCount= SELECT COUNT(*) AS TotalCount FROM UrlHashes;
+
+OUTPUT TotalCount
+TO SSTREAM @Out_Dir + "TotalCount.ss";
+
+
+Distinct_UrlHashes =SELECT DISTINCT UrlHash16B FROM Data;
+
+DistinctCount=SELECT COUNT(*) AS DistinctCount FROM Distinct_UrlHashes;
+
+OUTPUT DistinctCount
+TO SSTREAM  @Out_Dir + "DistinctCount.ss";
 
 OUTPUT UrlHashes
 TO @Out_Tsv
