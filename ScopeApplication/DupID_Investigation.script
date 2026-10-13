@@ -1,0 +1,66 @@
+﻿
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Core.dll";
+REFERENCE @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\MMRV2.Utility.dll";
+RESOURCE  @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Binaries\HashValue.dll";
+
+USING System;
+USING System.Collections.Generic;
+USING System.Collections;
+USING System.Text;
+USING System.IO;
+
+USING MMRV2.Utility;
+
+#DECLARE DATE_PARAMS string = "2026_10_12";
+#DECLARE Out_Stats string = "/local/users/v-yangtian/DupID/DupID_Investigation_2026_10_12.tsv";
+
+snapshot = 
+    VIEW @"D:\Data\MMCB\MMRV2\ProdCo3C\Image\Schema\Media_Raw.view" 
+    PARAMS 
+    (Date = @DATE_PARAMS
+    );
+
+snapshot = 
+    PROCESS snapshot
+    PRODUCE *
+    USING MMRV2.Core.MmrScopeTypeProcessor(
+    "-schemaPath", "Metadata:Image_Media_Schema.xml",
+    "-outputFeatures",
+        "MediaFeature__ImageSigHash",
+        "MediaFeatureEx__ImageDupIdV6"
+    );
+
+MediaSnapshotStats =
+    SELECT COUNT(DISTINCT Key) AS MediaSnapshotImagesWithSigHashWithoutDupIDV6
+    FROM snapshot
+    WHERE MediaFeature__ImageSigHash != null
+          AND MediaFeatureEx__ImageDupIdV6 == null;
+
+In_ActiveDocs =
+    SELECT DISTINCT Key
+    FROM
+    (
+        SSTREAM "/local/Prod/Image/Repository/ActiveDocsCombined/WithDups/Delta60B_2026_10_08.ss"
+    );
+
+// ActiveDocs contains nodules; count images by Key, not by Key/PageKey.
+ActiveDocsWithDupIDV6 =
+    SELECT snapshot.Key
+    FROM snapshot
+         LEFT SEMIJOIN In_ActiveDocs
+         ON snapshot.Key == In_ActiveDocs.Key
+    WHERE snapshot.MediaFeatureEx__ImageDupIdV6 != null;
+
+ActiveDocsStats =
+    SELECT COUNT(DISTINCT Key) AS ActiveDocsImagesWithDupIDV6
+    FROM ActiveDocsWithDupIDV6;
+
+Stats =
+    SELECT MediaSnapshotStats.MediaSnapshotImagesWithSigHashWithoutDupIDV6,
+           ActiveDocsStats.ActiveDocsImagesWithDupIDV6
+    FROM MediaSnapshotStats
+         CROSS JOIN ActiveDocsStats;
+
+OUTPUT Stats
+TO @Out_Stats
+USING Outputters.Tsv(outputHeader: true);
